@@ -14,6 +14,9 @@ export default function StatusModalPanel({ phase, data, error }) {
       <aside className={`${PANEL_SHELL} client-status-panel client-status-panel-loading-wrap`} aria-live="polite">
         <div className="client-status-panel-loading">
           <p>Загружаем статус обращения…</p>
+          <p className="client-status-panel-loading-hint muted">
+            Обычно это занимает несколько секунд
+          </p>
         </div>
       </aside>
     );
@@ -38,22 +41,20 @@ export default function StatusModalPanel({ phase, data, error }) {
             <li>Проверьте номер обращения</li>
             <li>Проверьте email, указанный при отправке</li>
             <li>
-              Формат: <code>NL-XXXXXXXX-NNN</code>
+              Используйте формат <code>NL-XXXXXXXX-NNN</code> (например, NL-00500001-001)
             </li>
           </ul>
+          <p className="client-status-demo-trust client-status-panel-trust">
+            <span aria-hidden="true">🛡</span> Мы ценим ваше доверие и бережно храним ваши данные
+          </p>
         </div>
       </aside>
     );
   }
 
   if (phase === "success" && data) {
+    const isPublished = data.status === "published";
     const headline = STATUS_HEADLINE[data.status] || data.status;
-    const statusNote =
-      data.status === "published"
-        ? "Ответ опубликован"
-        : data.status === "rejected"
-          ? "Обращение отклонено"
-          : "На проверке";
 
     return (
       <aside
@@ -61,45 +62,64 @@ export default function StatusModalPanel({ phase, data, error }) {
         aria-live="polite"
       >
         <header className="client-status-panel-header">
-          <div className="client-status-panel-header-row">
-            <code className="client-ticket client-status-panel-ticket-inline">{data.request_number}</code>
-            <span className={`client-status-panel-chip client-status-panel-chip--${data.status}`}>
-              {statusNote}
-            </span>
-          </div>
+          <p className="client-status-panel-eyebrow">Найдено обращение</p>
+          <p className="client-status-panel-ticket">
+            <code className="client-ticket">{data.request_number}</code>
+          </p>
           <p className="client-status-panel-headline">{headline}</p>
         </header>
 
-        <StatusStepper status={data.status} compact />
-
-        <div className="client-status-panel-details">
-          <dl className="client-status-panel-meta">
-            <div>
-              <dt>Тема</dt>
-              <dd>{topicLabel(data.product_area)}</dd>
-            </div>
-            <div>
-              <dt>Оценка</dt>
-              <dd>{data.rating != null ? `${data.rating} из 5` : "Не указана"}</dd>
-            </div>
-          </dl>
-
-          <section className="client-status-panel-review">
-            <h3>Ваш отзыв</h3>
-            <p className="client-status-clamp-2" title={data.review_text}>
-              {data.review_text}
-            </p>
-          </section>
+        <div className="client-status-panel-stepper-wrap">
+          <StatusStepper status={data.status} />
         </div>
+
+        <dl className="client-status-panel-meta client-status-panel-meta--stack">
+          <div>
+            <dt>Тема</dt>
+            <dd>{topicLabel(data.product_area)}</dd>
+          </div>
+          <div>
+            <dt>Оценка</dt>
+            <dd>{data.rating != null ? `${data.rating} из 5` : "Не указана"}</dd>
+          </div>
+        </dl>
+
+        <section className="client-status-panel-review">
+          <h3>Ваш отзыв</h3>
+          <p className="client-status-review-text" title={data.review_text}>
+            {data.review_text}
+          </p>
+        </section>
+
+        {!isPublished && data.status !== "rejected" && (
+          <div className="client-info-box client-status-panel-note" role="status">
+            <strong>На проверке</strong>
+            <p>
+              Специалист проверяет ответ перед публикацией. Финальный текст появится здесь, как
+              только он будет готов.
+            </p>
+          </div>
+        )}
+
+        {isPublished && (
+          <div className="client-info-box success client-status-panel-note" role="status">
+            <strong>Спасибо за обратную связь!</strong>
+            <p>Мы опубликовали ответ на ваше обращение. Ниже — текст от компании.</p>
+          </div>
+        )}
 
         {data.final_response ? (
           <section className="client-status-panel-response">
             <h3>Ответ компании</h3>
-            <p className="client-status-clamp-2" title={data.final_response}>
+            <p className="client-status-review-text" title={data.final_response}>
               {data.final_response}
             </p>
           </section>
         ) : null}
+
+        <p className="client-status-demo-trust client-status-panel-trust">
+          <span aria-hidden="true">🛡</span> Мы ценим ваше доверие
+        </p>
       </aside>
     );
   }

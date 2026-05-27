@@ -23,12 +23,11 @@ export function getStatusStep(status) {
   }
 }
 
-export default function StatusStepper({ status, compact = false }) {
+export default function StatusStepper({ status }) {
   const active = getStatusStep(status);
-  const className = compact ? "status-stepper status-stepper--compact" : "status-stepper";
 
   return (
-    <ol className={className} aria-label="Этапы обработки">
+    <ol className="status-stepper" aria-label="Этапы обработки">
       {STEPS.map((label, idx) => {
         const num = idx + 1;
         let state = "todo";
