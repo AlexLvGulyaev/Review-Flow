@@ -1,0 +1,128 @@
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query
+
+from app.core.roles import require_operator
+from sqlalchemy.orm import Session, joinedload
+
+from app.db.session import get_db
+from app.models.entities import Review, ReviewClassification, ReviewResponse
+from app.schemas.operator import (
+    ApproveRequest,
+    ModerationActionRequest,
+    ModerationActionResponse,
+    OperatorReviewDetail,
+    OperatorReviewListItem,
+)
+from app.services.moderation import (
+    approve_review,
+    build_operator_detail,
+    load_review_detail,
+    reject_review,
+    request_revision,
+)
+from app.services.review_helpers import latest_classification, latest_response, review_text_preview
+
+router = APIRouter(
+    prefix="/api/operator/reviews",
+    tags=["operator"],
+    dependencies=[Depends(require_operator)],
+)
+
+
+def _to_list_item(review: Review) -> OperatorReviewListItem:
+    cls = latest_classification(review)
+    resp = latest_response(review)
+    return OperatorReviewListItem(
+        review_id=review.id,
+        customer_name=review.customer.customer_name if review.customer else None,
+        service_case_title=review.service_case.case_title if review.service_case else None,
+        product_area=review.product_area,
+        rating=review.rating,
+        review_text_preview=review_text_preview(review.review_text),
+        scenario=cls.scenario if cls else None,
+        sentiment=cls.sentiment if cls else None,
+        priority=cls.priority if cls else None,
+        moderation_status=resp.moderation_status if resp else None,
+        publication_status=resp.publication_status if resp else None,
+        created_at=review.created_at,
+        updated_at=resp.updated_at if resp else None,
+    )
+
+
+@router.get("", response_model=list[OperatorReviewListItem])
+def list_operator_reviews(
+    moderation_status: str | None = Query(None),
+    publication_status: str | None = Query(None),
+    db: Session = Depends(get_db),
+) -> list[OperatorReviewListItem]:
+    query = (
+        db.query(Review)
+        .options(
+            joinedload(Review.customer),
+            joinedload(Review.service_case),
+            joinedload(Review.classifications),
+            joinedload(Review.responses),
+        )
+        .order_by(Review.created_at.desc())
+    )
+
+    reviews = query.limit(100).all()
+    items = [_to_list_item(r) for r in reviews]
+
+    if moderation_status:
+        items = [i for i in items if i.moderation_status == moderation_status]
+    if publication_status:
+        items = [i for i in items if i.publication_status == publication_status]
+
+    return items
+
+
+@router.get("/{review_id}", response_model=OperatorReviewDetail)
+def get_operator_review(
+    review_id: UUID,
+    db: Session = Depends(get_db),
+) -> OperatorReviewDetail:
+    review = load_review_detail(db, review_id)
+    detail = build_operator_detail(db, review, log_opened=True)
+    db.commit()
+    return detail
+
+
+@router.post("/{review_id}/approve", response_model=OperatorReviewDetail)
+def approve_operator_review(
+    review_id: UUID,
+    payload: ApproveRequest,
+    db: Session = Depends(get_db),
+) -> OperatorReviewDetail:
+    return approve_review(db, review_id, payload.final_response)
+
+
+@router.post("/{review_id}/reject", response_model=ModerationActionResponse)
+def reject_operator_review(
+    review_id: UUID,
+    payload: ModerationActionRequest,
+    db: Session = Depends(get_db),
+) -> ModerationActionResponse:
+    resp = reject_review(db, review_id, payload.reason)
+    return ModerationActionResponse(
+        review_id=review_id,
+        moderation_status=resp.moderation_status,
+        publication_status=resp.publication_status,
+        message="Review rejected",
+    )
+
+
+@router.post("/{review_id}/revision", response_model=ModerationActionResponse)
+def revision_operator_review(
+    review_id: UUID,
+    payload: ModerationActionRequest,
+    db: Session = Depends(get_db),
+) -> ModerationActionResponse:
+    resp = request_revision(db, review_id, payload.reason)
+    return ModerationActionResponse(
+        review_id=review_id,
+        moderation_status=resp.moderation_status,
+        publication_status=resp.publication_status,
+        message="Revision requested",
+    )
