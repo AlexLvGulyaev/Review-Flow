@@ -77,6 +77,8 @@ class InteractionScenario(Base):
     forbidden_response_elements: Mapped[str | None] = mapped_column(Text)
     escalation_rules: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
 
 class SentimentProfile(Base):
@@ -90,6 +92,21 @@ class SentimentProfile(Base):
     forbidden_tone: Mapped[str | None] = mapped_column(Text)
     escalation_hint: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class PriorityLevel(Base):
+    __tablename__ = "priority_levels"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    priority_code: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
+    priority_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    description: Mapped[str | None] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
 
 class ReviewPhrasePattern(Base):
@@ -97,6 +114,16 @@ class ReviewPhrasePattern(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     phrase_text: Mapped[str] = mapped_column(Text, nullable=False)
+    scenario_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("interaction_scenarios.id")
+    )
+    sentiment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sentiment_profiles.id")
+    )
+    priority_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("priority_levels.id")
+    )
+    # Deprecated: synced from FK on write; not used as source of truth at runtime.
     scenario: Mapped[str | None] = mapped_column(String(64))
     sentiment: Mapped[str | None] = mapped_column(String(64))
     topic: Mapped[str | None] = mapped_column(String(128))
@@ -106,12 +133,28 @@ class ReviewPhrasePattern(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
+    interaction_scenario: Mapped["InteractionScenario | None"] = relationship(
+        foreign_keys=[scenario_id]
+    )
+    sentiment_profile: Mapped["SentimentProfile | None"] = relationship(foreign_keys=[sentiment_id])
+    priority_level: Mapped["PriorityLevel | None"] = relationship(foreign_keys=[priority_id])
+
 
 class ResponseTemplate(Base):
     __tablename__ = "response_templates"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title: Mapped[str | None] = mapped_column(String(255))
+    scenario_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("interaction_scenarios.id")
+    )
+    sentiment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sentiment_profiles.id")
+    )
+    priority_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("priority_levels.id")
+    )
+    # Deprecated string mirrors (synced on write).
     scenario: Mapped[str | None] = mapped_column(String(64))
     sentiment: Mapped[str | None] = mapped_column(String(64))
     priority: Mapped[str | None] = mapped_column(String(32))
@@ -124,6 +167,12 @@ class ResponseTemplate(Base):
     forbidden_elements: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_fallback: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    interaction_scenario: Mapped["InteractionScenario | None"] = relationship(
+        foreign_keys=[scenario_id]
+    )
+    sentiment_profile: Mapped["SentimentProfile | None"] = relationship(foreign_keys=[sentiment_id])
+    priority_level: Mapped["PriorityLevel | None"] = relationship(foreign_keys=[priority_id])
 
 
 class PromptVersion(Base):
@@ -158,6 +207,16 @@ class ReviewClassification(Base):
     )
     phrase_match_score: Mapped[float | None] = mapped_column(Numeric(5, 4))
     classification_source: Mapped[str | None] = mapped_column(String(32))
+    scenario_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("interaction_scenarios.id")
+    )
+    sentiment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sentiment_profiles.id")
+    )
+    priority_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("priority_levels.id")
+    )
+    # Deprecated string mirrors (synced on write).
     scenario: Mapped[str | None] = mapped_column(String(64))
     sentiment: Mapped[str | None] = mapped_column(String(64))
     priority: Mapped[str | None] = mapped_column(String(32))
@@ -173,6 +232,11 @@ class ReviewClassification(Base):
     matched_phrase: Mapped["ReviewPhrasePattern | None"] = relationship()
     prompt_version: Mapped["PromptVersion | None"] = relationship()
     responses: Mapped[list["ReviewResponse"]] = relationship(back_populates="classification")
+    interaction_scenario: Mapped["InteractionScenario | None"] = relationship(
+        foreign_keys=[scenario_id]
+    )
+    sentiment_profile: Mapped["SentimentProfile | None"] = relationship(foreign_keys=[sentiment_id])
+    priority_level: Mapped["PriorityLevel | None"] = relationship(foreign_keys=[priority_id])
 
 
 class ReviewResponse(Base):
@@ -225,6 +289,25 @@ class RejectionFeedback(Base):
     review_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("reviews.id"))
     operator_id: Mapped[str] = mapped_column(String(128), default="operator-ui")
     rejection_reason: Mapped[str] = mapped_column(String(64), nullable=False)
+    llm_scenario_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("interaction_scenarios.id")
+    )
+    llm_sentiment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sentiment_profiles.id")
+    )
+    llm_priority_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("priority_levels.id")
+    )
+    operator_corrected_scenario_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("interaction_scenarios.id")
+    )
+    operator_corrected_sentiment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sentiment_profiles.id")
+    )
+    operator_corrected_priority_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("priority_levels.id")
+    )
+    # Deprecated string mirrors (synced on write).
     llm_scenario: Mapped[str | None] = mapped_column(String(64))
     llm_tone: Mapped[str | None] = mapped_column(String(64))
     llm_priority: Mapped[str | None] = mapped_column(String(32))

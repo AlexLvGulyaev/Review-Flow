@@ -1,7 +1,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
+
+from app.schemas.reference import ClassificationRefOut
 
 
 class ReviewCreateRequest(BaseModel):
@@ -22,9 +24,9 @@ class ReviewCreateResponse(BaseModel):
 
 
 class ClassificationOut(BaseModel):
-    scenario: str | None
-    sentiment: str | None
-    priority: str | None
+    scenario: ClassificationRefOut | None = None
+    sentiment: ClassificationRefOut | None = None
+    priority: ClassificationRefOut | None = None
     topic: str | None
     product_area: str | None
     confidence: float | None

@@ -1,18 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { OpButton, OpSelect, OpTextarea } from "../components/OpToolbar.jsx";
-import {
-  PRIORITY_LABELS,
-  SCENARIO_LABELS,
-  SENTIMENT_LABELS,
-  labelPriority,
-  labelScenario,
-  labelSentiment,
-} from "../../lib/displayLabels.js";
-
-const COMMON_SCENARIOS = Object.keys(SCENARIO_LABELS);
-const COMMON_SENTIMENTS = Object.keys(SENTIMENT_LABELS);
-const COMMON_PRIORITIES = Object.keys(PRIORITY_LABELS);
+import { labelPriority, labelScenario, labelSentiment } from "../../lib/displayLabels.js";
 
 const REASONS = [
   {
@@ -32,53 +21,37 @@ const REASONS = [
   },
 ];
 
-function uniqOptions(values, current) {
-  const set = new Set();
-  if (current) set.add(current);
-  for (const v of values) if (v) set.add(v);
-  return Array.from(set).sort();
-}
-
 export function RejectionFeedbackModal({
   open,
   detail,
-  scenarioOptions,
-  sentimentOptions,
-  priorityOptions,
+  scenarioOptions = [],
+  sentimentOptions = [],
+  priorityOptions = [],
   saving,
   onClose,
   onSave,
 }) {
   const cls = detail?.classification;
   const [reason, setReason] = useState("classification_error");
-  const [scenario, setScenario] = useState("");
-  const [tone, setTone] = useState("");
-  const [priority, setPriority] = useState("");
+  const [scenarioId, setScenarioId] = useState("");
+  const [sentimentId, setSentimentId] = useState("");
+  const [priorityId, setPriorityId] = useState("");
   const [comment, setComment] = useState("");
   const [validationError, setValidationError] = useState(null);
+
+  const llmScenarioId = cls?.scenario?.id ?? "";
+  const llmSentimentId = cls?.sentiment?.id ?? "";
+  const llmPriorityId = cls?.priority?.id ?? "";
 
   useEffect(() => {
     if (!open || !detail) return;
     setReason("classification_error");
-    setScenario(cls?.scenario || "");
-    setTone(cls?.sentiment || "");
-    setPriority(cls?.priority || "");
+    setScenarioId(llmScenarioId);
+    setSentimentId(llmSentimentId);
+    setPriorityId(llmPriorityId);
     setComment("");
     setValidationError(null);
-  }, [open, detail?.review_id, cls?.scenario, cls?.sentiment, cls?.priority]);
-
-  const scenarioChoices = useMemo(
-    () => uniqOptions([...COMMON_SCENARIOS, ...scenarioOptions], cls?.scenario),
-    [scenarioOptions, cls?.scenario]
-  );
-  const toneChoices = useMemo(
-    () => uniqOptions([...COMMON_SENTIMENTS, ...sentimentOptions], cls?.sentiment),
-    [sentimentOptions, cls?.sentiment]
-  );
-  const priorityChoices = useMemo(
-    () => uniqOptions([...COMMON_PRIORITIES, ...priorityOptions], cls?.priority),
-    [priorityOptions, cls?.priority]
-  );
+  }, [open, detail?.review_id, llmScenarioId, llmSentimentId, llmPriorityId]);
 
   if (!open) return null;
 
@@ -96,9 +69,9 @@ export function RejectionFeedbackModal({
 
     if (reason === "classification_error") {
       const changed =
-        (scenario && scenario !== cls?.scenario) ||
-        (tone && tone !== cls?.sentiment) ||
-        (priority && priority !== cls?.priority);
+        (scenarioId && scenarioId !== llmScenarioId) ||
+        (sentimentId && sentimentId !== llmSentimentId) ||
+        (priorityId && priorityId !== llmPriorityId);
       if (!changed) {
         setValidationError("Измените хотя бы одно поле: сценарий, тональность или приоритет.");
         return;
@@ -107,14 +80,30 @@ export function RejectionFeedbackModal({
 
     onSave({
       rejection_reason: reason,
-      llm_scenario: cls?.scenario ?? null,
-      llm_tone: cls?.sentiment ?? null,
-      llm_priority: cls?.priority ?? null,
-      operator_corrected_scenario: reason === "classification_error" ? scenario || null : null,
-      operator_corrected_tone: reason === "classification_error" ? tone || null : null,
-      operator_corrected_priority: reason === "classification_error" ? priority || null : null,
+      operator_corrected_scenario_id:
+        reason === "classification_error" && scenarioId !== llmScenarioId ? scenarioId || null : null,
+      operator_corrected_sentiment_id:
+        reason === "classification_error" && sentimentId !== llmSentimentId ? sentimentId || null : null,
+      operator_corrected_priority_id:
+        reason === "classification_error" && priorityId !== llmPriorityId ? priorityId || null : null,
       optional_comment: comment.trim() || null,
     });
+  }
+
+  function renderRefSelect(label, value, onChange, options, llmId) {
+    return (
+      <label>
+        {label}
+        <OpSelect value={value} onChange={(e) => onChange(e.target.value)} disabled={saving}>
+          {options.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.name}
+              {o.id === llmId ? " (LLM)" : ""}
+            </option>
+          ))}
+        </OpSelect>
+      </label>
+    );
   }
 
   return (
@@ -152,41 +141,36 @@ export function RejectionFeedbackModal({
           {reason === "classification_error" ? (
             <div className="rf-oc-modal__classification">
               <p className="muted rf-oc-modal__hint">
-                Укажите корректные значения. Текущие значения LLM предзаполнены — измените минимум одно поле.
+                Укажите корректные значения из справочников. Текущие значения LLM предзаполнены — измените
+                минимум одно поле.
               </p>
-              <label>
-                Сценарий
-                <OpSelect value={scenario} onChange={(e) => setScenario(e.target.value)}>
-                  {scenarioChoices.map((v) => (
-                    <option key={v} value={v}>
-                      {labelScenario(v)}
-                      {v === cls?.scenario ? " (LLM)" : ""}
-                    </option>
-                  ))}
-                </OpSelect>
-              </label>
-              <label>
-                Тональность
-                <OpSelect value={tone} onChange={(e) => setTone(e.target.value)}>
-                  {toneChoices.map((v) => (
-                    <option key={v} value={v}>
-                      {labelSentiment(v)}
-                      {v === cls?.sentiment ? " (LLM)" : ""}
-                    </option>
-                  ))}
-                </OpSelect>
-              </label>
-              <label>
-                Приоритет
-                <OpSelect value={priority} onChange={(e) => setPriority(e.target.value)}>
-                  {priorityChoices.map((v) => (
-                    <option key={v} value={v}>
-                      {labelPriority(v)}
-                      {v === cls?.priority ? " (LLM)" : ""}
-                    </option>
-                  ))}
-                </OpSelect>
-              </label>
+              {renderRefSelect(
+                "Сценарий",
+                scenarioId,
+                setScenarioId,
+                scenarioOptions,
+                llmScenarioId
+              )}
+              {renderRefSelect(
+                "Тональность",
+                sentimentId,
+                setSentimentId,
+                sentimentOptions,
+                llmSentimentId
+              )}
+              {renderRefSelect(
+                "Приоритет",
+                priorityId,
+                setPriorityId,
+                priorityOptions,
+                llmPriorityId
+              )}
+              {cls ? (
+                <p className="muted rf-oc-modal__hint">
+                  LLM: {labelScenario(cls.scenario)} / {labelSentiment(cls.sentiment)} ·{" "}
+                  {labelPriority(cls.priority)}
+                </p>
+              ) : null}
             </div>
           ) : null}
 

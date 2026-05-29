@@ -4,12 +4,14 @@ import { OperatorLifecycleTimeline } from "./OperatorLifecycleTimeline.jsx";
 import { CollapsibleTextPanel } from "./CollapsibleTextPanel.jsx";
 import {
   WORKFLOW_COMPLETED_TOOLTIP,
+  isControlledHybridDetail,
   isOperatorWorkflowCompleted,
   labelModeration,
   labelPriority,
   labelScenario,
   labelSentiment,
 } from "../../lib/displayLabels.js";
+import { ResponseCasePanel } from "./ResponseCasePanel.jsx";
 import {
   formatAge,
   formatDateTime,
@@ -30,6 +32,9 @@ export function OperatorModerationWorkspace({
   lifecycleTimeline,
   onApprove,
   onRejectClick,
+  onConfirmCase,
+  onOverrideCase,
+  onOpenCandidateModal,
 }) {
   if (loadingDetail) {
     return <p className="rf-oc-empty">Загрузка обращения…</p>;
@@ -54,6 +59,9 @@ export function OperatorModerationWorkspace({
     ? `Найдена типовая формулировка: «${detail.matched_phrase_text}»`
     : null;
   const templateFooter = templateLabel ? `Шаблон ответа: ${templateLabel}` : null;
+  const chMode = isControlledHybridDetail(detail);
+  const approvedText = detail.selected_response_case?.approved_response_text;
+  const draftText = detail.draft_response;
 
   return (
     <div className="rf-oc-detail">
@@ -99,9 +107,35 @@ export function OperatorModerationWorkspace({
         </div>
       </div>
 
-      <div className="rf-oc-io-grid">
-        <CollapsibleTextPanel title="Обращение клиента" text={detail.review_text} footer={phraseFooter} />
-        <CollapsibleTextPanel title="Ответ AI" text={detail.draft_response} footer={templateFooter} />
+      {chMode ? (
+        <ResponseCasePanel
+          detail={detail}
+          actionLoading={actionLoading}
+          workflowCompleted={workflowCompleted}
+          onConfirmCase={onConfirmCase}
+          onOverrideCase={onOverrideCase}
+          onOpenCandidateModal={onOpenCandidateModal}
+        />
+      ) : null}
+
+      <div className={chMode ? "rf-oc-io-grid rf-oc-io-grid--ch" : "rf-oc-io-grid"}>
+        <CollapsibleTextPanel title="Обращение клиента" text={detail.review_text} footer={chMode ? null : phraseFooter} />
+        {chMode ? (
+          <>
+            <CollapsibleTextPanel
+              title="Утверждённая основа ответа"
+              text={approvedText || "—"}
+              footer="Текст и политика типовой ситуации (read-only)"
+            />
+            <CollapsibleTextPanel
+              title="Сгенерированный черновик"
+              text={draftText || "Черновик ещё не сформирован — выберите или подтвердите типовую ситуацию."}
+              footer={null}
+            />
+          </>
+        ) : (
+          <CollapsibleTextPanel title="Ответ AI" text={detail.draft_response} footer={templateFooter} />
+        )}
       </div>
 
       <div className="rf-oc-detail-block rf-oc-detail-block--editor">

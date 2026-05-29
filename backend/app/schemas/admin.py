@@ -3,54 +3,52 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.reference import ClassificationRefOut
+
 
 class PhraseOut(BaseModel):
     id: UUID
     phrase_text: str
-    scenario: str | None
-    sentiment: str | None
-    priority: str | None = None
+    scenario: ClassificationRefOut | None = None
+    sentiment: ClassificationRefOut | None = None
+    priority: ClassificationRefOut | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class PhraseCreate(BaseModel):
     phrase_text: str = Field(..., min_length=1)
-    scenario: str | None = None
-    sentiment: str | None = None
-    priority: str | None = None
+    scenario_id: UUID | None = None
+    sentiment_id: UUID | None = None
+    priority_id: UUID | None = None
     is_active: bool = True
 
 
 class PhraseUpdate(BaseModel):
     phrase_text: str | None = None
-    scenario: str | None = None
-    sentiment: str | None = None
-    priority: str | None = None
+    scenario_id: UUID | None = None
+    sentiment_id: UUID | None = None
+    priority_id: UUID | None = None
     is_active: bool | None = None
 
 
 class TemplateOut(BaseModel):
     id: UUID
     title: str | None
-    scenario: str | None
-    sentiment: str | None
-    priority: str | None
+    scenario: ClassificationRefOut | None = None
+    sentiment: ClassificationRefOut | None = None
+    priority: ClassificationRefOut | None = None
     template_text: str
     is_fallback: bool
     is_active: bool
 
-    model_config = {"from_attributes": True}
-
 
 class TemplateCreate(BaseModel):
     title: str = Field(..., min_length=1)
-    scenario: str | None = None
-    sentiment: str | None = None
-    priority: str | None = None
+    scenario_id: UUID | None = None
+    sentiment_id: UUID | None = None
+    priority_id: UUID | None = None
     template_text: str = Field(..., min_length=1)
     is_fallback: bool = False
     is_active: bool = True
@@ -58,9 +56,9 @@ class TemplateCreate(BaseModel):
 
 class TemplateUpdate(BaseModel):
     title: str | None = None
-    scenario: str | None = None
-    sentiment: str | None = None
-    priority: str | None = None
+    scenario_id: UUID | None = None
+    sentiment_id: UUID | None = None
+    priority_id: UUID | None = None
     template_text: str | None = None
     is_fallback: bool | None = None
     is_active: bool | None = None

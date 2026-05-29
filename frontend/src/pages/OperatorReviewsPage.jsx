@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiFetch, readApiError } from "../lib/api.js";
+import { fetchClassificationReference } from "../lib/classificationReference.js";
 import { OpPage } from "../ops/components/OpPage.jsx";
 import { OperatorConsoleHeader, OperatorWorkspaceHeader } from "../ops/operator/OperatorConsoleHeader.jsx";
 import { OperatorLeftPanel } from "../ops/operator/OperatorLeftPanel.jsx";
 import { OperatorModerationWorkspace } from "../ops/operator/OperatorModerationWorkspace.jsx";
+import { CaseCandidateModal } from "../ops/operator/CaseCandidateModal.jsx";
 import { RejectionFeedbackModal } from "../ops/operator/RejectionFeedbackModal.jsx";
 import { buildLifecycleTimeline } from "../ops/operator/operatorTimeline.js";
 import { isOperatorWorkflowCompleted } from "../lib/displayLabels.js";
@@ -23,6 +25,7 @@ export default function OperatorReviewsPage() {
   const [detail, setDetail] = useState(null);
   const [finalResponse, setFinalResponse] = useState("");
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [candidateModalOpen, setCandidateModalOpen] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -34,6 +37,11 @@ export default function OperatorReviewsPage() {
   const [sentimentFilter, setSentimentFilter] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [classificationRef, setClassificationRef] = useState({
+    scenarios: [],
+    sentiments: [],
+    priorities: [],
+  });
 
   const editorLocked = detail ? isEditorLocked(detail) : true;
 
@@ -79,21 +87,32 @@ export default function OperatorReviewsPage() {
   }, [loadList]);
 
   useEffect(() => {
+    fetchClassificationReference()
+      .then(setClassificationRef)
+      .catch((err) => console.error("[operator] classification reference", err));
+  }, []);
+
+  useEffect(() => {
     setPage(0);
   }, [search, priorityFilter, scenarioFilter, sentimentFilter, moderationFilter]);
 
-  const scenarios = useMemo(
-    () => Array.from(new Set(reviews.map((r) => r.scenario).filter(Boolean))).sort(),
-    [reviews]
-  );
-  const sentiments = useMemo(
-    () => Array.from(new Set(reviews.map((r) => r.sentiment).filter(Boolean))).sort(),
-    [reviews]
-  );
-  const priorities = useMemo(
-    () => Array.from(new Set(reviews.map((r) => r.priority).filter(Boolean))).sort(),
-    [reviews]
-  );
+  const scenarios = useMemo(() => {
+    const fromRef = classificationRef.scenarios.map((s) => s.code);
+    const fromQueue = reviews.map((r) => r.scenario).filter(Boolean);
+    return Array.from(new Set([...fromRef, ...fromQueue])).sort();
+  }, [classificationRef.scenarios, reviews]);
+
+  const sentiments = useMemo(() => {
+    const fromRef = classificationRef.sentiments.map((s) => s.code);
+    const fromQueue = reviews.map((r) => r.sentiment).filter(Boolean);
+    return Array.from(new Set([...fromRef, ...fromQueue])).sort();
+  }, [classificationRef.sentiments, reviews]);
+
+  const priorities = useMemo(() => {
+    const fromRef = classificationRef.priorities.map((p) => p.code);
+    const fromQueue = reviews.map((r) => r.priority).filter(Boolean);
+    return Array.from(new Set([...fromRef, ...fromQueue])).sort();
+  }, [classificationRef.priorities, reviews]);
 
   const filteredReviews = useMemo(() => {
     const needle = safeLower(search).trim();
@@ -203,6 +222,73 @@ export default function OperatorReviewsPage() {
     }
   }
 
+  async function refreshDetail(reviewId) {
+    const res = await apiFetch(`/api/operator/reviews/${reviewId}`);
+    if (!res.ok) throw new Error(await readApiError(res, "Ошибка загрузки карточки"));
+    const data = await res.json();
+    setDetail(data);
+    setFinalResponse(data.draft_response || data.final_response || "");
+    return data;
+  }
+
+  async function runConfirmCase() {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await apiFetch(`/api/operator/reviews/${selectedId}/confirm-case`, { method: "POST" });
+      if (!res.ok) throw new Error(await readApiError(res, "Не удалось подтвердить ситуацию"));
+      await refreshDetail(selectedId);
+      setMessage("Типовая ситуация подтверждена");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function runOverrideCase(responseCaseId, comment) {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await apiFetch(`/api/operator/reviews/${selectedId}/override-case`, {
+        method: "POST",
+        body: JSON.stringify({ response_case_id: responseCaseId, comment }),
+      });
+      if (!res.ok) throw new Error(await readApiError(res, "Не удалось сменить типовую ситуацию"));
+      await refreshDetail(selectedId);
+      setMessage("Типовая ситуация изменена, черновик обновлён");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function runCreateCandidate(payload) {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await apiFetch(`/api/operator/reviews/${selectedId}/case-candidates`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await readApiError(res, "Не удалось создать кандидата"));
+      await refreshDetail(selectedId);
+      setCandidateModalOpen(false);
+      setMessage("Предложение новой типовой ситуации отправлено администратору");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function runRejectFeedback(payload) {
     if (!selectedId) return;
     setActionLoading(true);
@@ -281,6 +367,12 @@ export default function OperatorReviewsPage() {
               if (detail && isOperatorWorkflowCompleted(detail)) return;
               setRejectModalOpen(true);
             }}
+            onConfirmCase={runConfirmCase}
+            onOverrideCase={runOverrideCase}
+            onOpenCandidateModal={() => {
+              if (detail && isOperatorWorkflowCompleted(detail)) return;
+              setCandidateModalOpen(true);
+            }}
           />
         </section>
       </div>
@@ -288,12 +380,19 @@ export default function OperatorReviewsPage() {
       <RejectionFeedbackModal
         open={rejectModalOpen}
         detail={detail}
-        scenarioOptions={scenarios}
-        sentimentOptions={sentiments}
-        priorityOptions={priorities}
+        scenarioOptions={classificationRef.scenarios}
+        sentimentOptions={classificationRef.sentiments}
+        priorityOptions={classificationRef.priorities}
         saving={actionLoading}
         onClose={() => setRejectModalOpen(false)}
         onSave={runRejectFeedback}
+      />
+
+      <CaseCandidateModal
+        open={candidateModalOpen}
+        saving={actionLoading}
+        onClose={() => setCandidateModalOpen(false)}
+        onSave={runCreateCandidate}
       />
     </OpPage>
   );

@@ -4,6 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.admin import router as admin_router
+from app.api.response_cases_admin import router as response_cases_admin_router
+from app.api.ch_analytics import router as ch_analytics_router
+from app.api.reference import router as reference_router
 from app.api.analytics import router as analytics_router
 from app.api.evaluation import router as evaluation_router
 from app.api.health import router as health_router
@@ -41,4 +44,7 @@ app.include_router(evaluation_router)
 app.include_router(analytics_router)
 app.include_router(logs_router)
 app.include_router(admin_router)
+app.include_router(response_cases_admin_router)
+app.include_router(ch_analytics_router)
+app.include_router(reference_router)
 app.include_router(ai_providers_router)

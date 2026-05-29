@@ -3,10 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.models.entities import (
     EvaluationCase,
+    InteractionScenario,
+    PriorityLevel,
     PromptVersion,
     Review,
     ReviewClassification,
     ReviewResponse,
+    SentimentProfile,
 )
 from app.schemas.analytics import ActivePromptItem, AnalyticsOverview, DistributionItem
 
@@ -32,19 +35,31 @@ class AnalyticsService:
         )
 
         sentiment_dist = self._distribution(
-            select(ReviewClassification.sentiment, func.count(ReviewClassification.id))
-            .where(ReviewClassification.sentiment.isnot(None))
-            .group_by(ReviewClassification.sentiment)
+            select(SentimentProfile.sentiment_name, func.count(ReviewClassification.id))
+            .join(
+                SentimentProfile,
+                ReviewClassification.sentiment_id == SentimentProfile.id,
+            )
+            .where(ReviewClassification.sentiment_id.isnot(None))
+            .group_by(SentimentProfile.sentiment_name)
         )
         scenario_dist = self._distribution(
-            select(ReviewClassification.scenario, func.count(ReviewClassification.id))
-            .where(ReviewClassification.scenario.isnot(None))
-            .group_by(ReviewClassification.scenario)
+            select(InteractionScenario.scenario_name, func.count(ReviewClassification.id))
+            .join(
+                InteractionScenario,
+                ReviewClassification.scenario_id == InteractionScenario.id,
+            )
+            .where(ReviewClassification.scenario_id.isnot(None))
+            .group_by(InteractionScenario.scenario_name)
         )
         priority_dist = self._distribution(
-            select(ReviewClassification.priority, func.count(ReviewClassification.id))
-            .where(ReviewClassification.priority.isnot(None))
-            .group_by(ReviewClassification.priority)
+            select(PriorityLevel.priority_name, func.count(ReviewClassification.id))
+            .join(
+                PriorityLevel,
+                ReviewClassification.priority_id == PriorityLevel.id,
+            )
+            .where(ReviewClassification.priority_id.isnot(None))
+            .group_by(PriorityLevel.priority_name)
         )
 
         active_prompts = self.db.scalars(

@@ -636,3 +636,105 @@ Backend запускается, подключается к БД и отдаёт
 
 Результат:
 - проект готов к сдаче и демонстрации.
+
+---
+
+## Текущая архитектурная заметка (Sprint 021A)
+
+Scenario / sentiment / priority — reference data entities (`interaction_scenarios`, `sentiment_profiles`, `priority_levels`). Working tables reference them through FK ids (`scenario_id`, `sentiment_id`, `priority_id`). Codes remain unique business identifiers inside reference tables. UI uses selects backed by `GET /api/reference/classification`. Legacy string columns in working tables are deprecated sync mirrors only.
+
+---
+
+# Переход на Controlled Hybrid
+
+> **Нормативный источник:** SOT §3A (`Архитектурные_и_продуктовые_решения_проекта_SOT_v4.md`).  
+> **Инвентаризация:** `docs/cursor_sessions/2026-05-30_sprint_022a_ch_transition_inventory_forensics.md`.
+
+### Зафиксированное решение
+
+Целевая архитектура проекта — **Controlled Hybrid**: типовая ситуация (`response_cases`) — SOT бизнес-решения; LLM не является основным источником решения; retrieval + правила backend + оператор для спорных случаев.
+
+**Текущий MVP** (phrase match → LLM classification → template scoring → LLM generation → operator moderation) **остаётся в эксплуатации** до завершения цикла **C6** и акцепта владельца.
+
+### Статус циклов
+
+| Цикл | Название | Статус | Зависимости |
+|------|----------|--------|-------------|
+| **C1** | SOT / CH architecture | **Выполнен** (Sprint 022B) | — |
+| **C2** | Data model foundation | **Выполнен** (Sprint 022D — код + миграция `011`) | C1 |
+| **C3** | Customer UI preservation | **Спроектирован** (023); реализация не начата | C2 |
+| **C4** | Operator CH scenarios | **Выполнен** (Sprint C4 — operator UI) | C2, C6 |
+| **C5** | Admin case management | **Выполнен** (Sprint C5 — admin UI + CRUD API) | C2 |
+| **C6** | Pipeline transition | **Выполнен** (Sprint C6 — CH pipeline + operator case API) | C2, 023 |
+| **C7** | Audit / analytics / quality | **Выполнен** (Sprint C7 — CH quality console + analytics API) | C6 |
+
+**Правило приёмки:** цикл завершён только после **акцепта владельцем системы**. Документация C1 ≠ реализация CH в коде.
+
+### Порядок внедрения (план)
+
+```text
+C1 (docs) → C2 (DB + models + read APIs)
+         → C6 (backend pipeline CH) — критический путь
+         → C4 + C5 (operator + admin UI) — после C2
+         → C3 (customer regression) — параллельно, не ломать NL-number / status UX
+         → C7 (analytics / audit)
+```
+
+### C1 — выполнено (Sprint 022B)
+
+- Обновлён SOT: §3, §3A (CH), пометки as-is в §4.1, §5.
+- Обновлён IMPLEMENTATION_PLAN: этот раздел.
+- README: уточнение current vs target (если применимо).
+- Session log: `docs/cursor_sessions/2026-05-30_sprint_022b_ch_sot_architecture_update.md`.
+- **Код, миграции, UI не изменялись.**
+
+### C2 — выполнено (Sprint 022D)
+
+**Цель:** ввести `response_cases` и связанные сущности без отключения текущего pipeline.
+
+**Реализовано:**
+
+- миграция `backend/migrations/011_ch_data_model_foundation.sql` — справочники `product_areas`, `review_topics`; таблицы CH; seed (6 cases, 14 examples);
+- ORM: `backend/app/models/ch_entities.py`;
+- read API: `GET /api/admin/response-cases`, `GET /api/admin/response-cases/{id}`;
+- session log: `docs/cursor_sessions/2026-05-30_sprint_022d_c2_implementation_foundation_v2.md`.
+
+**Решение владельца (акцепт):** старая база знаний (`review_phrase_patterns`, `response_templates`) **не мигрируется** в cases; CH seed создаётся с нуля; legacy KB **оставлена активной** до C6, чтобы не ломать MVP pipeline.
+
+**Не реализовано в C2:** CRUD cases, operator/candidate UI, pipeline retrieval, заполнение `response_case_decisions` / `case_match_results`.
+
+**Следующий шаг (после акцепта владельца):** C6 (pipeline по AC), затем C4/C5 (UI), C3 (регрессия).
+
+### C3+C4+C5 — проектирование выполнено (Sprint 023)
+
+- Документ: `docs/architecture/controlled_hybrid_operational_model.md`
+- Session log: `docs/cursor_sessions/2026-05-30_sprint_023_c3_c4_c5_operational_model_design.md`
+- **Код, БД, pipeline, UI не изменялись.**
+
+### C4 — выполнено (Sprint C4)
+
+- Operator UI: блок типовой ситуации, confidence, alternatives, confirm/override/candidate.
+- Session log: `docs/cursor_sessions/2026-05-30_sprint_c4_operator_ui_controlled_hybrid.md`.
+
+### C6 — выполнено (Sprint C6)
+
+- Controlled Hybrid pipeline: retrieval → confidence → decision → case-based draft (`CH_PIPELINE_ENABLED`, default true).
+- Сервисы: `backend/app/services/controlled_hybrid/*`.
+- Operator API: `confirm-case`, `override-case`, `case-candidates`; detail: `selected_response_case`, `case_alternatives`.
+- Admin: `POST /api/admin/response-case-candidates/{id}/approve`.
+- Session log: `docs/cursor_sessions/2026-05-30_sprint_c6_controlled_hybrid_pipeline_transition.md`.
+- Legacy pipeline: `CH_PIPELINE_ENABLED=false`.
+
+### C3–C7 — реализация (остальное)
+
+| Цикл | Результат при акцепте |
+|------|---------------------|
+| C3 | Регрессия: submit, `NL-XXXXXXXX-NNN`, status stepper, published `final_response` |
+| C4 | Operator: case, confidence, candidates, override, propose case, feedback |
+| C5 | Admin: case CRUD, patterns, approved template, versions, operator proposals queue |
+| C6 | Pipeline: case retrieval → policy → bounded LLM; deprecate LLM-primary classify |
+| C7 | Metrics: retrieval misses, unknown cases, operator correction analytics |
+
+### Зависимости от legacy milestones
+
+Milestones 1–5 (ingestion, operator workflow, prompts, analytics) **сохраняются** как достигнутый фундамент. CH — эволюция поверх MVP, не отмена учебных целей §2 SOT.

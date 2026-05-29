@@ -14,5 +14,9 @@ class Settings(BaseSettings):
 
     phrase_match_threshold: float = 55.0
 
+    ch_pipeline_enabled: bool = True
+    ch_confidence_medium_delta: float = 0.10
+    ch_retrieval_top_n: int = 5
+
 
 settings = Settings()

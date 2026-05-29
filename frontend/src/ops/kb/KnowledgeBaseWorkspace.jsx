@@ -9,8 +9,9 @@ import { OpPill, OpPillRow } from "../components/OpPill.jsx";
 import { OpMetadataGrid, OpMetadataList } from "../components/OpMetadata.jsx";
 import { OpEditorSection } from "./components/OpEditorSection.jsx";
 import { OpRelationshipBlock } from "./components/OpRelationshipBlock.jsx";
-import { labelActiveFilter, labelEntityActive, formatKbRoutingLabel } from "../../lib/displayLabels.js";
-import { KB_ENTITIES } from "./kbModel.js";
+import { labelActiveFilter, labelEntityActive, formatKbRoutingLabel, refCode } from "../../lib/displayLabels.js";
+import { fetchClassificationReference, refOptions } from "../../lib/classificationReference.js";
+import { KB_ENTITIES, kbItemToFormModel, kbSearchHaystack } from "./kbModel.js";
 
 function entityPill(item) {
   const active = item?.is_active !== false;
@@ -24,7 +25,17 @@ function safeLower(s) {
 function pickPatchBody(model, fields) {
   const body = {};
   fields.forEach((f) => {
-    body[f.key] = model[f.key];
+    let val = model[f.key];
+    if (f.type === "ref_select" && val === "") val = null;
+    body[f.key] = val;
+  });
+  return body;
+}
+
+function normalizeCreateBody(model, fields) {
+  const body = { ...model };
+  fields.forEach((f) => {
+    if (f.type === "ref_select" && body[f.key] === "") body[f.key] = null;
   });
   return body;
 }
@@ -38,6 +49,11 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
     templates: [],
     scenarios: [],
     sentiments: [],
+  });
+  const [classificationRef, setClassificationRef] = useState({
+    scenarios: [],
+    sentiments: [],
+    priorities: [],
   });
 
   const [loading, setLoading] = useState(true);
@@ -58,11 +74,12 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
     setError(null);
     setMessage(null);
     try {
-      const [phrasesRes, templatesRes, scenariosRes, sentimentsRes] = await Promise.all([
+      const [phrasesRes, templatesRes, scenariosRes, sentimentsRes, classRef] = await Promise.all([
         apiFetch(KB_ENTITIES.phrases.apiBase),
         apiFetch(KB_ENTITIES.templates.apiBase),
         apiFetch(KB_ENTITIES.scenarios.apiBase),
         apiFetch(KB_ENTITIES.sentiments.apiBase),
+        fetchClassificationReference(),
       ]);
 
       const all = [phrasesRes, templatesRes, scenariosRes, sentimentsRes];
@@ -72,6 +89,7 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
 
       const [phrases, templates, scenarios, sentiments] = await Promise.all(all.map((r) => r.json()));
       setLists({ phrases, templates, scenarios, sentiments });
+      setClassificationRef(classRef);
     } catch (e) {
       setError(e.message || "Failed to load knowledge base");
     } finally {
@@ -106,18 +124,7 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
       })
       .filter((it) => {
         if (!needle) return true;
-        const hay = [
-          entity.listPrimary(it),
-          entity.listSemantic(it),
-          entity.listPreview(it),
-          it.id,
-          it.code,
-          it.scenario,
-          it.sentiment,
-          it.priority,
-        ]
-          .map(safeLower)
-          .join(" ");
+        const hay = kbSearchHaystack(it, entity).map(safeLower).join(" ");
         return hay.includes(needle);
       });
   }, [activeFilter, currentList, entity, search]);
@@ -133,12 +140,7 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
 
   useEffect(() => {
     if (!selected || mode !== "edit") return;
-    // build edit model with entity fields
-    const m = {};
-    entity.fields.forEach((f) => {
-      m[f.key] = selected[f.key] ?? (f.type === "checkbox" ? false : "");
-    });
-    setEditModel(m);
+    setEditModel(kbItemToFormModel(selected, entity.fields));
   }, [selected, entity, mode]);
 
   const relationships = useMemo(() => {
@@ -147,9 +149,9 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
     const summary = [];
 
     if (entityKey === "scenarios") {
-      const code = selected.code;
-      const phrasesLinked = lists.phrases.filter((p) => p.scenario === code);
-      const templatesLinked = lists.templates.filter((t) => t.scenario === code);
+      const scenarioId = selected.id;
+      const phrasesLinked = lists.phrases.filter((p) => p.scenario?.id === scenarioId);
+      const templatesLinked = lists.templates.filter((t) => t.scenario?.id === scenarioId);
       summary.push({ key: "phrases", color: "gray", label: `phrases: ${phrasesLinked.length}` });
       summary.push({ key: "templates", color: "gray", label: `templates: ${templatesLinked.length}` });
       blocks.push({
@@ -163,9 +165,9 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
     }
 
     if (entityKey === "sentiments") {
-      const code = selected.code;
-      const phrasesLinked = lists.phrases.filter((p) => p.sentiment === code);
-      const templatesLinked = lists.templates.filter((t) => t.sentiment === code);
+      const sentimentId = selected.id;
+      const phrasesLinked = lists.phrases.filter((p) => p.sentiment?.id === sentimentId);
+      const templatesLinked = lists.templates.filter((t) => t.sentiment?.id === sentimentId);
       summary.push({ key: "phrases", color: "gray", label: `phrases: ${phrasesLinked.length}` });
       summary.push({ key: "templates", color: "gray", label: `templates: ${templatesLinked.length}` });
       blocks.push({
@@ -238,7 +240,7 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
       // for create, include all fields that exist in defaults (server will validate)
       const res = await apiFetch(entity.apiBase, {
         method: "POST",
-        body: JSON.stringify(createModel),
+        body: JSON.stringify(normalizeCreateBody(createModel, entity.fields)),
       });
       if (!res.ok) throw new Error(await readApiError(res, "Не удалось создать"));
       const created = await res.json();
@@ -257,6 +259,26 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
   function renderField(f, model, setModel, { isEdit }) {
     const val = model[f.key];
     const disabled = saving || (isEdit && f.readonlyOnEdit);
+    if (f.type === "ref_select") {
+      const options = refOptions(classificationRef, f.refKey);
+      return (
+        <label key={f.key}>
+          {f.label}
+          <OpSelect
+            value={val ?? ""}
+            onChange={(e) => setModel({ ...model, [f.key]: e.target.value })}
+            disabled={disabled}
+          >
+            <option value="">—</option>
+            {options.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.name} ({o.code})
+              </option>
+            ))}
+          </OpSelect>
+        </label>
+      );
+    }
     if (f.type === "checkbox") {
       return (
         <label key={f.key}>

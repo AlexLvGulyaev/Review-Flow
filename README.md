@@ -1,6 +1,6 @@
 # Review Flow
 
-AI-ассистент для работы с отзывами клиентов: template-guided workflow, human-in-the-loop moderation, versioned prompts, analytics и operational observability.
+AI-ассистент для работы с отзывами клиентов: **текущий MVP** — template-guided workflow с human-in-the-loop moderation; **целевая архитектура** — Controlled Hybrid (типовая ситуация как SOT бизнес-решения, см. SOT §3A).
 
 ## Project overview
 
@@ -26,15 +26,28 @@ Review Flow — учебно-портфельный web-прототип для 
 
 ## Architecture
 
+### Current runtime (MVP)
+
 ```text
 Client contour (/review) → FastAPI pipeline → PostgreSQL
                               ↓
-                    phrase match → classification → template → generation
+                    phrase match → LLM classification → template scoring → LLM generation
                               ↓
 Company contour: Operator (/operator/reviews) → moderation → mock publication
 Company contour: Admin (/prompts, /evaluation, /settings/ai-providers, /admin/*)
-Observability (/analytics, /logs) → aggregates + operational_logs
+Observability (/analytics, /logs) → operational_logs
 ```
+
+### Target (Controlled Hybrid — pipeline not switched)
+
+**C2 + C6 + C4 + C5 + C7:** CH pipeline (`CH_PIPELINE_ENABLED=true`), operator console, admin KB at `/admin/response-cases`, and CH quality analytics at `/admin/ch-quality` (confidence, overrides, candidates, case quality, retrieval misses, audit).
+
+```text
+Incoming review → signal extraction → response case retrieval → confidence branch
+  → case response policy → optional LLM adaptation → operator review / publish → KB feedback
+```
+
+Normative spec: `Архитектурные_и_продуктовые_решения_проекта_SOT_v4.md` §3A. Operational model (C3–C5 design): `docs/architecture/controlled_hybrid_operational_model.md`. Transition plan: `IMPLEMENTATION_PLAN.md` § «Переход на Controlled Hybrid».
 
 ## Stack
 
@@ -45,6 +58,20 @@ Observability (/analytics, /logs) → aggregates + operational_logs
 | Database | PostgreSQL 16 |
 | AI | OpenAI-compatible API (mock fallback без ключа) |
 | Deploy | Docker Compose |
+
+## NM demo dataset (Sprint C7A)
+
+После миграции `012_nm_reference_dataset.sql` в БД есть **справочная предметная область NM** без истории обращений:
+
+| Сущность | Ориентир |
+|----------|----------|
+| Клиенты | 25 (`NM-CUST-001` … `NM-CUST-025`, email `*@nm-demo.retail`) |
+| Заказы (`service_cases`) | 50 (`NL-00501001` … `NL-00501050`) |
+| Product areas / topics / response cases | расширенный CH seed + примеры |
+
+Для ручного теста клиентского UI: укажите email существующего клиента (например `anna.smirnova@nm-demo.retail`) и номер заказа из диапазона `NL-00501001`–`NL-00501050`. Обращение привяжется к существующему `service_case`, а не создаст дубликат заказа.
+
+Аналитика CH остаётся пустой до первых реальных обращений.
 
 ## Setup
 

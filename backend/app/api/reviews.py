@@ -6,13 +6,13 @@ from sqlalchemy.orm import Session, joinedload
 from app.db.session import get_db
 from app.models.entities import Review, ReviewClassification
 from app.schemas.review import (
-    ClassificationOut,
     ReviewCreateRequest,
     ReviewCreateResponse,
     ReviewDetailResponse,
     ReviewResponseOut,
     ReviewStatusResponse,
 )
+from app.services.classification_out import build_classification_out
 from app.services.pipeline import ReviewPipeline
 from app.services.review_helpers import latest_classification, latest_response
 from app.services.review_ids import (
@@ -194,18 +194,8 @@ def get_review(review_id: UUID, db: Session = Depends(get_db)) -> ReviewDetailRe
     cls = latest_classification(review)
     if cls:
         matched_text = cls.matched_phrase.phrase_text if cls.matched_phrase else None
-        classification_out = ClassificationOut(
-            scenario=cls.scenario,
-            sentiment=cls.sentiment,
-            priority=cls.priority,
-            topic=cls.topic,
-            product_area=cls.product_area,
-            confidence=float(cls.confidence) if cls.confidence else None,
-            classification_source=cls.classification_source,
-            phrase_match_score=float(cls.phrase_match_score)
-            if cls.phrase_match_score
-            else None,
-            matched_phrase_text=matched_text,
+        classification_out = build_classification_out(
+            db, cls, matched_phrase_text=matched_text
         )
         if not resp:
             status = "processing"

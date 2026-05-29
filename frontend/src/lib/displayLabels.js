@@ -131,7 +131,51 @@ export const EVENT_TYPE_LABELS = {
   ai_provider_fallback_changed: "Fallback изменён",
   ai_provider_tested: "Тест AI-провайдера",
   deployment_health_checked: "Проверка health",
+  case_retrieval_completed: "Поиск типовой ситуации",
+  case_confidence_evaluated: "Оценка уверенности",
+  case_decision_recorded: "Решение по ситуации",
+  case_retrieval_low_confidence: "Низкая уверенность",
+  operator_case_confirmed: "Ситуация подтверждена",
+  operator_case_override: "Ситуация изменена оператором",
+  case_candidate_created: "Предложена новая ситуация",
+  case_candidate_promoted: "Кандидат: создан case",
+  case_candidate_merged: "Кандидат: объединён",
+  case_candidate_rejected: "Кандидат: отклонён",
+  response_case_created: "Case создан (admin)",
+  response_case_updated: "Case обновлён (admin)",
+  ch_analytics_dashboard_requested: "Запрос аналитики CH",
 };
+
+/** @type {Record<string, string>} */
+export const CONFIDENCE_BAND_LABELS = {
+  high: "Высокая",
+  medium: "Средняя",
+  low: "Низкая",
+};
+
+/** @type {Record<string, string>} */
+export const DECISION_SOURCE_LABELS = {
+  retrieval_auto: "Автоматический подбор",
+  retrieval_operator: "Подтверждено оператором",
+  operator_override: "Изменено оператором",
+  admin_override: "Изменено администратором",
+  legacy_migration: "Миграция legacy",
+  manual_seed: "Создано вручную",
+};
+
+export function labelConfidenceBand(band) {
+  if (!band) return FALLBACK;
+  return mapLabel(CONFIDENCE_BAND_LABELS, String(band).toLowerCase());
+}
+
+export function labelDecisionSource(source) {
+  if (!source) return FALLBACK;
+  return mapLabel(DECISION_SOURCE_LABELS, source);
+}
+
+export function isControlledHybridDetail(detail) {
+  return detail?.pipeline_mode === "controlled_hybrid";
+}
 
 const KB_FIELD_LABELS = {
   scenario: "Сценарий",
@@ -139,16 +183,32 @@ const KB_FIELD_LABELS = {
   priority: "Приоритет",
 };
 
-export function labelScenario(code) {
-  return mapLabel(SCENARIO_LABELS, code);
+/** Canonical code from API ref object or legacy string. */
+export function refCode(ref) {
+  if (ref === null || ref === undefined || ref === "") return null;
+  if (typeof ref === "string") return ref;
+  return ref.code ?? null;
 }
 
-export function labelSentiment(code) {
-  return mapLabel(SENTIMENT_LABELS, code);
+/** Human-readable label from API ref (name) or displayLabels fallback. */
+export function refName(ref, labelFn) {
+  if (ref === null || ref === undefined || ref === "") return FALLBACK;
+  if (typeof ref === "string") return labelFn(ref);
+  if (ref.name) return ref.name;
+  const code = ref.code;
+  return code ? labelFn(code) : FALLBACK;
 }
 
-export function labelPriority(code) {
-  return mapLabel(PRIORITY_LABELS, code);
+export function labelScenario(codeOrRef) {
+  return refName(codeOrRef, (code) => mapLabel(SCENARIO_LABELS, code));
+}
+
+export function labelSentiment(codeOrRef) {
+  return refName(codeOrRef, (code) => mapLabel(SENTIMENT_LABELS, code));
+}
+
+export function labelPriority(codeOrRef) {
+  return refName(codeOrRef, (code) => mapLabel(PRIORITY_LABELS, code));
 }
 
 export function labelModeration(code) {
@@ -185,22 +245,22 @@ export function labelOperationalEventType(code) {
 }
 
 export function labelClassificationLine(scenario, sentiment, priority) {
-  const s = scenario ? labelScenario(scenario) : FALLBACK;
-  const t = sentiment ? labelSentiment(sentiment) : FALLBACK;
-  const p = priority ? labelPriority(priority) : FALLBACK;
+  const s = labelScenario(scenario);
+  const t = labelSentiment(sentiment);
+  const p = labelPriority(priority);
   return `${s} / ${t} · ${p}`;
 }
 
-export function labelKbField(fieldKey, code) {
-  if (fieldKey === "scenario") return labelScenario(code);
-  if (fieldKey === "sentiment") return labelSentiment(code);
-  if (fieldKey === "priority") return labelPriority(code);
-  return code || FALLBACK;
+export function labelKbField(fieldKey, codeOrRef) {
+  if (fieldKey === "scenario") return labelScenario(codeOrRef);
+  if (fieldKey === "sentiment") return labelSentiment(codeOrRef);
+  if (fieldKey === "priority") return labelPriority(codeOrRef);
+  return refCode(codeOrRef) || FALLBACK;
 }
 
-export function formatKbRoutingLabel(fieldKey, code) {
+export function formatKbRoutingLabel(fieldKey, codeOrRef) {
   const prefix = KB_FIELD_LABELS[fieldKey] || fieldKey;
-  return `${prefix}: ${labelKbField(fieldKey, code)}`;
+  return `${prefix}: ${labelKbField(fieldKey, codeOrRef)}`;
 }
 
 export function labelDistributionRow(tableTitle, code) {
@@ -218,7 +278,7 @@ export function labelTemplateDescriptor(template) {
     template.scenario ? labelScenario(template.scenario) : null,
     template.sentiment ? labelSentiment(template.sentiment) : null,
     template.priority ? labelPriority(template.priority) : null,
-  ].filter(Boolean);
+  ].filter((p) => p && p !== FALLBACK);
   return parts.length ? parts.join(" · ") : null;
 }
 

@@ -1,3 +1,4 @@
+from app.models import ch_entities  # noqa: F401 — register CH ORM tables
 from app.models.entities import (
     Customer,
     EvaluationCase,
@@ -10,6 +11,16 @@ from app.models.entities import (
     ReviewResponse,
     RejectionFeedback,
     ServiceCase,
+)
+from app.models.ch_entities import (
+    CaseMatchResult,
+    ProductArea,
+    ResponseCase,
+    ResponseCaseCandidate,
+    ResponseCaseDecision,
+    ResponseCaseExample,
+    ResponseCaseFeedback,
+    ReviewTopic,
 )
 
 __all__ = [
@@ -24,4 +35,12 @@ __all__ = [
     "RejectionFeedback",
     "OperationalLog",
     "EvaluationCase",
+    "ProductArea",
+    "ReviewTopic",
+    "ResponseCase",
+    "ResponseCaseExample",
+    "ResponseCaseCandidate",
+    "ResponseCaseDecision",
+    "CaseMatchResult",
+    "ResponseCaseFeedback",
 ]

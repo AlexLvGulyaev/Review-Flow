@@ -2,7 +2,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.entities import (
@@ -14,11 +14,14 @@ from app.models.entities import (
 )
 from app.schemas.review import ReviewCreateRequest
 from app.services.classification import ClassificationService
+from app.services.classification_refs import ClassificationRefsService
 from app.services.ai_provider_runtime import AIProviderRuntime
 from app.services.operational_log import log_event
 from app.services.phrase_matching import PhraseMatchingService
 from app.services.response_generation import ResponseGenerationService
 from app.services.review_ids import format_request_number, normalize_order_number
+from app.core.config import settings
+from app.services.controlled_hybrid.pipeline import ControlledHybridPipeline
 from app.services.template_selection import TemplateSelectionService
 
 
@@ -82,15 +85,36 @@ class ReviewPipeline:
             customer.customer_name = payload.customer_name
         return customer
 
+    def _find_existing_service_case(
+        self, customer_id: uuid.UUID, order_number: str
+    ) -> ServiceCase | None:
+        """Reuse NM demo / pre-seeded order (C7A) instead of duplicating service_cases."""
+        normalized = normalize_order_number(order_number)
+        title = f"Заказ {normalized}"
+        return self.db.scalar(
+            select(ServiceCase).where(
+                ServiceCase.customer_id == customer_id,
+                or_(
+                    ServiceCase.metadata_["order_number"].astext == normalized,
+                    ServiceCase.case_title == title,
+                ),
+            )
+        )
+
     def _create_service_case(
         self, customer: Customer, payload: ReviewCreateRequest
     ) -> ServiceCase:
-        order_number = payload.order_number or (payload.service_case_title or "").strip()
+        raw_order = payload.order_number or (payload.service_case_title or "").strip()
+        order_number = normalize_order_number(raw_order) if raw_order else "NL-00000000"
+        existing = self._find_existing_service_case(customer.id, order_number)
+        if existing:
+            return existing
         case = ServiceCase(
             customer_id=customer.id,
             case_type="review_submission",
-            case_title=f"Заказ {order_number}" if order_number else (payload.service_case_title or "Заказ"),
+            case_title=f"Заказ {order_number}",
             product_area=payload.product_area,
+            metadata_={"order_number": order_number},
             created_at=datetime.now(timezone.utc),
         )
         self.db.add(case)
@@ -141,6 +165,9 @@ class ReviewPipeline:
         customer: Customer,
         payload: ReviewCreateRequest,
     ) -> tuple[uuid.UUID, str]:
+        if settings.ch_pipeline_enabled:
+            return ControlledHybridPipeline(self.db).process_review(review, customer, payload)
+
         pipeline_start = time.perf_counter()
 
         phrase_service = PhraseMatchingService(self.db)
@@ -182,15 +209,22 @@ class ReviewPipeline:
 
         matched_phrase_id = phrase_match.matched_phrase.id if phrase_match.matched_phrase else None
 
+        refs = ClassificationRefsService(self.db)
+        scenario_row, sentiment_row, priority_row = refs.resolve_codes(
+            classification.scenario,
+            classification.sentiment,
+            classification.priority,
+        )
+
         classification_row = ReviewClassification(
             review_id=review.id,
             prompt_version_id=class_prompt.id,
             matched_phrase_id=matched_phrase_id,
             phrase_match_score=phrase_match.phrase_match_score,
             classification_source=phrase_match.classification_source,
-            scenario=classification.scenario,
-            sentiment=classification.sentiment,
-            priority=classification.priority,
+            scenario_id=scenario_row.id,
+            sentiment_id=sentiment_row.id,
+            priority_id=priority_row.id,
             topic=classification.topic,
             product_area=classification.product_area,
             rating=review.rating,
@@ -198,11 +232,18 @@ class ReviewPipeline:
             needs_phrase_review=phrase_match.needs_phrase_review,
             created_at=datetime.now(timezone.utc),
         )
+        refs.sync_classification_legacy(
+            classification_row, scenario_row, sentiment_row, priority_row
+        )
         self.db.add(classification_row)
         self.db.flush()
 
         template_service = TemplateSelectionService(self.db)
-        template, template_latency = template_service.select(classification)
+        template, template_latency = template_service.select(
+            scenario_id=scenario_row.id,
+            sentiment_id=sentiment_row.id,
+            priority_id=priority_row.id,
+        )
 
         log_event(
             self.db,

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.entities import InteractionScenario, SentimentProfile
 from app.schemas.classification import ClassificationResult
 from app.services.ai_providers.base import AIProvider
+from app.services.classification_refs import ClassificationReferenceError, ClassificationRefsService
 from app.services.phrase_matching import PhraseMatchResult
 from app.services.prompt_service import PromptService
 
@@ -73,21 +74,33 @@ confidence: number 0..1
         raw, latency_ms = self.ai.complete_json(system_prompt, user_prompt)
         result = ClassificationResult.model_validate(raw)
 
+        refs = ClassificationRefsService(self.db)
         if phrase_match.matched_phrase and phrase_match.classification_source == "phrase_match":
             pattern = phrase_match.matched_phrase
-            if pattern.scenario:
-                result = result.model_copy(update={"scenario": pattern.scenario})
-            if pattern.sentiment:
-                result = result.model_copy(update={"sentiment": pattern.sentiment})
+            scenario_code = refs.code_for_scenario_id(pattern.scenario_id) or pattern.scenario
+            sentiment_code = refs.code_for_sentiment_id(pattern.sentiment_id) or pattern.sentiment
+            priority_code = refs.code_for_priority_id(pattern.priority_id) or pattern.priority_hint
+            updates: dict = {}
+            if scenario_code:
+                updates["scenario"] = scenario_code
+            if sentiment_code:
+                updates["sentiment"] = sentiment_code
             if pattern.topic:
-                result = result.model_copy(update={"topic": pattern.topic})
+                updates["topic"] = pattern.topic
             if pattern.product_area:
-                result = result.model_copy(update={"product_area": pattern.product_area})
-            if pattern.priority_hint:
-                result = result.model_copy(update={"priority": pattern.priority_hint})
+                updates["product_area"] = pattern.product_area
+            if priority_code:
+                updates["priority"] = priority_code
+            if updates:
+                result = result.model_copy(update=updates)
 
         if not result.product_area:
             result = result.model_copy(update={"product_area": product_area})
+
+        try:
+            refs.resolve_codes(result.scenario, result.sentiment, result.priority)
+        except ClassificationReferenceError as exc:
+            raise ValueError(str(exc)) from exc
 
         return result, prompt_version, latency_ms
 

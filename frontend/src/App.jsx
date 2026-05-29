@@ -14,6 +14,8 @@ import AiProvidersPage from "./pages/AiProvidersPage.jsx";
 import AdminPhrasesPage from "./pages/admin/AdminPhrasesPage.jsx";
 import AdminScenariosPage from "./pages/admin/AdminScenariosPage.jsx";
 import AdminSentimentsPage from "./pages/admin/AdminSentimentsPage.jsx";
+import AdminResponseCasesPage from "./pages/admin/AdminResponseCasesPage.jsx";
+import AdminChQualityPage from "./pages/admin/AdminChQualityPage.jsx";
 import AdminTemplatesPage from "./pages/admin/AdminTemplatesPage.jsx";
 import ClientLayout from "./layouts/ClientLayout.jsx";
 import CompanyLayout from "./layouts/CompanyLayout.jsx";
@@ -115,6 +117,22 @@ export default function App() {
             element={
               <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
                 <AdminSentimentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/response-cases"
+            element={
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+                <AdminResponseCasesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/ch-quality"
+            element={
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+                <AdminChQualityPage />
               </ProtectedRoute>
             }
           />

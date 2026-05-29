@@ -21,6 +21,7 @@ export function getCompanyNavGroups(role) {
         title: "Наблюдаемость",
         links: [
           { to: "/analytics", label: "Аналитика" },
+          { to: "/admin/ch-quality", label: "Качество CH" },
           { to: "/logs", label: "Логи" },
         ],
       },
@@ -38,6 +39,7 @@ export function getCompanyNavGroups(role) {
           { to: "/admin/templates", label: "Шаблоны" },
           { to: "/admin/scenarios", label: "Сценарии" },
           { to: "/admin/sentiments", label: "Тональности" },
+          { to: "/admin/response-cases", label: "Типовые ситуации (CH)" },
         ],
       },
       {
