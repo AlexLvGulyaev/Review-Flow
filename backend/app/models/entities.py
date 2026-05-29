@@ -218,6 +218,25 @@ class EvaluationCase(Base):
     review: Mapped["Review"] = relationship(back_populates="evaluation_cases")
 
 
+class RejectionFeedback(Base):
+    __tablename__ = "rejection_feedback"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    review_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("reviews.id"))
+    operator_id: Mapped[str] = mapped_column(String(128), default="operator-ui")
+    rejection_reason: Mapped[str] = mapped_column(String(64), nullable=False)
+    llm_scenario: Mapped[str | None] = mapped_column(String(64))
+    llm_tone: Mapped[str | None] = mapped_column(String(64))
+    llm_priority: Mapped[str | None] = mapped_column(String(32))
+    operator_corrected_scenario: Mapped[str | None] = mapped_column(String(64))
+    operator_corrected_tone: Mapped[str | None] = mapped_column(String(64))
+    operator_corrected_priority: Mapped[str | None] = mapped_column(String(32))
+    optional_comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    review: Mapped["Review"] = relationship()
+
+
 class OperationalLog(Base):
     __tablename__ = "operational_logs"
 

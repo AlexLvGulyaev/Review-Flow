@@ -3,95 +3,45 @@ import { NavLink, Outlet } from "react-router-dom";
 import RoleSelector from "../components/RoleSelector.jsx";
 import { useRole } from "../context/RoleContext.jsx";
 import { ROLES } from "../lib/role.js";
+import { getCompanyNavGroups } from "../ops/nav/companyNavModel.js";
 
 function CompanyNav() {
   const { role } = useRole();
 
-  const operatorLinks = [{ to: "/operator/reviews", label: "Очередь отзывов" }];
-  const adminGroups = [
-    {
-      title: "Качество и промпты",
-      links: [
-        { to: "/prompts", label: "Промпты" },
-        { to: "/evaluation", label: "Evaluation" },
-      ],
-    },
-    {
-      title: "Наблюдаемость",
-      links: [
-        { to: "/analytics", label: "Аналитика" },
-        { to: "/logs", label: "Логи" },
-      ],
-    },
-    {
-      title: "База знаний",
-      links: [
-        { to: "/admin/phrases", label: "Формулировки" },
-        { to: "/admin/templates", label: "Шаблоны" },
-        { to: "/admin/scenarios", label: "Сценарии" },
-        { to: "/admin/sentiments", label: "Тональности" },
-      ],
-    },
-    {
-      title: "AI",
-      links: [{ to: "/settings/ai-providers", label: "Провайдеры AI" }],
-    },
-  ];
+  const navGroups = getCompanyNavGroups(role);
 
   return (
-    <nav className="company-nav">
-      {role === ROLES.OPERATOR && (
-        <div className="company-nav-group">
-          <div className="company-nav-title">Оператор</div>
-          {operatorLinks.map((l) => (
+    <nav className="op-nav">
+      {navGroups.map((g) => (
+        <div key={g.title}>
+          <div className="op-nav-group-title">{g.title}</div>
+          {g.links.map((l) => (
             <NavLink
               key={l.to}
               to={l.to}
-              className={({ isActive }) =>
-                isActive ? "company-nav-link active" : "company-nav-link"
-              }
+              className={({ isActive }) => (isActive ? "op-nav-link active" : "op-nav-link")}
             >
               {l.label}
             </NavLink>
           ))}
         </div>
-      )}
-
-      {role === ROLES.ADMINISTRATOR &&
-        adminGroups.map((g) => (
-          <div key={g.title} className="company-nav-group">
-            <div className="company-nav-title">{g.title}</div>
-            {g.links.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                className={({ isActive }) =>
-                  isActive ? "company-nav-link active" : "company-nav-link"
-                }
-              >
-                {l.label}
-              </NavLink>
-            ))}
-          </div>
-        ))}
+      ))}
     </nav>
   );
 }
 
 export default function CompanyLayout() {
   return (
-    <div className="company-shell">
-      <aside className="company-sidebar">
-        <div className="company-sidebar-header">
-          <div className="company-brand">Review Flow Operations</div>
-          <RoleSelector />
+    <div className="op-shell">
+      <aside className="op-sidebar">
+        <div>
+          <div className="op-brand">Review Flow Operations</div>
+          <div className="op-sidebar-meta">Internal workspace</div>
         </div>
+        <RoleSelector />
         <CompanyNav />
-        <div className="company-sidebar-footer">
-          <p className="muted">Internal workspace</p>
-        </div>
       </aside>
-      <div className="company-content">
+      <div className="op-content">
         <Outlet />
       </div>
     </div>

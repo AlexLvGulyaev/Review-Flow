@@ -11,14 +11,7 @@ export const PRODUCT_AREA_LABELS = {
   general: "Другое",
 };
 
-export const STATUS_HEADLINE = {
-  processing: "Мы анализируем ваше обращение",
-  pending_review: "Ответ готовится и проверяется специалистом",
-  approved: "Ответ утверждён и скоро будет опубликован",
-  published: "Ответ опубликован",
-  rejected: "Обращение отклонено",
-  needs_revision: "Требуется доработка ответа",
-};
+export { REVIEW_STATUS_LABELS as STATUS_HEADLINE, labelReviewStatus } from "./displayLabels.js";
 
 export async function fetchReviewStatus(requestNumber, email) {
   const lookupId = encodeURIComponent(normalizeRequestNumberInput(requestNumber.trim()));

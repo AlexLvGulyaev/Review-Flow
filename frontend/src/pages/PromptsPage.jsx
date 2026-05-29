@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { apiFetch, readApiError } from "../lib/api.js";
+import { OpPage, OpPageHeader } from "../ops/components/OpPage.jsx";
+import { OpToolbar, OpButton, OpInput, OpTextarea } from "../ops/components/OpToolbar.jsx";
+import { OpSplitView } from "../ops/components/OpSplitView.jsx";
+import { OpCardButton } from "../ops/components/OpCard.jsx";
+import { OpPill, OpPillRow } from "../ops/components/OpPill.jsx";
+import { OpEditorSection } from "../ops/kb/components/OpEditorSection.jsx";
+import { OpPayloadBlock } from "../ops/observability/OpPayloadBlock.jsx";
 
 export default function PromptsPage() {
   const [prompts, setPrompts] = useState([]);
@@ -10,6 +17,8 @@ export default function PromptsPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+  const [search, setSearch] = useState("");
+  const [activeOnly, setActiveOnly] = useState(false);
   const [form, setForm] = useState({
     prompt_key: "review_response_generation",
     title: "",
@@ -94,99 +103,172 @@ export default function PromptsPage() {
     }
   }
 
+  const items = prompts
+    .filter((p) => (activeOnly ? p.is_active : true))
+    .filter((p) => {
+      const needle = String(search || "").toLowerCase().trim();
+      if (!needle) return true;
+      const hay = `${p.prompt_key} ${p.title} v${p.version}`.toLowerCase();
+      return hay.includes(needle);
+    })
+    .map((p) => {
+      const createdAt = p.created_at ? new Date(p.created_at).toLocaleDateString() : "";
+      return {
+        key: p.id,
+        active: selectedId === p.id,
+        primaryLeft: `${p.prompt_key}`,
+        primaryRight: createdAt,
+        secondary: `v${p.version} — ${p.title}`,
+        preview: "",
+        pills: [
+          {
+            key: "state",
+            color: p.is_active ? "green" : "gray",
+            label: p.is_active ? "active" : "inactive",
+            title: "activation state",
+          },
+        ],
+        raw: p,
+      };
+    });
+
   return (
-    <main className="page page-wide">
-      <h1>Prompt Management</h1>
-      {error && <p className="error">{error}</p>}
-      {message && <p className="success-inline">{message}</p>}
+    <OpPage wide>
+      <OpPageHeader
+        title="AI Governance — Prompts"
+        subtitle="Versioned AI configuration. Active prompt state and safe activation semantics."
+        actions={
+          <OpButton type="button" onClick={loadList} disabled={loading} variant="primary">
+            Refresh
+          </OpButton>
+        }
+      />
 
-      <div className="operator-layout">
-        <aside className="operator-list">
-          <h2>Версии</h2>
-          {loading && <p>Загрузка…</p>}
-          <ul>
-            {prompts.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  className={selectedId === p.id ? "list-item active" : "list-item"}
-                  onClick={() => setSelectedId(p.id)}
-                >
-                  <strong>{p.prompt_key}</strong>
-                  <span>v{p.version} — {p.title}</span>
-                  {p.is_active && <span className="badge">ACTIVE</span>}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
+      <OpToolbar>
+        <label style={{ flex: 1, minWidth: 240 }}>
+          search
+          <OpInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="prompt_key / title…" />
+        </label>
+        <label>
+          active only
+          <select className="op-select" value={activeOnly ? "1" : "0"} onChange={(e) => setActiveOnly(e.target.value === "1")}>
+            <option value="0">all</option>
+            <option value="1">active</option>
+          </select>
+        </label>
+        <OpButton type="button" onClick={loadList} disabled={loading} variant="primary">
+          {loading ? "Loading…" : "Refresh"}
+        </OpButton>
+        {error ? <span className="error">{error}</span> : null}
+        {message ? <span className="success-inline">{message}</span> : null}
+      </OpToolbar>
 
-        <section className="operator-detail">
-          <h2>Детали prompt</h2>
-          {loadingDetail && <p>Загрузка…</p>}
-          {detail && (
-            <>
-              <p>
-                <strong>{detail.prompt_key}</strong> v{detail.version}{" "}
-                {detail.is_active && <span className="badge">ACTIVE</span>}
-              </p>
-              <div className="detail-block">
-                <h3>System prompt</h3>
-                <pre className="prompt-box">{detail.system_prompt}</pre>
-              </div>
-              <div className="detail-block">
-                <h3>User template</h3>
-                <pre className="prompt-box">{detail.user_prompt_template}</pre>
-              </div>
-              {!detail.is_active && (
-                <button type="button" className="btn-approve" onClick={handleActivate}>
-                  Activate
-                </button>
-              )}
-            </>
-          )}
+      <OpSplitView
+        left={
+          <>
+            <h2 className="op-panel-title">Prompt versions</h2>
+            {loading ? <p>Загрузка…</p> : null}
+            {!loading && items.length === 0 ? <p>Нет промптов</p> : null}
+            <ul className="op-list">
+              {items.map((it) => (
+                <li key={it.key} style={{ marginBottom: 10 }}>
+                  <OpCardButton
+                    active={it.active}
+                    onClick={() => setSelectedId(it.key)}
+                    primaryLeft={it.primaryLeft}
+                    primaryRight={it.primaryRight}
+                    secondary={it.secondary}
+                    preview={it.preview}
+                    pills={it.pills}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
+        }
+        right={
+          <>
+            <h2 className="op-panel-title">Workspace</h2>
+            {loadingDetail ? <p>Загрузка…</p> : null}
+            {!detail ? <p>Выберите prompt</p> : null}
+            {detail ? (
+              <>
+                <OpPillRow>
+                  <OpPill color={detail.is_active ? "green" : "gray"}>{detail.is_active ? "active" : "inactive"}</OpPill>
+                  <OpPill color="gray">
+                    {detail.prompt_key} v{detail.version}
+                  </OpPill>
+                </OpPillRow>
 
-          <form className="review-form" onSubmit={handleCreate} style={{ marginTop: "2rem" }}>
-            <h3>Новая версия</h3>
-            <label>
-              prompt_key
-              <input
-                value={form.prompt_key}
-                onChange={(e) => setForm({ ...form, prompt_key: e.target.value })}
-              />
-            </label>
-            <label>
-              title
-              <input
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
-              />
-            </label>
-            <label>
-              system_prompt
-              <textarea
-                rows={8}
-                value={form.system_prompt}
-                onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
-                required
-              />
-            </label>
-            <label>
-              user_prompt_template
-              <textarea
-                rows={6}
-                value={form.user_prompt_template}
-                onChange={(e) =>
-                  setForm({ ...form, user_prompt_template: e.target.value })
-                }
-                required
-              />
-            </label>
-            <button type="submit">Создать версию</button>
-          </form>
-        </section>
-      </div>
-    </main>
+                <div style={{ marginTop: 12 }}>
+                  <OpEditorSection
+                    title="Prompt header"
+                    right={
+                      !detail.is_active ? (
+                        <OpButton type="button" onClick={handleActivate} variant="primary">
+                          Activate
+                        </OpButton>
+                      ) : null
+                    }
+                  >
+                    <div className="muted">Title: <strong>{detail.title}</strong></div>
+                    <div className="muted">
+                      Created: {detail.created_at ? new Date(detail.created_at).toLocaleString() : "—"} · Updated:{" "}
+                      {detail.updated_at ? new Date(detail.updated_at).toLocaleString() : "—"}
+                    </div>
+                  </OpEditorSection>
+                </div>
+
+                <OpEditorSection title="System prompt (read-only)">
+                  <OpTextarea rows={10} value={detail.system_prompt || ""} readOnly />
+                </OpEditorSection>
+
+                <OpEditorSection title="User template (read-only)">
+                  <OpTextarea rows={8} value={detail.user_prompt_template || ""} readOnly />
+                </OpEditorSection>
+
+                <OpPayloadBlock title="Prompt metadata (compact)" payload={{ prompt_key: detail.prompt_key, version: detail.version, is_active: detail.is_active }} />
+
+                <OpEditorSection title="Create new version">
+                  <form onSubmit={handleCreate}>
+                    <label>
+                      prompt_key
+                      <OpInput value={form.prompt_key} onChange={(e) => setForm({ ...form, prompt_key: e.target.value })} />
+                    </label>
+                    <label>
+                      title
+                      <OpInput value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+                    </label>
+                    <label>
+                      system_prompt
+                      <OpTextarea
+                        rows={8}
+                        value={form.system_prompt}
+                        onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
+                        required
+                      />
+                    </label>
+                    <label>
+                      user_prompt_template
+                      <OpTextarea
+                        rows={6}
+                        value={form.user_prompt_template}
+                        onChange={(e) => setForm({ ...form, user_prompt_template: e.target.value })}
+                        required
+                      />
+                    </label>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <OpButton type="submit" variant="primary">
+                        Create version
+                      </OpButton>
+                    </div>
+                  </form>
+                </OpEditorSection>
+              </>
+            ) : null}
+          </>
+        }
+      />
+    </OpPage>
   );
 }

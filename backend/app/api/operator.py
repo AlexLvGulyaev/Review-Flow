@@ -13,13 +13,16 @@ from app.schemas.operator import (
     ModerationActionResponse,
     OperatorReviewDetail,
     OperatorReviewListItem,
+    RejectionFeedbackRequest,
 )
 from app.services.moderation import (
+    _display_request_number,
     approve_review,
     build_operator_detail,
     load_review_detail,
     reject_review,
     request_revision,
+    submit_ai_draft_rejection_feedback,
 )
 from app.services.review_helpers import latest_classification, latest_response, review_text_preview
 
@@ -35,6 +38,7 @@ def _to_list_item(review: Review) -> OperatorReviewListItem:
     resp = latest_response(review)
     return OperatorReviewListItem(
         review_id=review.id,
+        request_number=_display_request_number(review),
         customer_name=review.customer.customer_name if review.customer else None,
         service_case_title=review.service_case.case_title if review.service_case else None,
         product_area=review.product_area,
@@ -111,6 +115,15 @@ def reject_operator_review(
         publication_status=resp.publication_status,
         message="Review rejected",
     )
+
+
+@router.post("/{review_id}/reject-feedback", response_model=OperatorReviewDetail)
+def reject_feedback_operator_review(
+    review_id: UUID,
+    payload: RejectionFeedbackRequest,
+    db: Session = Depends(get_db),
+) -> OperatorReviewDetail:
+    return submit_ai_draft_rejection_feedback(db, review_id, payload)
 
 
 @router.post("/{review_id}/revision", response_model=ModerationActionResponse)

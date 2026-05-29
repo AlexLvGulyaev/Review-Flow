@@ -8,6 +8,7 @@ from app.models.entities import (
     ReviewClassification,
     ReviewPhrasePattern,
     ReviewResponse,
+    RejectionFeedback,
     ServiceCase,
 )
 
@@ -20,6 +21,7 @@ __all__ = [
     "PromptVersion",
     "ReviewClassification",
     "ReviewResponse",
+    "RejectionFeedback",
     "OperationalLog",
     "EvaluationCase",
 ]

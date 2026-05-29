@@ -6,17 +6,53 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.entities import OperationalLog, Review, ReviewClassification, ReviewResponse
+from app.models.entities import (
+    OperationalLog,
+    RejectionFeedback,
+    Review,
+    ReviewClassification,
+    ReviewResponse,
+)
 from app.schemas.operator import (
     ClassificationOut,
     OperatorReviewDetail,
     OperationalLogOut,
+    RejectionFeedbackOut,
     TemplateOut,
 )
+from app.services.review_ids import customer_display_request_number
 from app.services.operational_log import log_event
 from app.services.review_helpers import latest_classification, latest_response
 
 OPERATOR_PLACEHOLDER = "operator-ui"
+
+REJECTION_REASONS = frozenset(
+    {"classification_error", "unsuitable_template", "history_ignored"}
+)
+
+
+def _display_request_number(review: Review) -> str | None:
+    num = customer_display_request_number(
+        review.request_number,
+        review.order_number,
+        review.request_sequence,
+    )
+    return num or None
+
+
+def _feedback_out(row: RejectionFeedback) -> RejectionFeedbackOut:
+    return RejectionFeedbackOut(
+        id=row.id,
+        rejection_reason=row.rejection_reason,
+        llm_scenario=row.llm_scenario,
+        llm_tone=row.llm_tone,
+        llm_priority=row.llm_priority,
+        operator_corrected_scenario=row.operator_corrected_scenario,
+        operator_corrected_tone=row.operator_corrected_tone,
+        operator_corrected_priority=row.operator_corrected_priority,
+        optional_comment=row.optional_comment,
+        created_at=row.created_at,
+    )
 
 
 def _classification_out(review: Review) -> ClassificationOut | None:
@@ -76,10 +112,20 @@ def build_operator_detail(db: Session, review: Review, *, log_opened: bool = Fal
         template_out = TemplateOut(
             template_id=resp.template.id,
             template_text=resp.template.template_text,
+            title=resp.template.title,
             scenario=resp.template.scenario,
             sentiment=resp.template.sentiment,
             priority=resp.template.priority,
         )
+
+    feedback_rows = db.scalars(
+        select(RejectionFeedback)
+        .where(RejectionFeedback.review_id == review.id)
+        .order_by(RejectionFeedback.created_at.asc())
+    ).all()
+    feedback_history = [_feedback_out(f) for f in feedback_rows]
+    latest_feedback = feedback_history[-1] if feedback_history else None
+    ai_review_mode = "manual_override" if latest_feedback else "review"
 
     logs = db.scalars(
         select(OperationalLog)
@@ -90,8 +136,14 @@ def build_operator_detail(db: Session, review: Review, *, log_opened: bool = Fal
         .order_by(OperationalLog.created_at.asc())
     ).all()
 
+    llm_model = None
+    if resp and isinstance(resp.generation_metadata, dict):
+        llm_model = resp.generation_metadata.get("model") or resp.generation_metadata.get("model_name")
+
     return OperatorReviewDetail(
         review_id=review.id,
+        request_number=_display_request_number(review),
+        order_number=review.order_number,
         customer_name=review.customer.customer_name if review.customer else None,
         customer_email=review.customer.email if review.customer else None,
         service_case_title=review.service_case.case_title if review.service_case else None,
@@ -115,6 +167,11 @@ def build_operator_detail(db: Session, review: Review, *, log_opened: bool = Fal
             )
             for log in logs
         ],
+        updated_at=resp.updated_at if resp else None,
+        llm_model=llm_model,
+        ai_review_mode=ai_review_mode,
+        latest_rejection_feedback=latest_feedback,
+        rejection_feedback_history=feedback_history,
     )
 
 
@@ -182,6 +239,92 @@ def reject_review(db: Session, review_id: uuid.UUID, reason: str) -> ReviewRespo
     )
     db.commit()
     return resp
+
+
+def submit_ai_draft_rejection_feedback(
+    db: Session, review_id: uuid.UUID, payload
+) -> OperatorReviewDetail:
+    if payload.rejection_reason not in REJECTION_REASONS:
+        raise HTTPException(status_code=400, detail="Invalid rejection reason")
+
+    review = load_review_detail(db, review_id)
+    cls = latest_classification(review)
+    if not cls:
+        raise HTTPException(status_code=400, detail="Classification not found")
+
+    llm_scenario = cls.scenario
+    llm_tone = cls.sentiment
+    llm_priority = cls.priority
+
+    if payload.rejection_reason == "classification_error":
+        corrected = [
+            payload.operator_corrected_scenario,
+            payload.operator_corrected_tone,
+            payload.operator_corrected_priority,
+        ]
+        if not any(corrected):
+            raise HTTPException(
+                status_code=400,
+                detail="Corrected scenario, tone, or priority required",
+            )
+        changed = (
+            (payload.operator_corrected_scenario and payload.operator_corrected_scenario != llm_scenario)
+            or (payload.operator_corrected_tone and payload.operator_corrected_tone != llm_tone)
+            or (payload.operator_corrected_priority and payload.operator_corrected_priority != llm_priority)
+        )
+        if not changed:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one classification field must differ from LLM values",
+            )
+        if payload.operator_corrected_scenario:
+            cls.scenario = payload.operator_corrected_scenario
+        if payload.operator_corrected_tone:
+            cls.sentiment = payload.operator_corrected_tone
+        if payload.operator_corrected_priority:
+            cls.priority = payload.operator_corrected_priority
+
+    row = RejectionFeedback(
+        review_id=review_id,
+        operator_id=OPERATOR_PLACEHOLDER,
+        rejection_reason=payload.rejection_reason,
+        llm_scenario=llm_scenario,
+        llm_tone=llm_tone,
+        llm_priority=llm_priority,
+        operator_corrected_scenario=payload.operator_corrected_scenario,
+        operator_corrected_tone=payload.operator_corrected_tone,
+        operator_corrected_priority=payload.operator_corrected_priority,
+        optional_comment=(payload.optional_comment or "").strip() or None,
+    )
+    db.add(row)
+
+    resp = latest_response(review)
+    if resp:
+        resp.moderation_status = "needs_revision"
+        resp.publication_status = "not_published"
+        resp.operator_id = OPERATOR_PLACEHOLDER
+        resp.updated_at = datetime.now(timezone.utc)
+
+    log_event(
+        db,
+        event_type="ai_draft_rejected",
+        entity_type="review",
+        entity_id=review_id,
+        status="ok",
+        error_message=payload.optional_comment,
+        metadata={
+            "rejection_reason": payload.rejection_reason,
+            "llm_scenario": llm_scenario,
+            "llm_tone": llm_tone,
+            "llm_priority": llm_priority,
+            "operator_corrected_scenario": payload.operator_corrected_scenario,
+            "operator_corrected_tone": payload.operator_corrected_tone,
+            "operator_corrected_priority": payload.operator_corrected_priority,
+        },
+    )
+    db.commit()
+    review = load_review_detail(db, review_id)
+    return build_operator_detail(db, review)
 
 
 def request_revision(db: Session, review_id: uuid.UUID, reason: str) -> ReviewResponse:

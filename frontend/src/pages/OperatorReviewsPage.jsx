@@ -1,20 +1,41 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiFetch, readApiError } from "../lib/api.js";
+import { OpPage } from "../ops/components/OpPage.jsx";
+import { OperatorConsoleHeader, OperatorWorkspaceHeader } from "../ops/operator/OperatorConsoleHeader.jsx";
+import { OperatorLeftPanel } from "../ops/operator/OperatorLeftPanel.jsx";
+import { OperatorModerationWorkspace } from "../ops/operator/OperatorModerationWorkspace.jsx";
+import { RejectionFeedbackModal } from "../ops/operator/RejectionFeedbackModal.jsx";
+import { buildLifecycleTimeline } from "../ops/operator/operatorTimeline.js";
+import { isOperatorWorkflowCompleted } from "../lib/displayLabels.js";
+import { formatDateTime, getOperationalIdentity, isEditorLocked, queueCounters } from "../ops/operator/operatorUtils.js";
+
+const PAGE_SIZE = 10;
+
+function safeLower(s) {
+  return String(s || "").toLowerCase();
+}
 
 export default function OperatorReviewsPage() {
+  const listRef = useRef(null);
   const [reviews, setReviews] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [detail, setDetail] = useState(null);
   const [finalResponse, setFinalResponse] = useState("");
-  const [rejectReason, setRejectReason] = useState("");
-  const [revisionReason, setRevisionReason] = useState("");
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [moderationFilter, setModerationFilter] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("");
+  const [scenarioFilter, setScenarioFilter] = useState("");
+  const [sentimentFilter, setSentimentFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+
+  const editorLocked = detail ? isEditorLocked(detail) : true;
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -23,12 +44,14 @@ export default function OperatorReviewsPage() {
       const params = new URLSearchParams();
       if (moderationFilter) params.set("moderation_status", moderationFilter);
       const qs = params.toString();
-      const res = await apiFetch(`/api/operator/reviews${qs ? `?${qs}` : ""}`);
+      const path = `/api/operator/reviews${qs ? `?${qs}` : ""}`;
+      const res = await apiFetch(path);
       if (!res.ok) throw new Error(await readApiError(res, "Ошибка загрузки списка"));
-      const data = await res.json();
-      setReviews(data);
+      setReviews(await res.json());
     } catch (err) {
-      setError(err.message);
+      console.error("[operator] failed to load list", err);
+      setReviews([]);
+      setError(err.message || "Ошибка загрузки");
     } finally {
       setLoadingList(false);
     }
@@ -37,13 +60,13 @@ export default function OperatorReviewsPage() {
   const loadDetail = useCallback(async (reviewId) => {
     if (!reviewId) return;
     setLoadingDetail(true);
-    setError(null);
     try {
       const res = await apiFetch(`/api/operator/reviews/${reviewId}`);
       if (!res.ok) throw new Error(await readApiError(res, "Ошибка загрузки карточки"));
       const data = await res.json();
       setDetail(data);
-      setFinalResponse(data.final_response || data.draft_response || "");
+      const draft = data.draft_response || "";
+      setFinalResponse(data.ai_review_mode === "manual_override" ? data.final_response || draft : draft);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -56,35 +79,123 @@ export default function OperatorReviewsPage() {
   }, [loadList]);
 
   useEffect(() => {
-    if (reviews.length && !selectedId) {
-      setSelectedId(reviews[0].review_id);
+    setPage(0);
+  }, [search, priorityFilter, scenarioFilter, sentimentFilter, moderationFilter]);
+
+  const scenarios = useMemo(
+    () => Array.from(new Set(reviews.map((r) => r.scenario).filter(Boolean))).sort(),
+    [reviews]
+  );
+  const sentiments = useMemo(
+    () => Array.from(new Set(reviews.map((r) => r.sentiment).filter(Boolean))).sort(),
+    [reviews]
+  );
+  const priorities = useMemo(
+    () => Array.from(new Set(reviews.map((r) => r.priority).filter(Boolean))).sort(),
+    [reviews]
+  );
+
+  const filteredReviews = useMemo(() => {
+    const needle = safeLower(search).trim();
+    return reviews.filter((r) => {
+      if (priorityFilter && r.priority !== priorityFilter) return false;
+      if (scenarioFilter && r.scenario !== scenarioFilter) return false;
+      if (sentimentFilter && r.sentiment !== sentimentFilter) return false;
+      if (!needle) return true;
+      const identity = getOperationalIdentity(r);
+      const hay = [
+        identity.primary,
+        identity.secondary,
+        r.request_number,
+        r.review_id,
+        r.customer_name,
+        r.service_case_title,
+        r.product_area,
+        r.review_text_preview,
+        r.scenario,
+        r.sentiment,
+      ]
+        .map(safeLower)
+        .join(" ");
+      return hay.includes(needle);
+    });
+  }, [reviews, search, priorityFilter, scenarioFilter, sentimentFilter]);
+
+  const totalPagesRaw = Math.ceil(filteredReviews.length / PAGE_SIZE);
+  const totalPages = Math.max(1, totalPagesRaw || 1);
+  const pageIndex = Math.min(page, Math.max(0, totalPagesRaw - 1));
+  const pageItems = useMemo(
+    () => filteredReviews.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE),
+    [filteredReviews, pageIndex]
+  );
+
+  useEffect(() => {
+    if (page !== pageIndex) setPage(pageIndex);
+  }, [page, pageIndex]);
+
+  useEffect(() => {
+    if (!pageItems.length) {
+      if (!filteredReviews.length) setSelectedId(null);
+      return;
     }
-  }, [reviews, selectedId]);
+    if (!selectedId || !filteredReviews.some((r) => r.review_id === selectedId)) {
+      setSelectedId(pageItems[0].review_id);
+      return;
+    }
+    if (!pageItems.some((r) => r.review_id === selectedId)) {
+      const idx = filteredReviews.findIndex((r) => r.review_id === selectedId);
+      if (idx >= 0) setPage(Math.floor(idx / PAGE_SIZE));
+      else setSelectedId(pageItems[0].review_id);
+    }
+  }, [filteredReviews, pageItems, selectedId]);
 
   useEffect(() => {
     if (selectedId) loadDetail(selectedId);
   }, [selectedId, loadDetail]);
 
-  async function runAction(url, body) {
+  const lastPageIndex = Math.max(0, totalPagesRaw - 1);
+
+  function goPrevPage() {
+    const np = Math.max(0, pageIndex - 1);
+    setPage(np);
+    const slice = filteredReviews.slice(np * PAGE_SIZE, (np + 1) * PAGE_SIZE);
+    const pick = slice[slice.length - 1] ?? slice[0];
+    if (pick) setSelectedId(pick.review_id);
+  }
+
+  function goNextPage() {
+    const np = Math.min(lastPageIndex, pageIndex + 1);
+    setPage(np);
+    const slice = filteredReviews.slice(np * PAGE_SIZE, (np + 1) * PAGE_SIZE);
+    if (slice[0]) setSelectedId(slice[0].review_id);
+  }
+
+  function resetPagination() {
+    setPage(0);
+    const first = filteredReviews[0];
+    if (first) setSelectedId(first.review_id);
+  }
+
+  async function runApprove() {
+    if (!selectedId || !detail) return;
+    const text = (editorLocked ? detail.draft_response : finalResponse) || "";
+    if (!String(text).trim()) {
+      setError("Нет текста ответа для отправки");
+      return;
+    }
     setActionLoading(true);
     setError(null);
     setMessage(null);
     try {
-      const res = await apiFetch(url, {
+      const res = await apiFetch(`/api/operator/reviews/${selectedId}/approve`, {
         method: "POST",
-        body: JSON.stringify(body),
+        body: JSON.stringify({ final_response: String(text).trim() }),
       });
-      if (!res.ok) {
-        throw new Error(await readApiError(res, "Ошибка действия модерации"));
-      }
+      if (!res.ok) throw new Error(await readApiError(res, "Ошибка одобрения"));
       const data = await res.json();
-      if (data.draft_response !== undefined) {
-        setDetail(data);
-        setFinalResponse(data.final_response || data.draft_response || "");
-      }
-      setMessage(data.message || "Действие выполнено");
+      setDetail(data);
+      setMessage("Ответ одобрен и отправлен");
       await loadList();
-      if (selectedId) await loadDetail(selectedId);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -92,215 +203,98 @@ export default function OperatorReviewsPage() {
     }
   }
 
-  function handleApprove() {
-    if (!selectedId || !finalResponse.trim()) {
-      setError("Укажите финальный ответ");
-      return;
+  async function runRejectFeedback(payload) {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await apiFetch(`/api/operator/reviews/${selectedId}/reject-feedback`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await readApiError(res, "Ошибка сохранения отклонения"));
+      const data = await res.json();
+      setDetail(data);
+      setFinalResponse(data.draft_response || "");
+      setRejectModalOpen(false);
+      setMessage("Отклонение зафиксировано — доступна ручная корректировка");
+      await loadList();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
     }
-    runAction(`/api/operator/reviews/${selectedId}/approve`, {
-      final_response: finalResponse.trim(),
-    });
   }
 
-  function handleReject() {
-    if (!selectedId || !rejectReason.trim()) {
-      setError("Укажите причину отклонения");
-      return;
-    }
-    runAction(`/api/operator/reviews/${selectedId}/reject`, {
-      reason: rejectReason.trim(),
-    });
-  }
-
-  function handleRevision() {
-    if (!selectedId || !revisionReason.trim()) {
-      setError("Укажите причину доработки");
-      return;
-    }
-    runAction(`/api/operator/reviews/${selectedId}/revision`, {
-      reason: revisionReason.trim(),
-    });
-  }
+  const counters = useMemo(() => queueCounters(reviews), [reviews]);
+  const lifecycleTimeline = detail ? buildLifecycleTimeline(detail, formatDateTime) : [];
 
   return (
-    <main className="page page-wide">
-      <h1>Оператор — очередь отзывов</h1>
+    <OpPage wide className="op-page--operator-full">
+      <OperatorConsoleHeader />
+      <OperatorWorkspaceHeader />
 
-      <div className="operator-toolbar">
-        <label>
-          Фильтр moderation_status
-          <select
-            value={moderationFilter}
-            onChange={(e) => setModerationFilter(e.target.value)}
-          >
-            <option value="">Все</option>
-            <option value="pending_review">pending_review</option>
-            <option value="approved">approved</option>
-            <option value="rejected">rejected</option>
-            <option value="needs_revision">needs_revision</option>
-          </select>
-        </label>
-        <button type="button" onClick={loadList} disabled={loadingList}>
-          Обновить
-        </button>
-      </div>
+      <div className="rf-oc-console">
+        <OperatorLeftPanel
+          listRef={listRef}
+          search={search}
+          onSearchChange={setSearch}
+          moderationFilter={moderationFilter}
+          onModerationFilterChange={setModerationFilter}
+          priorityFilter={priorityFilter}
+          onPriorityFilterChange={setPriorityFilter}
+          scenarioFilter={scenarioFilter}
+          onScenarioFilterChange={setScenarioFilter}
+          sentimentFilter={sentimentFilter}
+          onSentimentFilterChange={setSentimentFilter}
+          scenarios={scenarios}
+          sentiments={sentiments}
+          counters={counters}
+          filteredCount={filteredReviews.length}
+          pageIndex={pageIndex}
+          totalPages={totalPagesRaw || 1}
+          pageItems={pageItems}
+          loading={loadingList}
+          onRefresh={loadList}
+          onPrevPage={goPrevPage}
+          onNextPage={goNextPage}
+          onResetPage={resetPagination}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          error={error}
+          message={message}
+        />
 
-      {error && <p className="error">{error}</p>}
-      {message && <p className="success-inline">{message}</p>}
-
-      <div className="operator-layout">
-        <aside className="operator-list">
-          <h2>Список</h2>
-          {loadingList && <p>Загрузка…</p>}
-          {!loadingList && reviews.length === 0 && <p>Нет отзывов</p>}
-          <ul>
-            {reviews.map((item) => (
-              <li key={item.review_id}>
-                <button
-                  type="button"
-                  className={
-                    selectedId === item.review_id ? "list-item active" : "list-item"
-                  }
-                  onClick={() => setSelectedId(item.review_id)}
-                >
-                  <strong>{item.customer_name || "Клиент"}</strong>
-                  <span>★ {item.rating}</span>
-                  <span>
-                    {item.scenario} / {item.sentiment} / {item.priority}
-                  </span>
-                  <span className="badge">{item.moderation_status}</span>
-                  <span className="preview">{item.review_text_preview}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
-
-        <section className="operator-detail">
-          <h2>Карточка отзыва</h2>
-          {loadingDetail && <p>Загрузка карточки…</p>}
-          {!loadingDetail && !detail && <p>Выберите отзыв</p>}
-          {detail && (
-            <>
-              <div className="detail-grid">
-                <div>
-                  <h3>Клиент</h3>
-                  <p>{detail.customer_name}</p>
-                  <p>{detail.customer_email}</p>
-                </div>
-                <div>
-                  <h3>Обращение</h3>
-                  <p>{detail.service_case_title}</p>
-                  <p>{detail.product_area}</p>
-                  <p>Оценка: {detail.rating}</p>
-                </div>
-              </div>
-
-              <div className="detail-block">
-                <h3>Отзыв</h3>
-                <p>{detail.review_text}</p>
-              </div>
-
-              {detail.classification && (
-                <div className="detail-block">
-                  <h3>Классификация</h3>
-                  <ul>
-                    <li>scenario: {detail.classification.scenario}</li>
-                    <li>sentiment: {detail.classification.sentiment}</li>
-                    <li>priority: {detail.classification.priority}</li>
-                    <li>topic: {detail.classification.topic}</li>
-                    <li>source: {detail.classification.classification_source}</li>
-                  </ul>
-                </div>
-              )}
-
-              {detail.matched_phrase_text && (
-                <div className="detail-block">
-                  <h3>Типовая формулировка</h3>
-                  <p>{detail.matched_phrase_text}</p>
-                </div>
-              )}
-
-              {detail.template?.template_text && (
-                <div className="detail-block">
-                  <h3>Шаблон</h3>
-                  <p className="mono">{detail.template.template_text}</p>
-                </div>
-              )}
-
-              {detail.draft_response && (
-                <div className="detail-block">
-                  <h3>Draft (AI)</h3>
-                  <p>{detail.draft_response}</p>
-                </div>
-              )}
-
-              <div className="detail-block">
-                <h3>Финальный ответ</h3>
-                <p>
-                  moderation: <strong>{detail.moderation_status}</strong> · publication:{" "}
-                  <strong>{detail.publication_status}</strong>
-                </p>
-                <textarea
-                  rows={6}
-                  value={finalResponse}
-                  onChange={(e) => setFinalResponse(e.target.value)}
-                  disabled={actionLoading}
-                />
-              </div>
-
-              <div className="action-row">
-                <button
-                  type="button"
-                  className="btn-approve"
-                  onClick={handleApprove}
-                  disabled={actionLoading}
-                >
-                  Approve / Mock publish
-                </button>
-              </div>
-
-              <div className="action-row secondary">
-                <input
-                  placeholder="Причина отклонения"
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  disabled={actionLoading}
-                />
-                <button type="button" onClick={handleReject} disabled={actionLoading}>
-                  Reject
-                </button>
-              </div>
-
-              <div className="action-row secondary">
-                <input
-                  placeholder="Причина доработки"
-                  value={revisionReason}
-                  onChange={(e) => setRevisionReason(e.target.value)}
-                  disabled={actionLoading}
-                />
-                <button type="button" onClick={handleRevision} disabled={actionLoading}>
-                  Needs revision
-                </button>
-              </div>
-
-              {detail.operational_logs?.length > 0 && (
-                <div className="detail-block">
-                  <h3>Operational logs</h3>
-                  <ul className="log-list">
-                    {detail.operational_logs.map((log, idx) => (
-                      <li key={idx}>
-                        {log.created_at} — {log.event_type} ({log.status})
-                        {log.error_message ? `: ${log.error_message}` : ""}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
+        <section className="rf-oc-right card" aria-label="Рабочая область проверки AI">
+          <OperatorModerationWorkspace
+            detail={detail}
+            selectedId={selectedId}
+            finalResponse={finalResponse}
+            onFinalResponseChange={setFinalResponse}
+            editorLocked={editorLocked}
+            actionLoading={actionLoading}
+            loadingDetail={loadingDetail}
+            lifecycleTimeline={lifecycleTimeline}
+            onApprove={runApprove}
+            onRejectClick={() => {
+              if (detail && isOperatorWorkflowCompleted(detail)) return;
+              setRejectModalOpen(true);
+            }}
+          />
         </section>
       </div>
-    </main>
+
+      <RejectionFeedbackModal
+        open={rejectModalOpen}
+        detail={detail}
+        scenarioOptions={scenarios}
+        sentimentOptions={sentiments}
+        priorityOptions={priorities}
+        saving={actionLoading}
+        onClose={() => setRejectModalOpen(false)}
+        onSave={runRejectFeedback}
+      />
+    </OpPage>
   );
 }

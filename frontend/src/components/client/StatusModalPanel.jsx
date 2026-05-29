@@ -1,6 +1,7 @@
 import StatusStepper from "./StatusStepper.jsx";
 import StatusDialogVisual from "./StatusDialogVisual.jsx";
-import { STATUS_HEADLINE, topicLabel } from "../../lib/reviewStatus.js";
+import { labelReviewStatus } from "../../lib/displayLabels.js";
+import { topicLabel } from "../../lib/reviewStatus.js";
 
 const PANEL_SHELL = "client-status-dialog-visual client-status-panel-shell";
 
@@ -54,7 +55,7 @@ export default function StatusModalPanel({ phase, data, error }) {
 
   if (phase === "success" && data) {
     const isPublished = data.status === "published";
-    const headline = STATUS_HEADLINE[data.status] || data.status;
+    const headline = labelReviewStatus(data.status);
 
     return (
       <aside
