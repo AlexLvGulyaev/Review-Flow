@@ -44,3 +44,6 @@ Thumbs.db
 # Build artifacts
 frontend/dist/
 backend/.pytest_cache/
+
+cursor_tasks_local/
+docs/cursor_sessions/
