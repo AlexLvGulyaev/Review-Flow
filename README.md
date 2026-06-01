@@ -1,168 +1,127 @@
 # Review Flow
 
-AI-ассистент для работы с отзывами клиентов: **текущий MVP** — template-guided workflow с human-in-the-loop moderation; **целевая архитектура** — Controlled Hybrid (типовая ситуация как SOT бизнес-решения, см. SOT §3A).
+Демонстрационный MVP для обработки клиентских обращений (отзывов) с разделением ролей и **Controlled Hybrid** подходом: **типовая ситуация (Response Case) — Source of Truth бизнес‑решения**, retrieval подбирает подходящую ситуацию по примерам, а **LLM используется для адаптации текста ответа в рамках утверждённой политики**.
 
-## Project overview
+## Какую проблему решает
 
-Review Flow — учебно-портфельный web-прототип для обработки клиентских отзывов:
+Если обращения обрабатываются вручную — растут издержки и падает качество из‑за разнобоя в решениях. Review Flow показывает, как:
 
-- клиент отправляет отзыв;
-- система классифицирует и формирует draft-ответ по шаблону;
-- оператор модерирует и публикует mock-ответ;
-- администратор управляет промптами и оценивает качество;
-- аналитика и логи доступны для демонстрации lifecycle.
+- фиксировать бизнес‑решения в базе типовых ситуаций;
+- ускорять обработку через retrieval + пороги уверенности (confidence);
+- оставлять контроль за оператором (Human‑in‑the‑Loop);
+- развивать базу знаний через Candidate Learning Loop.
 
-## UI contours (architecture)
+## Почему Controlled Hybrid (а не LLM‑first / полный RAG)
 
-Система проектируется с **разделением интерфейсов** (см. SOT §4.6 и [UI contour plan](docs/architecture/ui_contour_separation_plan.md)):
+Ключевые причины выбора подхода:
 
-| Контур | Аудитория | Назначение |
-|--------|-----------|------------|
-| **Клиентский** | Покупатель / пользователь сервиса | Customer-facing сайт компании: оставить отзыв, проверить статус |
-| **Контур компании — оператор** | Сотрудник поддержки | Очередь отзывов, модерация, mock publication |
-| **Контур компании — администратор** | Админ / методолог | Промпты, evaluation, analytics, logs, AI providers, knowledge base |
+- **бизнес‑решение не делегируется LLM** (LLM может ошибаться непредсказуемо);
+- решение опирается на **управляемую базу типовых ситуаций** и аудитируемый retrieval;
+- LLM используется там, где он уместен: **переформулирование/адаптация текста** в рамках `response_policy`.
 
-Текущий MVP: одно React-приложение с role selector; целевое состояние — визуально раздельные client site и company workspace (следующий UI milestone).
+Подробное обоснование: `docs/architecture/controlled_hybrid_architecture_rationale.pdf`.  
+Главные документы по архитектуре: `docs/CONTROLLED_HYBRID.md`, `docs/ARCHITECTURE.md`.
 
-## Architecture
+## Основные возможности
 
-### Current runtime (MVP)
+- **Клиент**: отправить обращение, получить номер, проверить статус, увидеть опубликованный ответ.
+- **Оператор**: очередь обращений, просмотр предложенной типовой ситуации и confidence, правка ответа, публикация, эскалация через “нет подходящей ситуации”.
+- **Администратор**: управление типовыми ситуациями и примерами, обработка кандидатов, настройка AI‑провайдеров, отчётность.
+- **Руководитель/аналитик**: отчёты по обращениям и качеству обработки (в рамках текущего MVP).
 
-```text
-Client contour (/review) → FastAPI pipeline → PostgreSQL
-                              ↓
-                    phrase match → LLM classification → template scoring → LLM generation
-                              ↓
-Company contour: Operator (/operator/reviews) → moderation → mock publication
-Company contour: Admin (/prompts, /evaluation, /settings/ai-providers, /admin/*)
-Observability (/analytics, /logs) → operational_logs
-```
+## Роли и контуры
 
-### Target (Controlled Hybrid — pipeline not switched)
+В проекте различаются интерфейсные контуры (см. `docs/architecture/ui_contour_separation_plan.md`):
 
-**C2 + C6 + C4 + C5 + C7:** CH pipeline (`CH_PIPELINE_ENABLED=true`), operator console, admin KB at `/admin/response-cases`, and CH quality analytics at `/admin/ch-quality` (confidence, overrides, candidates, case quality, retrieval misses, audit).
+- **Клиентский контур**: публичные страницы `/`, `/review`, `/review/status`.
+- **Контур компании (оператор)**: `/operator/reviews`.
+- **Контур компании (администратор)**: `/reports`, `/logs`, `/prompts`, `/evaluation`, `/settings/*`, `/admin/*`.
+
+## Как работает основной pipeline (реализовано)
 
 ```text
-Incoming review → signal extraction → response case retrieval → confidence branch
-  → case response policy → optional LLM adaptation → operator review / publish → KB feedback
+Клиент создаёт обращение
+→ Backend сохраняет review в PostgreSQL
+→ Controlled Hybrid pipeline:
+     retrieval подбирает Response Case по примерам
+     система вычисляет confidence и показывает его оператору
+     система формирует draft на основе response_policy + approved_response_text
+     (LLM — только адаптация текста, не выбор бизнес-решения)
+→ Оператор подтверждает/меняет ситуацию, редактирует ответ и публикует
+→ Клиент видит опубликованный ответ по номеру обращения
 ```
 
-Normative spec: `Архитектурные_и_продуктовые_решения_проекта_SOT_v4.md` §3A. Operational model (C3–C5 design): `docs/architecture/controlled_hybrid_operational_model.md`. Transition plan: `IMPLEMENTATION_PLAN.md` § «Переход на Controlled Hybrid».
+Переключение режима: `CH_PIPELINE_ENABLED=true|false` (см. `.env.example`).
 
-## Stack
+## Controlled Hybrid Learning Loop (демо‑сценарий)
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 19, Vite, React Router |
-| Backend | FastAPI, Python 3.12, SQLAlchemy 2.0 |
-| Database | PostgreSQL 16 |
-| AI | OpenAI-compatible API (mock fallback без ключа) |
-| Deploy | Docker Compose |
+```text
+Обращение клиента
+→ retrieval предлагает неподходящую или недостаточно уверенную типовую ситуацию
+→ оператор выбирает “ни одна типовая ситуация не подходит”
+→ оператор предлагает новую типовую ситуацию (candidate)
+→ администратор видит кандидата
+→ администратор создаёт новую типовую ситуацию или присоединяет к существующей
+→ кандидат становится retrieval‑примером
+→ новое похожее обращение распознаётся с высокой уверенностью
+```
 
-## NM demo dataset (Sprint C7A)
+## Скриншоты ключевых экранов
 
-После миграции `012_nm_reference_dataset.sql` в БД есть **справочная предметная область NM** без истории обращений:
+Клиентский портал:
 
-| Сущность | Ориентир |
-|----------|----------|
-| Клиенты | 25 (`NM-CUST-001` … `NM-CUST-025`, email `*@nm-demo.retail`) |
-| Заказы (`service_cases`) | 50 (`NL-00501001` … `NL-00501050`) |
-| Product areas / topics / response cases | расширенный CH seed + примеры |
+![Клиент: главная](docs/screenshots/cli-main.png)
 
-Для ручного теста клиентского UI: укажите email существующего клиента (например `anna.smirnova@nm-demo.retail`) и номер заказа из диапазона `NL-00501001`–`NL-00501050`. Обращение привяжется к существующему `service_case`, а не создаст дубликат заказа.
+Операторская консоль:
 
-Аналитика CH остаётся пустой до первых реальных обращений.
+![Оператор: низкая уверенность и альтернативы](docs/screenshots/oper-rev-low.png)
 
-## Setup
+Администрирование базы знаний (Response Cases):
+
+![Админ: список типовых ситуаций](docs/screenshots/adm-ts-list.png)
+
+Отчётность и настройки:
+
+![Админ: отчёты](docs/screenshots/adm-repbus.png)
+![Админ: системные настройки](docs/screenshots/adm-sys.png)
+
+Полная галерея и пояснения: `docs/SCREENSHOTS.md`.
+
+## Технологический стек
+
+- **Frontend**: React + Vite + React Router
+- **Backend**: FastAPI (Python 3.12), SQLAlchemy
+- **DB**: PostgreSQL 16
+- **AI**: OpenAI‑compatible API (в демо возможен `mock`‑провайдер)
+- **Запуск**: Docker Compose
+
+## Быстрый запуск
 
 ```bash
 cp .env.example .env
-# опционально: OPENAI_API_KEY=sk-...
-docker compose up --build -d
+docker compose up --build
 ```
 
-## Local run
+После запуска:
 
-| Сервис | URL |
-|--------|-----|
-| Frontend | http://localhost:5180 |
-| Backend API | http://localhost:8700 |
-| Health | http://localhost:8700/health |
-| Postgres | internal (docker network) |
+- Frontend: `http://localhost:5180`
+- Backend API: `http://localhost:8700`
+- Health: `http://localhost:8700/health`
 
-### Frontend routes (текущий MVP)
+Подробные инструкции: `docs/DEPLOYMENT.md`.
 
-| Route | Контур | Назначение |
-|-------|--------|------------|
-| `/` | Клиентский | Главная страница компании (demo) |
-| `/review` | Клиентский | Форма отправки отзыва |
-| `/review/status` | Клиентский | Форма поиска статуса |
-| `/review/status/:requestNumber` | Клиентский | Статус обращения (по номеру обращения) |
-| `/company` | Компания | Entry point в рабочее пространство (redirect по роли) |
-| `/operator/reviews` | Компания (operator) | Очередь оператора |
-| `/prompts` | Компания (admin) | Управление промптами |
-| `/evaluation` | Компания (admin) | Ручная оценка качества |
-| `/analytics` | Компания (admin) | Сводная аналитика |
-| `/logs` | Компания (admin) | Operational logs |
-| `/settings/ai-providers` | Компания (admin) | Настройки AI-провайдеров |
-| `/admin/phrases`, `/admin/templates`, … | Компания (admin) | Knowledge base |
+## Подробная документация
 
-### API (основное)
+- `docs/ARCHITECTURE.md` — архитектура (контуры, API, БД, pipeline)
+- `docs/CONTROLLED_HYBRID.md` — Controlled Hybrid в терминах Review Flow
+- `docs/USER_GUIDE.md` — как пользоваться системой (клиент/оператор/админ)
+- `docs/SCREENSHOTS.md` — галерея экранов
+- `docs/PROJECT_HISTORY.md` — краткая история развития
+- Нормативный SOT: `Архитектурные_и_продуктовые_решения_проекта_SOT_v4.md`
+- План реализации: `IMPLEMENTATION_PLAN.md`
 
-```bash
-POST /api/reviews
-GET  /api/reviews/requests/{request_number}/status?email=...
-GET  /api/reviews/{id}/status
-GET  /api/operator/reviews
-POST /api/operator/reviews/{id}/approve
-GET  /api/prompts
-POST /api/prompts/{id}/activate
-GET  /api/analytics/overview
-GET  /api/logs
-```
+## Ограничения демо
 
-## Demo workflow
-
-1. Отправить отзыв на `/review` (форма просит **номер заказа**)
-2. Проверить pipeline в `/logs`
-3. Модерировать в `/operator/reviews` → Approve
-4. Клиент видит ответ на `/review/status/:requestNumber` (по номеру обращения)
-5. Создать/активировать prompt на `/prompts`
-6. Добавить evaluation case на `/evaluation`
-7. Посмотреть метрики на `/analytics`
-
-Подробнее: [docs/demo_scenarios.md](docs/demo_scenarios.md)
-
-## Operational lifecycle
-
-- **Ingestion** — customer, service_case, review
-- **AI pipeline** — phrase matching, classification, template selection, draft generation (DB prompts)
-- **Moderation** — pending_review → approved/rejected/needs_revision
-- **Publication** — mock publication для клиента
-- **Prompt management** — versioned prompts per `prompt_key`
-- **Evaluation** — manual operator score 1–5
-- **Observability** — `operational_logs` с `latency_ms` и metadata
-
-## Screenshots
-
-<!-- Placeholder: добавьте скриншоты demo в docs/screenshots/ -->
-
-- `docs/screenshots/` — placeholders для портфолио
-
-## Documentation
-
-- SOT: `Архитектурные_и_продуктовые_решения_проекта_SOT_v4.md`
-- Plan: `IMPLEMENTATION_PLAN.md`
-- [UI contour separation plan](docs/architecture/ui_contour_separation_plan.md)
-- [User guide](docs/user_guide.md)
-- [Demo scenarios](docs/demo_scenarios.md)
-
-## Environment
-
-См. `.env.example`:
-
-- `POSTGRES_*`, `DATABASE_URL`
-- `OPENAI_API_KEY`, `OPENAI_MODEL`
-- `VITE_API_URL`, `PHRASE_MATCH_THRESHOLD`
-
-Migrations применяются автоматически при старте backend.
+- Это **демонстрационный MVP**: часть функций может быть реализована в упрощённом виде (например, mock‑провайдер LLM).
+- Роли переключаются в рамках одного приложения (см. `docs/architecture/ui_contour_separation_plan.md`).
+- Содержимое базы типовых ситуаций — учебный seed‑набор для демонстрации retrieval и learning loop.
