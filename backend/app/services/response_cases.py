@@ -9,9 +9,10 @@ from fastapi import HTTPException
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.ch_entities import ProductArea, ResponseCase, ResponseCaseExample, ReviewTopic
+from app.models.ch_entities import ProcessingPolicy, ProductArea, ResponseCase, ResponseCaseExample, ReviewTopic
 from app.schemas.reference import ClassificationRefOut
 from app.schemas.response_case import (
+    ProcessingPolicyOut,
     ProductAreaOut,
     ResponseCaseExampleOut,
     ResponseCaseListItem,
@@ -91,6 +92,7 @@ class ResponseCaseService:
                 joinedload(ResponseCase.priority_level),
                 joinedload(ResponseCase.product_area),
                 joinedload(ResponseCase.topic).joinedload(ReviewTopic.product_area),
+                joinedload(ResponseCase.processing_policy),
             )
             .order_by(ResponseCase.title)
         )
@@ -129,6 +131,7 @@ class ResponseCaseService:
                 joinedload(ResponseCase.product_area),
                 joinedload(ResponseCase.topic).joinedload(ReviewTopic.product_area),
                 joinedload(ResponseCase.examples),
+                joinedload(ResponseCase.processing_policy),
             )
         )
         if not row:
@@ -143,6 +146,7 @@ class ResponseCaseService:
             raise HTTPException(status_code=409, detail="case_code already exists")
         self._validate_case_refs(payload.scenario_id, payload.sentiment_id, payload.priority_id)
         self._validate_area_topic(payload.product_area_id, payload.topic_id)
+        policy = self._resolve_processing_policy(payload.processing_policy_id)
         now = datetime.now(timezone.utc)
         row = ResponseCase(
             case_code=payload.case_code.strip(),
@@ -156,7 +160,8 @@ class ResponseCaseService:
             response_policy=payload.response_policy,
             approved_response_text=payload.approved_response_text,
             confidence_threshold=payload.confidence_threshold,
-            review_policy=payload.review_policy,
+            processing_policy_id=policy.id,
+            review_policy=policy.code,
             is_active=True,
             created_by="admin",
             created_at=now,
@@ -193,6 +198,10 @@ class ResponseCaseService:
                 data.get("product_area_id", row.product_area_id),
                 data.get("topic_id", row.topic_id),
             )
+        if "processing_policy_id" in data:
+            policy = self._resolve_processing_policy(data.pop("processing_policy_id"))
+            row.processing_policy_id = policy.id
+            row.review_policy = policy.code
         for key, val in data.items():
             setattr(row, key, val)
         row.updated_at = datetime.now(timezone.utc)
@@ -263,7 +272,15 @@ class ResponseCaseService:
             created_at=ex.created_at,
         )
 
-    def list_catalog(self) -> tuple[list[ProductArea], list[ReviewTopic]]:
+    def list_processing_policies(self, *, active_only: bool = True) -> list[ProcessingPolicy]:
+        stmt = select(ProcessingPolicy).order_by(ProcessingPolicy.name_ru)
+        if active_only:
+            stmt = stmt.where(ProcessingPolicy.is_active.is_(True))
+        return list(self.db.scalars(stmt).all())
+
+    def list_catalog(
+        self,
+    ) -> tuple[list[ProductArea], list[ReviewTopic], list[ProcessingPolicy]]:
         areas = list(
             self.db.scalars(
                 select(ProductArea).where(ProductArea.is_active.is_(True)).order_by(ProductArea.name)
@@ -273,10 +290,36 @@ class ResponseCaseService:
             self.db.scalars(
                 select(ReviewTopic)
                 .where(ReviewTopic.is_active.is_(True))
+                .options(joinedload(ReviewTopic.product_area))
                 .order_by(ReviewTopic.name)
             ).all()
         )
-        return areas, topics
+        policies = self.list_processing_policies(active_only=True)
+        return areas, topics, policies
+
+    @staticmethod
+    def _processing_policy_out(policy: ProcessingPolicy) -> ProcessingPolicyOut:
+        return ProcessingPolicyOut(
+            id=policy.id,
+            code=policy.code,
+            name_ru=policy.name_ru,
+            description=policy.description,
+            is_active=policy.is_active,
+        )
+
+    def _resolve_processing_policy(self, policy_id: uuid.UUID | None) -> ProcessingPolicy:
+        if policy_id is None:
+            policy = self.db.scalar(
+                select(ProcessingPolicy).where(
+                    ProcessingPolicy.code == "operator_review_with_llm_draft",
+                    ProcessingPolicy.is_active.is_(True),
+                )
+            )
+        else:
+            policy = self.db.get(ProcessingPolicy, policy_id)
+        if not policy or not policy.is_active:
+            raise HTTPException(status_code=400, detail="Invalid processing_policy_id")
+        return policy
 
     @staticmethod
     def slugify_case_code(title: str) -> str:
@@ -341,6 +384,8 @@ class ResponseCaseService:
             product_area=self._product_area_out(row.product_area),
             topic=self._topic_out(row.topic),
             confidence_threshold=Decimal(str(row.confidence_threshold)),
+            processing_policy_id=row.processing_policy_id,
+            processing_policy=self._processing_policy_out(row.processing_policy),
             review_policy=row.review_policy,
             is_active=row.is_active,
             updated_at=row.updated_at,

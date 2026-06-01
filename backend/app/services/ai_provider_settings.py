@@ -19,6 +19,7 @@ from app.services.ai_providers.gigachat_auth import (
 )
 from app.services.ai_providers.base import EffectiveProviderConfig, ProviderNotReadyError
 from app.services.ai_providers.factory import AIProviderFactory, get_implementation_status
+from app.services.ai_provider_validation import validate_model_name
 from app.services.operational_log import log_event
 
 DEFAULT_BASE_URLS: dict[str, str] = {
@@ -92,6 +93,11 @@ class AIProviderSettingsService:
 
     def patch_setting(self, provider_key: str, data: dict) -> AIProviderSettingOut:
         row = self.get_by_key(provider_key)
+        if "model_name" in data and data["model_name"] is not None:
+            try:
+                data["model_name"] = validate_model_name(provider_key, data["model_name"])
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
         for key, val in data.items():
             if val is not None:
                 setattr(row, key, val)
@@ -353,9 +359,20 @@ class AIProviderSettingsService:
             readiness_reason=reason,
             credentials_check_applicable=creds_applicable,
             related_env_keys=related,
+            effective_base_url=self._effective_base_url_display(row),
             created_at=row.created_at,
             updated_at=row.updated_at,
         )
+
+    def _effective_base_url_display(self, row: AIProviderSetting) -> str | None:
+        if row.provider_key == "mock":
+            return None
+        if row.provider_key == "gigachat":
+            return "GigaChat API (OAuth)"
+        url = self._read_env(row.base_url_env_key) if row.base_url_env_key else None
+        if url:
+            return url
+        return DEFAULT_BASE_URLS.get(row.provider_key)
 
     def _missing_env_keys(self, row: AIProviderSetting) -> list[str]:
         if row.provider_key == "mock":

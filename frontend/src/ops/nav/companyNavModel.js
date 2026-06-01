@@ -1,16 +1,17 @@
 import { ROLES } from "../../lib/role.js";
 
+/**
+ * Sidebar navigation for the company contour.
+ *
+ * Sprint 024B: legacy / duplicate items are hidden from the menu but remain
+ * reachable by direct URL (/prompts, /evaluation, /settings/ai-providers, …).
+ */
 export function getCompanyNavGroups(role) {
   if (role === ROLES.OPERATOR) {
     return [
       {
-        title: "Оператор",
-        links: [
-          { to: "/operator/reviews", label: "Очередь обращений" },
-          // Future placeholders (no backend coupling required for now):
-          // { to: "/operator/assigned", label: "Мои задачи" },
-          // { to: "/operator/history", label: "История" },
-        ],
+        title: "Операции",
+        links: [{ to: "/operator/reviews", label: "Очередь обращений" }],
       },
     ];
   }
@@ -18,33 +19,23 @@ export function getCompanyNavGroups(role) {
   if (role === ROLES.ADMINISTRATOR) {
     return [
       {
-        title: "Наблюдаемость",
-        links: [
-          { to: "/analytics", label: "Аналитика" },
-          { to: "/admin/ch-quality", label: "Качество CH" },
-          { to: "/logs", label: "Логи" },
-        ],
+        title: "Операции",
+        links: [{ to: "/operator/reviews", label: "Очередь обращений" }],
       },
       {
-        title: "Качество и промпты",
-        links: [
-          { to: "/prompts", label: "Промпты" },
-          { to: "/evaluation", label: "Evaluation" },
-        ],
-      },
-      {
-        title: "База знаний",
-        links: [
-          { to: "/admin/phrases", label: "Формулировки" },
-          { to: "/admin/templates", label: "Шаблоны" },
-          { to: "/admin/scenarios", label: "Сценарии" },
-          { to: "/admin/sentiments", label: "Тональности" },
-          { to: "/admin/response-cases", label: "Типовые ситуации (CH)" },
-        ],
+        title: "Controlled Hybrid",
+        links: [{ to: "/admin/response-cases", label: "Типовые ситуации" }],
       },
       {
         title: "Настройки",
-        links: [{ to: "/settings/ai-providers", label: "Провайдеры AI" }],
+        links: [{ to: "/settings/system", label: "Системные настройки" }],
+      },
+      {
+        title: "Наблюдаемость",
+        links: [
+          { to: "/reports", label: "Отчёты" },
+          { to: "/logs", label: "Логи" },
+        ],
       },
     ];
   }
@@ -52,3 +43,15 @@ export function getCompanyNavGroups(role) {
   return [];
 }
 
+/** Hidden from sidebar; routes and pages unchanged (direct URL still works). */
+export const HIDDEN_NAV_ROUTES = [
+  "/analytics",
+  "/admin/ch-quality",
+  "/settings/ai-providers",
+  "/prompts",
+  "/evaluation",
+  "/admin/phrases",
+  "/admin/templates",
+  "/admin/scenarios",
+  "/admin/sentiments",
+];

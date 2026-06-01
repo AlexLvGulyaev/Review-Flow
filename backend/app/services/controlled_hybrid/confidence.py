@@ -24,9 +24,15 @@ class ConfidenceEvaluation:
 def evaluate_confidence(
     match_score: float,
     confidence_threshold: Decimal | float,
+    *,
+    medium_delta: float | None = None,
 ) -> ConfidenceEvaluation:
     threshold = float(confidence_threshold)
-    delta = settings.ch_confidence_medium_delta
+    delta = (
+        medium_delta
+        if medium_delta is not None
+        else settings.ch_confidence_medium_delta
+    )
     medium_floor = max(0.0, threshold - delta)
     if match_score >= threshold:
         band = ConfidenceBand.HIGH

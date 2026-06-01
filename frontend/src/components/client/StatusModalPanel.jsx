@@ -112,9 +112,7 @@ export default function StatusModalPanel({ phase, data, error }) {
         {data.final_response ? (
           <section className="client-status-panel-response">
             <h3>Ответ компании</h3>
-            <p className="client-status-review-text" title={data.final_response}>
-              {data.final_response}
-            </p>
+            <p className="client-status-response-text">{data.final_response}</p>
           </section>
         ) : null}
 

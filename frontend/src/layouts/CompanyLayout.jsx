@@ -1,9 +1,10 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 
-import RoleSelector from "../components/RoleSelector.jsx";
-import { useRole } from "../context/RoleContext.jsx";
-import { ROLES } from "../lib/role.js";
+import CompanyStaffPanel from "../components/CompanyStaffPanel.jsx";
+import { useCompanyAuth } from "../context/CompanyAuthContext.jsx";
+import { isCompanyEntryPath, isCompanyStaffPath } from "../lib/companyPaths.js";
 import { getCompanyNavGroups } from "../ops/nav/companyNavModel.js";
+import { useRole } from "../context/RoleContext.jsx";
 
 function CompanyNav() {
   const { role } = useRole();
@@ -11,7 +12,7 @@ function CompanyNav() {
   const navGroups = getCompanyNavGroups(role);
 
   return (
-    <nav className="op-nav">
+    <nav className="op-nav op-sidebar__nav">
       {navGroups.map((g) => (
         <div key={g.title}>
           <div className="op-nav-group-title">{g.title}</div>
@@ -30,16 +31,16 @@ function CompanyNav() {
   );
 }
 
-export default function CompanyLayout() {
+function CompanyShell() {
   return (
     <div className="op-shell">
-      <aside className="op-sidebar">
-        <div>
+      <aside className="op-sidebar op-sidebar--company">
+        <div className="op-sidebar__head">
           <div className="op-brand">Review Flow Operations</div>
           <div className="op-sidebar-meta">Internal workspace</div>
         </div>
-        <RoleSelector />
         <CompanyNav />
+        <CompanyStaffPanel />
       </aside>
       <div className="op-content">
         <Outlet />
@@ -48,3 +49,27 @@ export default function CompanyLayout() {
   );
 }
 
+export default function CompanyLayout() {
+  const { isStaffSignedIn } = useCompanyAuth();
+  const { pathname } = useLocation();
+
+  if (isCompanyEntryPath(pathname)) {
+    return (
+      <div className="company-entry-shell">
+        <Outlet />
+      </div>
+    );
+  }
+
+  if (!isStaffSignedIn && isCompanyStaffPath(pathname)) {
+    return (
+      <Navigate
+        to="/company"
+        replace
+        state={{ staffSignInRequired: true, from: pathname }}
+      />
+    );
+  }
+
+  return <CompanyShell />;
+}

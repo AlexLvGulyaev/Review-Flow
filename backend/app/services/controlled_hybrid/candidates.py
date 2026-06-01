@@ -6,12 +6,19 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models.ch_entities import ResponseCase, ResponseCaseCandidate, ResponseCaseExample
+from app.models.ch_entities import ResponseCase, ResponseCaseCandidate
+from app.services.controlled_hybrid.auto_learning import CANDIDATE_TYPE_RESPONSE_CASE_EXAMPLE
 from app.schemas.response_case import ResponseCaseOut
 from app.schemas.response_case_admin import ResponseCaseCandidateOut
-from app.services.controlled_hybrid.decisions import create_decision
+from app.services.controlled_hybrid.candidate_learning import (
+    EXAMPLE_SOURCE_OPERATOR_CONFIRMED,
+    apply_candidate_learning_classification,
+    apply_candidate_merge_classification,
+    ensure_response_case_example,
+    is_published_operator_response,
+    should_apply_merge_classification,
+)
 from app.services.controlled_hybrid.draft_generation import CaseDraftGenerationService
-from app.services.controlled_hybrid.retrieval import ResponseCaseRetrievalService
 from app.services.ai_provider_runtime import AIProviderRuntime
 from app.services.operational_log import log_event
 from app.services.response_cases import ResponseCaseService
@@ -29,26 +36,72 @@ def promote_candidate(
     candidate = db.get(ResponseCaseCandidate, candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
-    if candidate.status not in ("pending_admin", "pending_operator"):
+    if candidate.status not in ("pending_admin", "pending_operator", "new"):
         raise HTTPException(status_code=400, detail=f"Candidate status is {candidate.status}")
 
     now = datetime.now(timezone.utc)
+
+    if candidate.candidate_type == CANDIDATE_TYPE_RESPONSE_CASE_EXAMPLE:
+        target_id = merge_into_case_id or candidate.target_response_case_id
+        if not target_id:
+            raise HTTPException(status_code=400, detail="Example candidate missing target response case")
+        target = db.get(ResponseCase, target_id)
+        if not target or not target.is_active:
+            raise HTTPException(status_code=404, detail="Target response case not found")
+        review = db.get(Review, candidate.review_id)
+        if not review:
+            raise HTTPException(status_code=404, detail="Review not found for example candidate")
+        ensure_response_case_example(
+            db,
+            response_case_id=target.id,
+            review=review,
+            now=now,
+            source=EXAMPLE_SOURCE_OPERATOR_CONFIRMED,
+            rewrite_source=False,
+        )
+        candidate.status = "approved"
+        candidate.merged_into_case_id = target.id
+        candidate.reviewed_by_admin_id = admin_id
+        candidate.updated_at = now
+        db.flush()
+        log_event(
+            db,
+            event_type="case_candidate_promoted",
+            entity_type="response_case_candidate",
+            entity_id=candidate.id,
+            status="ok",
+            metadata={
+                "response_case_id": str(target.id),
+                "candidate_type": CANDIDATE_TYPE_RESPONSE_CASE_EXAMPLE,
+            },
+        )
+        db.commit()
+        out = ResponseCaseService(db).get_case(target.id)
+        if not out:
+            raise HTTPException(status_code=500, detail="Failed to load target case")
+        return out
+
     if merge_into_case_id:
         target = db.get(ResponseCase, merge_into_case_id)
         if not target or not target.is_active:
             raise HTTPException(status_code=404, detail="Target response case not found")
         review = db.get(Review, candidate.review_id)
         if review:
-            example = ResponseCaseExample(
+            ensure_response_case_example(
+                db,
                 response_case_id=target.id,
-                example_text=review.review_text,
-                source="from_review",
-                source_review_id=review.id,
-                is_active=True,
-                created_at=now,
-                updated_at=now,
+                review=review,
+                now=now,
+                source=EXAMPLE_SOURCE_OPERATOR_CONFIRMED,
+                rewrite_source=False,
             )
-            db.add(example)
+            if should_apply_merge_classification(db, review, candidate):
+                apply_candidate_merge_classification(
+                    db,
+                    review=review,
+                    response_case=target,
+                    preserve_published_response=True,
+                )
         candidate.status = "merged"
         candidate.merged_into_case_id = target.id
         candidate.reviewed_by_admin_id = admin_id
@@ -103,16 +156,8 @@ def promote_candidate(
 
     review = db.get(Review, candidate.review_id)
     if review:
-        db.add(
-            ResponseCaseExample(
-                response_case_id=case.id,
-                example_text=review.review_text,
-                source="from_review",
-                source_review_id=review.id,
-                is_active=True,
-                created_at=now,
-                updated_at=now,
-            )
+        ensure_response_case_example(
+            db, response_case_id=case.id, review=review, now=now
         )
 
     candidate.status = "approved"
@@ -121,22 +166,16 @@ def promote_candidate(
     candidate.updated_at = now
 
     if review:
-        retrieval = ResponseCaseRetrievalService(db).retrieve(review.review_text)
-        match_score = 1.0
-        for c in retrieval.candidates:
-            if c.response_case.id == case.id:
-                match_score = c.match_score
-                break
-        decision = create_decision(
-            db,
-            review_id=review.id,
-            response_case=case,
-            match_score=match_score,
-            decision_source="manual_seed",
-        )
         resp = latest_response(review)
-        customer_name = review.customer.customer_name if review.customer else "Клиент"
-        if resp:
+        published = is_published_operator_response(resp)
+        apply_candidate_learning_classification(
+            db,
+            review=review,
+            response_case=case,
+            preserve_published_response=True,
+        )
+        if not published and resp:
+            customer_name = review.customer.customer_name if review.customer else "Клиент"
             resolved = AIProviderRuntime(db).resolve(review_id=review.id)
             draft, _, gen_prompt, gen_metadata = CaseDraftGenerationService(db, resolved).generate(
                 review=review,
@@ -146,6 +185,8 @@ def promote_candidate(
             gen_metadata["operator_case_confirmed"] = True
             gen_metadata["requires_operator_case_confirmation"] = False
             gen_metadata["confidence_band"] = "high"
+            gen_metadata["decision_source"] = "candidate_learning"
+            gen_metadata["selection_source"] = "Создано из кандидата / обучение"
             resp.draft_response = draft
             resp.prompt_version_id = gen_prompt.id
             resp.generation_metadata = gen_metadata
@@ -177,7 +218,7 @@ def reject_candidate(
     candidate = db.get(ResponseCaseCandidate, candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
-    if candidate.status not in ("pending_admin", "pending_operator"):
+    if candidate.status not in ("pending_admin", "pending_operator", "new"):
         raise HTTPException(status_code=400, detail=f"Candidate status is {candidate.status}")
 
     now = datetime.now(timezone.utc)
@@ -198,6 +239,8 @@ def reject_candidate(
         id=candidate.id,
         review_id=candidate.review_id,
         status=candidate.status,
+        candidate_type=candidate.candidate_type,
+        target_response_case_id=candidate.target_response_case_id,
         proposed_title=candidate.proposed_title,
         proposed_description=candidate.proposed_description,
         proposed_response_policy=candidate.proposed_response_policy,

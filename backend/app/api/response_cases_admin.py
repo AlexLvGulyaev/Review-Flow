@@ -1,5 +1,7 @@
 from uuid import UUID
 
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -9,9 +11,11 @@ from app.db.session import get_db
 from app.models.ch_entities import ResponseCaseCandidate
 from app.schemas.response_case import ResponseCaseExampleOut, ResponseCaseOut
 from app.schemas.response_case_admin import (
+    CandidateCompleteBody,
     CandidatePromoteBody,
     CandidateRejectBody,
     ChCatalogOut,
+    ResponseCaseCandidateDetailOut,
     ResponseCaseCandidateOut,
     ResponseCaseCreate,
     ResponseCaseExampleCreate,
@@ -19,6 +23,8 @@ from app.schemas.response_case_admin import (
     ResponseCaseListItemAdmin,
     ResponseCaseUpdate,
 )
+from app.services.controlled_hybrid.auto_learning import CANDIDATE_TYPE_RESPONSE_CASE_EXAMPLE
+from app.services.candidate_admin import build_candidate_detail, complete_candidate_with_case
 from app.services.controlled_hybrid.candidates import promote_candidate, reject_candidate
 from app.services.response_cases import ResponseCaseService
 
@@ -29,11 +35,28 @@ router = APIRouter(
 )
 
 
+def _learning_metrics(row: ResponseCaseCandidate) -> tuple[float | None, float | None, float | None]:
+    if row.candidate_type != CANDIDATE_TYPE_RESPONSE_CASE_EXAMPLE or not row.proposed_description:
+        return None, None, None
+    try:
+        data = json.loads(row.proposed_description)
+    except json.JSONDecodeError:
+        return None, None, None
+    return (
+        float(data["match_score"]) if data.get("match_score") is not None else None,
+        float(data["retrieval_threshold"]) if data.get("retrieval_threshold") is not None else None,
+        float(data["gap"]) if data.get("gap") is not None else None,
+    )
+
+
 def _candidate_out(row: ResponseCaseCandidate) -> ResponseCaseCandidateOut:
+    match_score, retrieval_threshold, gap = _learning_metrics(row)
     return ResponseCaseCandidateOut(
         id=row.id,
         review_id=row.review_id,
         status=row.status,
+        candidate_type=row.candidate_type,
+        target_response_case_id=row.target_response_case_id,
         proposed_title=row.proposed_title,
         proposed_description=row.proposed_description,
         proposed_response_policy=row.proposed_response_policy,
@@ -47,6 +70,9 @@ def _candidate_out(row: ResponseCaseCandidate) -> ResponseCaseCandidateOut:
         rejection_comment=row.rejection_comment,
         promoted_response_case_id=row.promoted_response_case_id,
         merged_into_case_id=row.merged_into_case_id,
+        match_score=match_score,
+        retrieval_threshold=retrieval_threshold,
+        gap=gap,
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat() if row.updated_at else None,
     )
@@ -55,10 +81,11 @@ def _candidate_out(row: ResponseCaseCandidate) -> ResponseCaseCandidateOut:
 @router.get("/ch-catalog", response_model=ChCatalogOut)
 def get_ch_catalog(db: Session = Depends(get_db)) -> ChCatalogOut:
     svc = ResponseCaseService(db)
-    areas, topics = svc.list_catalog()
+    areas, topics, policies = svc.list_catalog()
     return ChCatalogOut(
-        product_areas=[svc._area_out(a) for a in areas],
+        product_areas=[svc._product_area_out(a) for a in areas],
         review_topics=[svc._topic_out(t) for t in topics],
+        processing_policies=[svc._processing_policy_out(p) for p in policies],
     )
 
 
@@ -141,9 +168,29 @@ def list_response_case_candidates(
 ) -> list[ResponseCaseCandidateOut]:
     stmt = select(ResponseCaseCandidate).order_by(ResponseCaseCandidate.created_at.desc())
     if status:
-        stmt = stmt.where(ResponseCaseCandidate.status == status)
+        if status == "pending_admin":
+            stmt = stmt.where(ResponseCaseCandidate.status.in_(("pending_admin", "new")))
+        else:
+            stmt = stmt.where(ResponseCaseCandidate.status == status)
     rows = db.scalars(stmt).all()
     return [_candidate_out(r) for r in rows]
+
+
+@router.get("/response-case-candidates/{candidate_id}", response_model=ResponseCaseCandidateDetailOut)
+def get_response_case_candidate(
+    candidate_id: UUID,
+    db: Session = Depends(get_db),
+) -> ResponseCaseCandidateDetailOut:
+    return build_candidate_detail(db, candidate_id)
+
+
+@router.post("/response-case-candidates/{candidate_id}/complete", status_code=204)
+def complete_response_case_candidate(
+    candidate_id: UUID,
+    body: CandidateCompleteBody,
+    db: Session = Depends(get_db),
+) -> None:
+    complete_candidate_with_case(db, candidate_id, response_case_id=body.response_case_id)
 
 
 @router.post("/response-case-candidates/{candidate_id}/approve", response_model=ResponseCaseOut)

@@ -12,6 +12,7 @@ from app.schemas.operator import (
     CaseCandidateCreateRequest,
     ModerationActionRequest,
     ModerationActionResponse,
+    OperatorEscalationRequest,
     OperatorReviewDetail,
     OperatorReviewListItem,
     RejectionFeedbackRequest,
@@ -20,6 +21,7 @@ from app.schemas.operator import (
 from app.services.controlled_hybrid.operator_case import (
     confirm_response_case,
     create_case_candidate,
+    escalate_response_case,
     override_response_case,
 )
 from app.services.moderation import (
@@ -32,7 +34,8 @@ from app.services.moderation import (
     submit_ai_draft_rejection_feedback,
 )
 from app.services.classification_refs import ClassificationRefsService
-from app.services.review_helpers import latest_classification, latest_response, review_text_preview
+from app.services.controlled_hybrid.presenter import resolve_operator_list_classification
+from app.services.review_helpers import latest_response, review_text_preview
 
 router = APIRouter(
     prefix="/api/operator/reviews",
@@ -41,18 +44,11 @@ router = APIRouter(
 )
 
 
-def _to_list_item(review: Review, refs: ClassificationRefsService) -> OperatorReviewListItem:
-    cls = latest_classification(review)
+def _to_list_item(review: Review, refs: ClassificationRefsService, db: Session) -> OperatorReviewListItem:
     resp = latest_response(review)
-    scenario_code = refs.code_for_scenario_id(cls.scenario_id) if cls else None
-    sentiment_code = refs.code_for_sentiment_id(cls.sentiment_id) if cls else None
-    priority_code = refs.code_for_priority_id(cls.priority_id) if cls else None
-    if cls and not scenario_code:
-        scenario_code = cls.scenario
-    if cls and not sentiment_code:
-        sentiment_code = cls.sentiment
-    if cls and not priority_code:
-        priority_code = cls.priority
+    scenario_code, sentiment_code, priority_code = resolve_operator_list_classification(
+        db, review, resp, refs
+    )
     return OperatorReviewListItem(
         review_id=review.id,
         request_number=_display_request_number(review),
@@ -90,7 +86,7 @@ def list_operator_reviews(
 
     reviews = query.limit(100).all()
     refs = ClassificationRefsService(db)
-    items = [_to_list_item(r, refs) for r in reviews]
+    items = [_to_list_item(r, refs, db) for r in reviews]
 
     if moderation_status:
         items = [i for i in items if i.moderation_status == moderation_status]
@@ -168,6 +164,15 @@ def create_case_candidate_operator_review(
     db: Session = Depends(get_db),
 ) -> OperatorReviewDetail:
     return create_case_candidate(db, review_id, payload)
+
+
+@router.post("/{review_id}/escalate", response_model=OperatorReviewDetail)
+def escalate_operator_review(
+    review_id: UUID,
+    payload: OperatorEscalationRequest,
+    db: Session = Depends(get_db),
+) -> OperatorReviewDetail:
+    return escalate_response_case(db, review_id, payload)
 
 
 @router.post("/{review_id}/revision", response_model=ModerationActionResponse)

@@ -8,8 +8,8 @@ from rapidfuzz import fuzz
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.config import settings
 from app.models.ch_entities import ResponseCase, ResponseCaseExample
+from app.services.ch_runtime_settings import ChRuntimeSettingsService
 
 
 @dataclass(frozen=True)
@@ -33,7 +33,7 @@ class ResponseCaseRetrievalService:
     def retrieve(self, review_text: str) -> RetrievalResult:
         start = time.perf_counter()
         normalized_review = review_text.lower().strip()
-        top_n = settings.ch_retrieval_top_n
+        top_n = ChRuntimeSettingsService(self.db).effective().retrieval_top_n
 
         examples = self.db.scalars(
             select(ResponseCaseExample)

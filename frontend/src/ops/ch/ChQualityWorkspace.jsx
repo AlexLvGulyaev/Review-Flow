@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { apiFetch, readApiError } from "../../lib/api.js";
+import { adminApiFetch, readApiError } from "../../lib/api.js";
 import {
   labelConfidenceBand,
   labelOperationalEventType,
@@ -54,8 +54,8 @@ export default function ChQualityWorkspace() {
     setError(null);
     try {
       const [dashRes, auditRes] = await Promise.all([
-        apiFetch(`${API}/dashboard?days=${days}`),
-        apiFetch(`${API}/audit?days=${days}&limit=100`),
+        adminApiFetch(`${API}/dashboard?days=${days}`),
+        adminApiFetch(`${API}/audit?days=${days}&limit=100`),
       ]);
       if (!dashRes.ok) throw new Error(await readApiError(dashRes, "Не удалось загрузить аналитику CH"));
       if (!auditRes.ok) throw new Error(await readApiError(auditRes, "Не удалось загрузить аудит CH"));

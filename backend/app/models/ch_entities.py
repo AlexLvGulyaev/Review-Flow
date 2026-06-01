@@ -1,11 +1,25 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+
+class ProcessingPolicy(Base):
+    __tablename__ = "processing_policies"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    name_ru: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    response_cases: Mapped[list["ResponseCase"]] = relationship(back_populates="processing_policy")
 
 
 class ProductArea(Base):
@@ -66,6 +80,9 @@ class ResponseCase(Base):
     response_policy: Mapped[str] = mapped_column(Text, nullable=False)
     approved_response_text: Mapped[str] = mapped_column(Text, nullable=False)
     confidence_threshold: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.75)
+    processing_policy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("processing_policies.id"), nullable=False
+    )
     review_policy: Mapped[str] = mapped_column(String(32), nullable=False, default="operator_required")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by: Mapped[str | None] = mapped_column(String(128))
@@ -79,6 +96,7 @@ class ResponseCase(Base):
     priority_level: Mapped["PriorityLevel"] = relationship(foreign_keys=[priority_id])  # noqa: F821
     product_area: Mapped["ProductArea"] = relationship(back_populates="response_cases")
     topic: Mapped["ReviewTopic"] = relationship(back_populates="response_cases")
+    processing_policy: Mapped["ProcessingPolicy"] = relationship(back_populates="response_cases")
     examples: Mapped[list["ResponseCaseExample"]] = relationship(
         back_populates="response_case", cascade="all, delete-orphan"
     )
@@ -140,6 +158,10 @@ class ResponseCaseCandidate(Base):
         UUID(as_uuid=True), ForeignKey("response_cases.id")
     )
     rejection_comment: Mapped[str | None] = mapped_column(Text)
+    candidate_type: Mapped[str] = mapped_column(String(32), nullable=False, default="new_response_case")
+    target_response_case_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("response_cases.id")
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
@@ -209,3 +231,18 @@ class ResponseCaseFeedback(Base):
     )
     legacy_rejection_feedback_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class ChRuntimeSettings(Base):
+    __tablename__ = "ch_runtime_settings"
+
+    id: Mapped[int] = mapped_column(SmallInteger, primary_key=True, default=1)
+    retrieval_top_n: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    minimum_match_score: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0)
+    confidence_medium_delta: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.10)
+    default_confidence_threshold: Mapped[float] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0.75
+    )
+    draft_on_medium: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    auto_decision_on_high: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)

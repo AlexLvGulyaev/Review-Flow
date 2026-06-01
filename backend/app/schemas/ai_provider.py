@@ -22,6 +22,7 @@ class AIProviderSettingOut(BaseModel):
     readiness_reason: str | None = None
     credentials_check_applicable: bool = True
     related_env_keys: list[str] = []
+    effective_base_url: str | None = None
     created_at: datetime
     updated_at: datetime
 

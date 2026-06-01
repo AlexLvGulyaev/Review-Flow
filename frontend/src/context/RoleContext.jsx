@@ -1,14 +1,15 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { getStoredRole, ROLES, setStoredRole } from "../lib/role.js";
 
 const RoleContext = createContext(null);
 
 export function RoleProvider({ children }) {
-  const [role, setRole] = useState(getStoredRole);
+  const [role, setRoleState] = useState(getStoredRole);
 
-  useEffect(() => {
-    setStoredRole(role);
-  }, [role]);
+  const setRole = (next) => {
+    setRoleState(next);
+    setStoredRole(next);
+  };
 
   return (
     <RoleContext.Provider value={{ role, setRole, ROLES }}>

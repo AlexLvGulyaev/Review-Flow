@@ -7,6 +7,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.schemas.reference import ClassificationRefOut
 
 
+class ProcessingPolicyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    code: str
+    name_ru: str
+    description: str | None = None
+    is_active: bool
+
+
 class ProductAreaOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -52,6 +62,8 @@ class ResponseCaseListItem(BaseModel):
     product_area: ProductAreaOut
     topic: ReviewTopicOut
     confidence_threshold: Decimal
+    processing_policy_id: UUID
+    processing_policy: ProcessingPolicyOut
     review_policy: str
     is_active: bool
     updated_at: datetime
@@ -72,6 +84,8 @@ class ResponseCaseOut(BaseModel):
     response_policy: str
     approved_response_text: str
     confidence_threshold: Decimal
+    processing_policy_id: UUID
+    processing_policy: ProcessingPolicyOut
     review_policy: str
     is_active: bool
     created_by: str | None = None

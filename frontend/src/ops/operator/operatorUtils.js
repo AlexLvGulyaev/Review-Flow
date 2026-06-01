@@ -96,7 +96,29 @@ export function buildDetailTelemetry(detail) {
 }
 
 export function isEditorLocked(detail) {
+  if (isOperatorWorkflowCompleted(detail)) return true;
+  if (detail?.pipeline_mode === "controlled_hybrid") {
+    if (detail.case_resolved || detail.operator_editor_enabled) return false;
+  }
   return detail?.ai_review_mode !== "manual_override";
+}
+
+/** Text shown in the operator response editor for the current review state. */
+export function resolveOperatorFinalResponse(detail) {
+  if (!detail) return "";
+  if (isOperatorWorkflowCompleted(detail)) {
+    return detail.final_response || detail.draft_response || "";
+  }
+  if (detail.pipeline_mode === "controlled_hybrid") {
+    if (detail.case_resolved || detail.operator_editor_enabled || detail.ai_review_mode === "manual_override") {
+      return detail.final_response || detail.draft_response || "";
+    }
+    return detail.draft_response || "";
+  }
+  if (detail.ai_review_mode === "manual_override") {
+    return detail.final_response || detail.draft_response || "";
+  }
+  return detail.draft_response || "";
 }
 
 export function shortTechnicalId(uuid) {

@@ -9,6 +9,7 @@ function isCompanyPath(path) {
     path.startsWith("/prompts") ||
     path.startsWith("/evaluation") ||
     path.startsWith("/analytics") ||
+    path.startsWith("/reports") ||
     path.startsWith("/logs") ||
     path.startsWith("/settings/") ||
     path.startsWith("/admin/")

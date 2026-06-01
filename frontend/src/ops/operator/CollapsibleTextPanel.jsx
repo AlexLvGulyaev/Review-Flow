@@ -7,7 +7,7 @@ const DEFAULT_PREVIEW_LINES = 5;
 const CHARS_PER_LINE = 72;
 
 /** ~5 lines operational content block with optional full-text expand. */
-export function CollapsibleTextPanel({ title, caption, text, footer, previewLines = DEFAULT_PREVIEW_LINES }) {
+export function CollapsibleTextPanel({ title, caption, text, footer, previewLines = DEFAULT_PREVIEW_LINES, className = "" }) {
   const [expanded, setExpanded] = useState(false);
   const source = String(text || "").trim() || "—";
   const maxChars = previewLines * CHARS_PER_LINE;
@@ -17,7 +17,7 @@ export function CollapsibleTextPanel({ title, caption, text, footer, previewLine
   const bodyClass = expanded ? "rf-oc-text-panel__body rf-oc-text-panel__body--expanded" : "rf-oc-text-panel__body";
 
   return (
-    <div className="rf-oc-text-panel">
+    <div className={`rf-oc-text-panel${className ? ` ${className}` : ""}`}>
       <div className="rf-oc-text-panel__head">
         <h3 className="rf-oc-text-panel__title">{title}</h3>
         {caption ? <span className="rf-oc-text-panel__caption muted">{caption}</span> : null}

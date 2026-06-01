@@ -50,5 +50,5 @@ def require_roles(*allowed: Role):
 
 
 require_client = require_roles(Role.CLIENT, Role.OPERATOR, Role.ADMINISTRATOR)
-require_operator = require_roles(Role.OPERATOR)
+require_operator = require_roles(Role.OPERATOR, Role.ADMINISTRATOR)
 require_admin = require_roles(Role.ADMINISTRATOR)

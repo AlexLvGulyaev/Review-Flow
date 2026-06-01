@@ -94,6 +94,7 @@ class SelectedResponseCaseOut(BaseModel):
     product_area: ClassificationRefOut | None = None
     topic: ClassificationRefOut | None = None
     match_confidence: float | None = None
+    confidence_threshold: float | None = None
     confidence_band: str | None = None
     decision_source: str | None = None
     is_operator_override: bool = False
@@ -125,6 +126,23 @@ class CaseCandidateCreateRequest(BaseModel):
     proposed_approved_response_text: str | None = None
 
 
+class RetrievalSuggestionOut(BaseModel):
+    response_case_id: UUID | None = None
+    case_code: str | None = None
+    title: str | None = None
+    match_score: float | None = None
+    operator_rejected: bool = False
+    rejection_reason: str | None = None
+
+
+class OperatorEscalationRequest(BaseModel):
+    escalation_reason: str = Field(..., min_length=1)
+    comment: str = Field(..., min_length=1)
+    scenario_id: UUID | None = None
+    sentiment_id: UUID | None = None
+    priority_id: UUID | None = None
+
+
 class OperatorReviewDetail(BaseModel):
     review_id: UUID
     request_number: str | None = None
@@ -152,3 +170,9 @@ class OperatorReviewDetail(BaseModel):
     pipeline_mode: str = "legacy"
     selected_response_case: SelectedResponseCaseOut | None = None
     case_alternatives: list[ResponseCaseAlternativeOut] = Field(default_factory=list)
+    case_resolved: bool = False
+    operator_editor_enabled: bool = False
+    case_escalated: bool = False
+    case_confirmation_not_required: bool = False
+    escalation_reason: str | None = None
+    retrieval_suggestion: RetrievalSuggestionOut | None = None

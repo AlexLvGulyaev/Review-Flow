@@ -14,6 +14,7 @@ from app.models.entities import (
 )
 from app.models.ch_entities import (
     CaseMatchResult,
+    ProcessingPolicy,
     ProductArea,
     ResponseCase,
     ResponseCaseCandidate,
@@ -35,6 +36,7 @@ __all__ = [
     "RejectionFeedback",
     "OperationalLog",
     "EvaluationCase",
+    "ProcessingPolicy",
     "ProductArea",
     "ReviewTopic",
     "ResponseCase",

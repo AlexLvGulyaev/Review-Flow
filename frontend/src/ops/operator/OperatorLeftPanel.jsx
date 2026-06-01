@@ -39,8 +39,7 @@ export function OperatorLeftPanel({
   onResetPage,
   selectedId,
   onSelect,
-  error,
-  message,
+  listError,
 }) {
   const pageHuman = filteredCount === 0 ? 0 : pageIndex + 1;
 
@@ -135,8 +134,7 @@ export function OperatorLeftPanel({
           </button>
         </div>
 
-        {error ? <div className="error rf-oc-inline-error">{error}</div> : null}
-        {message ? <div className="success-inline rf-oc-inline-msg">{message}</div> : null}
+        {listError ? <div className="error rf-oc-inline-error">{listError}</div> : null}
       </div>
 
       <div className="rf-oc-list" ref={listRef}>

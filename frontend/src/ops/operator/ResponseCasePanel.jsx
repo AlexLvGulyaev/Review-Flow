@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo } from "react";
 
 import { OpButton } from "../components/OpToolbar.jsx";
 import {
@@ -17,61 +17,57 @@ function confidenceBandClass(band) {
   return "rf-oc-ch-band--unknown";
 }
 
-function buildLifecycleBadges(detail, selected) {
-  const badges = [];
-  const logs = detail.operational_logs || [];
-  const candidateCreated = logs.some((e) => e.event_type === "case_candidate_created");
-
-  if (selected) {
-    badges.push({ id: "selected", label: "Ситуация выбрана" });
-  }
-  if (selected?.operator_confirmed) {
-    badges.push({ id: "confirmed", label: "Ситуация подтверждена" });
-  }
-  if (selected?.is_operator_override) {
-    badges.push({ id: "overridden", label: "Ситуация изменена" });
-  }
-  if (candidateCreated) {
-    badges.push({ id: "candidate", label: "Кандидат создан" });
-  }
-  return badges;
+function formatScore(score) {
+  if (score == null || Number.isNaN(Number(score))) return "—";
+  return Number(score).toFixed(2);
 }
 
-export function ResponseCasePanel({
-  detail,
-  actionLoading,
-  workflowCompleted,
-  onConfirmCase,
-  onOverrideCase,
-  onOpenCandidateModal,
-}) {
-  const [overrideComment, setOverrideComment] = useState("");
-  const [pendingOverrideId, setPendingOverrideId] = useState(null);
+function formatMatchScoreWithThreshold(score, threshold) {
+  const formattedScore = formatScore(score);
+  if (formattedScore === "—" || threshold == null || Number.isNaN(Number(threshold))) {
+    return formattedScore;
+  }
+  return `${formattedScore} (порог ТС: ${Number(threshold).toFixed(2)})`;
+}
 
-  const selected = detail.selected_response_case;
-  const alternatives = detail.case_alternatives || [];
+/** Правая колонка верхней зоны (~60%): выбранная типовая ситуация. */
+export function SelectedResponseCaseSummary({ selected, detail }) {
   const band = selected?.confidence_band;
-  const needsConfirm =
-    selected?.requires_operator_confirmation && !selected?.operator_confirmed;
-  const actionsDisabled = actionLoading || workflowCompleted;
+  const noCaseEscalation =
+    !selected && (detail?.case_escalated || detail?.escalation_reason === "no_case_fits");
+  const cls = detail?.classification;
 
-  const lifecycleBadges = buildLifecycleBadges(detail, selected);
-
-  function handleOverrideClick(caseId) {
-    if (pendingOverrideId === caseId) {
-      onOverrideCase(caseId, overrideComment.trim() || null);
-      setPendingOverrideId(null);
-      setOverrideComment("");
-      return;
-    }
-    setPendingOverrideId(caseId);
-    setOverrideComment("");
+  if (noCaseEscalation) {
+    return (
+      <div className="rf-oc-ch-top-col rf-oc-ch-top-col--case">
+        <div className="rf-oc-ch-top-col__head">
+          <h3 className="rf-oc-summary-col__label">Типовая ситуация</h3>
+        </div>
+        <dl className="rf-oc-kv-list rf-oc-ch-kv rf-oc-ch-kv--compact">
+          <dt>Статус</dt>
+          <dd>Не выбрана</dd>
+          <dt>Причина</dt>
+          <dd>Ни одна типовая ситуация не подошла</dd>
+          <dt>Источник решения</dt>
+          <dd>{labelDecisionSource("operator_escalation")}</dd>
+          {cls ? (
+            <>
+              <dt>Сценарий / Тональность / Приоритет</dt>
+              <dd>
+                {labelScenario(cls.scenario)} · {labelSentiment(cls.sentiment)} ·{" "}
+                {labelPriority(cls.priority)}
+              </dd>
+            </>
+          ) : null}
+        </dl>
+      </div>
+    );
   }
 
   return (
-    <section className="rf-oc-ch-panel" aria-label="Типовая ситуация">
-      <div className="rf-oc-ch-panel__head">
-        <h3 className="rf-oc-detail-block__title">Выбранная типовая ситуация</h3>
+    <div className="rf-oc-ch-top-col rf-oc-ch-top-col--case">
+      <div className="rf-oc-ch-top-col__head">
+        <h3 className="rf-oc-summary-col__label">Выбранная типовая ситуация</h3>
         {band ? (
           <span className={`rf-oc-ch-band ${confidenceBandClass(band)}`}>
             Уверенность: {labelConfidenceBand(band)}
@@ -81,98 +77,80 @@ export function ResponseCasePanel({
         )}
       </div>
 
-      {lifecycleBadges.length ? (
-        <ul className="rf-oc-ch-lifecycle">
-          {lifecycleBadges.map((b) => (
-            <li key={b.id} className={`rf-oc-ch-lifecycle__item rf-oc-ch-lifecycle__item--${b.id}`}>
-              {b.label}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
       {!selected ? (
-        <div className="rf-oc-ch-empty">
-          <p>
-            Подходящая типовая ситуация не выбрана автоматически. Выберите вариант из списка ниже или
-            предложите новую ситуацию.
-          </p>
-        </div>
+        <p className="muted rf-oc-ch-top-empty">
+          Типовая ситуация не выбрана. Выберите альтернативу ниже или выполните эскалацию.
+        </p>
       ) : (
-        <dl className="rf-oc-kv-list rf-oc-ch-kv">
+        <dl className="rf-oc-kv-list rf-oc-ch-kv rf-oc-ch-kv--compact">
           <dt>Название</dt>
           <dd>{selected.title}</dd>
           <dt>Описание</dt>
-          <dd>{selected.description || "—"}</dd>
-          <dt>Направление</dt>
+          <dd className="rf-oc-ch-case-desc">{selected.description || "—"}</dd>
+          <dt>Продукт</dt>
           <dd>{selected.product_area?.name ?? "—"}</dd>
           <dt>Тема</dt>
           <dd>{selected.topic?.name ?? "—"}</dd>
-          <dt>Сценарий / тон / приоритет</dt>
+          <dt>Сценарий / Тональность / Приоритет</dt>
           <dd>
             {labelScenario(selected.scenario)} · {labelSentiment(selected.sentiment)} ·{" "}
             {labelPriority(selected.priority)}
           </dd>
-          <dt>Источник решения</dt>
+          <dt>Оценка совпадения</dt>
+          <dd>{formatMatchScoreWithThreshold(selected.match_confidence, selected.confidence_threshold)}</dd>
+          <dt>Источник выбора</dt>
           <dd>{labelDecisionSource(selected.decision_source)}</dd>
         </dl>
       )}
+    </div>
+  );
+}
 
-      <div className="rf-oc-ch-actions">
-        {needsConfirm ? (
-          <OpButton type="button" variant="primary" disabled={actionsDisabled} onClick={onConfirmCase}>
-            Подтвердить типовую ситуацию
-          </OpButton>
-        ) : null}
-        <OpButton type="button" disabled={actionsDisabled} onClick={onOpenCandidateModal}>
-          Создать новую типовую ситуацию
-        </OpButton>
-      </div>
+/** Альтернативные типовые ситуации — компактные строки (AF retrieval chunk-row). */
+export function ResponseCaseAlternatives({
+  detail,
+  actionLoading,
+  workflowCompleted,
+  onOverrideCase,
+}) {
+  const selected = detail.selected_response_case;
+  const actionsDisabled = actionLoading || workflowCompleted;
 
-      {alternatives.length ? (
-        <div className="rf-oc-ch-alternatives">
-          <h4 className="rf-oc-ch-alternatives__title">Альтернативные типовые ситуации</h4>
-          <ul className="rf-oc-ch-alt-list">
-            {alternatives.map((alt) => (
-              <li
-                key={alt.response_case_id}
-                className={alt.is_selected ? "rf-oc-ch-alt-item rf-oc-ch-alt-item--selected" : "rf-oc-ch-alt-item"}
-              >
-                <div className="rf-oc-ch-alt-item__main">
-                  <strong>{alt.title}</strong>
-                  {alt.is_selected ? (
-                    <span className="rf-oc-ch-alt-item__tag">Текущая</span>
-                  ) : null}
-                </div>
-                {alt.description ? <p className="muted rf-oc-ch-alt-item__desc">{alt.description}</p> : null}
-                {!alt.is_selected ? (
-                  <div className="rf-oc-ch-alt-item__actions">
-                    <OpButton
-                      type="button"
-                      disabled={actionsDisabled}
-                      onClick={() => handleOverrideClick(alt.response_case_id)}
-                    >
-                      {pendingOverrideId === alt.response_case_id ? "Применить выбор" : "Выбрать"}
-                    </OpButton>
-                  </div>
-                ) : null}
-                {pendingOverrideId === alt.response_case_id ? (
-                  <label className="rf-oc-ch-override-comment">
-                    Комментарий (необязательно)
-                    <textarea
-                      className="rf-oc-search"
-                      rows={2}
-                      value={overrideComment}
-                      onChange={(e) => setOverrideComment(e.target.value)}
-                      disabled={actionsDisabled}
-                    />
-                  </label>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+  const alternatives = useMemo(() => {
+    const selectedId = selected?.response_case_id;
+    return (detail.case_alternatives || [])
+      .filter((alt) => !alt.is_selected && alt.response_case_id !== selectedId)
+      .sort((a, b) => a.rank - b.rank);
+  }, [detail.case_alternatives, selected?.response_case_id]);
+
+  if (!alternatives.length) return null;
+
+  return (
+    <section className="rf-oc-ch-alternatives" aria-label="Альтернативные типовые ситуации">
+      <h4 className="rf-oc-ch-alternatives__title">Альтернативные типовые ситуации</h4>
+      <ul className="rf-oc-ch-alt-rows">
+        {alternatives.map((alt) => (
+          <li key={alt.response_case_id} className="rf-oc-ch-alt-row">
+            <span className="rf-oc-ch-alt-row__score">{formatScore(alt.match_score)}</span>
+            <span className="rf-oc-ch-alt-row__sep" aria-hidden="true">
+              |
+            </span>
+            <strong className="rf-oc-ch-alt-row__title">{alt.title}</strong>
+            <span className="rf-oc-ch-alt-row__sep" aria-hidden="true">
+              |
+            </span>
+            <span className="rf-oc-ch-alt-row__desc muted">{alt.description || "—"}</span>
+            <OpButton
+              type="button"
+              className="rf-oc-ch-alt-row__btn rf-oc-btn--minor"
+              disabled={actionsDisabled}
+              onClick={() => onOverrideCase(alt.response_case_id, null)}
+            >
+              Выбрать
+            </OpButton>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

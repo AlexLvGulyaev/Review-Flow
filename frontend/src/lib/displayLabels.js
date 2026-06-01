@@ -73,6 +73,7 @@ export const REJECTION_REASON_LABELS = {
 };
 
 export const WORKFLOW_COMPLETED_TOOLTIP = "Ответ уже отправлен клиенту";
+export const OPERATOR_WORKFLOW_SENT_LABEL = "Ответ отправлен";
 
 /** @type {Record<string, string>} */
 export const REVIEW_STATUS_LABELS = {
@@ -116,6 +117,9 @@ export const EVENT_TYPE_LABELS = {
   evaluation_case_created: "Создан evaluation case",
   evaluation_scored: "Оценка сохранена",
   analytics_overview_requested: "Запрос аналитики",
+  report_customer_reviews_requested: "Отчёт: обращения клиентов",
+  report_business_problems_requested: "Отчёт: бизнес-сводка",
+  report_ch_quality_requested: "Отчёт: качество CH",
   logs_view_opened: "Открыт журнал логов",
   prompt_version_created: "Версия промпта создана",
   prompt_version_activated: "Версия промпта активирована",
@@ -156,11 +160,15 @@ export const CONFIDENCE_BAND_LABELS = {
 /** @type {Record<string, string>} */
 export const DECISION_SOURCE_LABELS = {
   retrieval_auto: "Автоматический подбор",
+  retrieval_suggested: "Предложено retrieval",
   retrieval_operator: "Подтверждено оператором",
   operator_override: "Изменено оператором",
+  operator_escalation: "Эскалация оператора",
   admin_override: "Изменено администратором",
   legacy_migration: "Миграция legacy",
   manual_seed: "Создано вручную",
+  candidate_learning: "Создано из кандидата / обучение",
+  candidate_merge: "Присоединено к существующей ТС / обучение",
 };
 
 export function labelConfidenceBand(band) {

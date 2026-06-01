@@ -30,8 +30,10 @@ from app.core.config import settings
 from app.services.controlled_hybrid.decisions import get_current_decision, record_feedback
 from app.services.controlled_hybrid.presenter import (
     build_case_alternatives,
+    build_retrieval_suggestion_out,
     build_selected_case_out,
     ch_approve_guard,
+    infer_ch_escalation_flags,
 )
 from app.services.review_helpers import latest_classification, latest_response
 
@@ -136,15 +138,44 @@ def build_operator_detail(db: Session, review: Review, *, log_opened: bool = Fal
     pipeline_mode = "legacy"
     selected_case = None
     case_alternatives: list = []
+    case_resolved = False
+    case_escalated = False
+    case_confirmation_not_required = False
+    escalation_reason: str | None = None
+    retrieval_suggestion = None
+    operator_editor_enabled = bool(latest_feedback)
     if resp and isinstance(resp.generation_metadata, dict):
         llm_model = resp.generation_metadata.get("model") or resp.generation_metadata.get("model_name")
-        if resp.generation_metadata.get("pipeline") == "controlled_hybrid":
+        meta = resp.generation_metadata or {}
+        is_ch_meta = meta.get("pipeline") == "controlled_hybrid"
+        decision = get_current_decision(db, review.id) if settings.ch_pipeline_enabled or is_ch_meta else None
+        if is_ch_meta or decision or meta.get("suggested_response_case_id"):
             pipeline_mode = "controlled_hybrid"
-            decision = get_current_decision(db, review.id)
-            selected_case = build_selected_case_out(db, decision, resp)
+            selected_case = build_selected_case_out(db, decision, resp, review.id)
             case_alternatives = build_case_alternatives(db, review.id)
+            ch_flags = infer_ch_escalation_flags(db, review.id, meta, logs=logs)
+            operator_editor_enabled = operator_editor_enabled or ch_flags["operator_editor_enabled"]
+            case_escalated = ch_flags["case_escalated"]
+            case_confirmation_not_required = ch_flags["case_confirmation_not_required"]
+            if decision and decision.is_operator_override:
+                case_resolved = True
+                operator_editor_enabled = True
+            escalation_reason = meta.get("escalation_reason")
+            retrieval_suggestion = build_retrieval_suggestion_out(db, review.id, resp)
     elif settings.ch_pipeline_enabled:
         pipeline_mode = "controlled_hybrid"
+
+    if operator_editor_enabled:
+        ai_review_mode = "manual_override"
+
+    workflow_completed = bool(
+        resp
+        and resp.moderation_status == "approved"
+        and resp.publication_status == "published"
+    )
+    if workflow_completed:
+        operator_editor_enabled = False
+        ai_review_mode = "review"
 
     return OperatorReviewDetail(
         review_id=review.id,
@@ -187,6 +218,12 @@ def build_operator_detail(db: Session, review: Review, *, log_opened: bool = Fal
         pipeline_mode=pipeline_mode,
         selected_response_case=selected_case,
         case_alternatives=case_alternatives,
+        case_resolved=case_resolved,
+        operator_editor_enabled=operator_editor_enabled,
+        case_escalated=case_escalated,
+        case_confirmation_not_required=case_confirmation_not_required,
+        escalation_reason=escalation_reason,
+        retrieval_suggestion=retrieval_suggestion,
     )
 
 
@@ -203,7 +240,7 @@ def approve_review(
 ) -> OperatorReviewDetail:
     start = time.perf_counter()
     resp = get_review_response_row(db, review_id)
-    ch_approve_guard(resp)
+    ch_approve_guard(resp, db, review_id)
     now = datetime.now(timezone.utc)
     resp.final_response = final_response.strip()
     resp.moderation_status = "approved"

@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AnalyticsPage from "./pages/AnalyticsPage.jsx";
+import ReportsPage from "./pages/ReportsPage.jsx";
 import EvaluationPage from "./pages/EvaluationPage.jsx";
 import AccessDeniedPage from "./pages/AccessDeniedPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
@@ -11,6 +12,7 @@ import ReviewPage from "./pages/ReviewPage.jsx";
 import ReviewStatusLookupPage from "./pages/ReviewStatusLookupPage.jsx";
 import ReviewStatusPage from "./pages/ReviewStatusPage.jsx";
 import AiProvidersPage from "./pages/AiProvidersPage.jsx";
+import SystemSettingsPage from "./pages/SystemSettingsPage.jsx";
 import AdminPhrasesPage from "./pages/admin/AdminPhrasesPage.jsx";
 import AdminScenariosPage from "./pages/admin/AdminScenariosPage.jsx";
 import AdminSentimentsPage from "./pages/admin/AdminSentimentsPage.jsx";
@@ -43,7 +45,7 @@ export default function App() {
           <Route
             path="/operator/reviews"
             element={
-              <ProtectedRoute allowed={[ROLES.OPERATOR]}>
+              <ProtectedRoute allowed={[ROLES.OPERATOR, ROLES.ADMINISTRATOR]}>
                 <OperatorReviewsPage />
               </ProtectedRoute>
             }
@@ -73,6 +75,14 @@ export default function App() {
             }
           />
           <Route
+            path="/reports"
+            element={
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+                <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/logs"
             element={
               <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
@@ -85,6 +95,14 @@ export default function App() {
             element={
               <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
                 <AiProvidersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings/system"
+            element={
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+                <SystemSettingsPage />
               </ProtectedRoute>
             }
           />

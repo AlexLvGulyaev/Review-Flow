@@ -18,11 +18,19 @@ export function formatRolesList(roles) {
 const STORAGE_KEY = "review-flow-role";
 
 export function getStoredRole() {
-  const v = localStorage.getItem(STORAGE_KEY);
-  if (v && Object.values(ROLES).includes(v)) return v;
+  try {
+    const v = localStorage.getItem(STORAGE_KEY);
+    if (v && Object.values(ROLES).includes(v)) return v;
+  } catch {
+    /* private mode / blocked storage */
+  }
   return ROLES.CLIENT;
 }
 
 export function setStoredRole(role) {
-  localStorage.setItem(STORAGE_KEY, role);
+  try {
+    localStorage.setItem(STORAGE_KEY, role);
+  } catch {
+    /* ignore */
+  }
 }

@@ -7,10 +7,11 @@ import { OperatorConsoleHeader, OperatorWorkspaceHeader } from "../ops/operator/
 import { OperatorLeftPanel } from "../ops/operator/OperatorLeftPanel.jsx";
 import { OperatorModerationWorkspace } from "../ops/operator/OperatorModerationWorkspace.jsx";
 import { CaseCandidateModal } from "../ops/operator/CaseCandidateModal.jsx";
+import { EscalationModal } from "../ops/operator/EscalationModal.jsx";
 import { RejectionFeedbackModal } from "../ops/operator/RejectionFeedbackModal.jsx";
 import { buildLifecycleTimeline } from "../ops/operator/operatorTimeline.js";
-import { isOperatorWorkflowCompleted } from "../lib/displayLabels.js";
-import { formatDateTime, getOperationalIdentity, isEditorLocked, queueCounters } from "../ops/operator/operatorUtils.js";
+import { isControlledHybridDetail, isOperatorWorkflowCompleted } from "../lib/displayLabels.js";
+import { formatDateTime, getOperationalIdentity, isEditorLocked, queueCounters, resolveOperatorFinalResponse } from "../ops/operator/operatorUtils.js";
 
 const PAGE_SIZE = 10;
 
@@ -25,12 +26,13 @@ export default function OperatorReviewsPage() {
   const [detail, setDetail] = useState(null);
   const [finalResponse, setFinalResponse] = useState("");
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [escalationModalOpen, setEscalationModalOpen] = useState(false);
   const [candidateModalOpen, setCandidateModalOpen] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
+  const [listError, setListError] = useState(null);
+  const [actionError, setActionError] = useState(null);
   const [moderationFilter, setModerationFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [scenarioFilter, setScenarioFilter] = useState("");
@@ -47,7 +49,7 @@ export default function OperatorReviewsPage() {
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
-    setError(null);
+    setListError(null);
     try {
       const params = new URLSearchParams();
       if (moderationFilter) params.set("moderation_status", moderationFilter);
@@ -59,7 +61,7 @@ export default function OperatorReviewsPage() {
     } catch (err) {
       console.error("[operator] failed to load list", err);
       setReviews([]);
-      setError(err.message || "Ошибка загрузки");
+      setListError(err.message || "Ошибка загрузки");
     } finally {
       setLoadingList(false);
     }
@@ -68,15 +70,15 @@ export default function OperatorReviewsPage() {
   const loadDetail = useCallback(async (reviewId) => {
     if (!reviewId) return;
     setLoadingDetail(true);
+    setActionError(null);
     try {
       const res = await apiFetch(`/api/operator/reviews/${reviewId}`);
       if (!res.ok) throw new Error(await readApiError(res, "Ошибка загрузки карточки"));
       const data = await res.json();
       setDetail(data);
-      const draft = data.draft_response || "";
-      setFinalResponse(data.ai_review_mode === "manual_override" ? data.final_response || draft : draft);
+      setFinalResponse(resolveOperatorFinalResponse(data));
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setLoadingDetail(false);
     }
@@ -169,7 +171,10 @@ export default function OperatorReviewsPage() {
   }, [filteredReviews, pageItems, selectedId]);
 
   useEffect(() => {
-    if (selectedId) loadDetail(selectedId);
+    if (selectedId) {
+      setActionError(null);
+      loadDetail(selectedId);
+    }
   }, [selectedId, loadDetail]);
 
   const lastPageIndex = Math.max(0, totalPagesRaw - 1);
@@ -199,12 +204,11 @@ export default function OperatorReviewsPage() {
     if (!selectedId || !detail) return;
     const text = (editorLocked ? detail.draft_response : finalResponse) || "";
     if (!String(text).trim()) {
-      setError("Нет текста ответа для отправки");
+      setActionError("Нет текста ответа для отправки");
       return;
     }
     setActionLoading(true);
-    setError(null);
-    setMessage(null);
+    setActionError(null);
     try {
       const res = await apiFetch(`/api/operator/reviews/${selectedId}/approve`, {
         method: "POST",
@@ -213,10 +217,10 @@ export default function OperatorReviewsPage() {
       if (!res.ok) throw new Error(await readApiError(res, "Ошибка одобрения"));
       const data = await res.json();
       setDetail(data);
-      setMessage("Ответ одобрен и отправлен");
+      setFinalResponse(resolveOperatorFinalResponse(data));
       await loadList();
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setActionLoading(false);
     }
@@ -227,22 +231,20 @@ export default function OperatorReviewsPage() {
     if (!res.ok) throw new Error(await readApiError(res, "Ошибка загрузки карточки"));
     const data = await res.json();
     setDetail(data);
-    setFinalResponse(data.draft_response || data.final_response || "");
+    setFinalResponse(resolveOperatorFinalResponse(data));
     return data;
   }
 
   async function runConfirmCase() {
     if (!selectedId) return;
     setActionLoading(true);
-    setError(null);
-    setMessage(null);
+    setActionError(null);
     try {
       const res = await apiFetch(`/api/operator/reviews/${selectedId}/confirm-case`, { method: "POST" });
       if (!res.ok) throw new Error(await readApiError(res, "Не удалось подтвердить ситуацию"));
       await refreshDetail(selectedId);
-      setMessage("Типовая ситуация подтверждена");
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setActionLoading(false);
     }
@@ -251,18 +253,17 @@ export default function OperatorReviewsPage() {
   async function runOverrideCase(responseCaseId, comment) {
     if (!selectedId) return;
     setActionLoading(true);
-    setError(null);
-    setMessage(null);
+    setActionError(null);
     try {
       const res = await apiFetch(`/api/operator/reviews/${selectedId}/override-case`, {
         method: "POST",
         body: JSON.stringify({ response_case_id: responseCaseId, comment }),
       });
       if (!res.ok) throw new Error(await readApiError(res, "Не удалось сменить типовую ситуацию"));
-      await refreshDetail(selectedId);
-      setMessage("Типовая ситуация изменена, черновик обновлён");
+      const data = await refreshDetail(selectedId);
+      setFinalResponse(resolveOperatorFinalResponse(data));
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setActionLoading(false);
     }
@@ -271,8 +272,7 @@ export default function OperatorReviewsPage() {
   async function runCreateCandidate(payload) {
     if (!selectedId) return;
     setActionLoading(true);
-    setError(null);
-    setMessage(null);
+    setActionError(null);
     try {
       const res = await apiFetch(`/api/operator/reviews/${selectedId}/case-candidates`, {
         method: "POST",
@@ -281,9 +281,29 @@ export default function OperatorReviewsPage() {
       if (!res.ok) throw new Error(await readApiError(res, "Не удалось создать кандидата"));
       await refreshDetail(selectedId);
       setCandidateModalOpen(false);
-      setMessage("Предложение новой типовой ситуации отправлено администратору");
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function runEscalate(payload) {
+    if (!selectedId) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const res = await apiFetch(`/api/operator/reviews/${selectedId}/escalate`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await readApiError(res, "Ошибка эскалации"));
+      const data = await res.json();
+      setDetail(data);
+      setFinalResponse(resolveOperatorFinalResponse(data));
+      setEscalationModalOpen(false);
+    } catch (err) {
+      setActionError(err.message);
     } finally {
       setActionLoading(false);
     }
@@ -292,8 +312,7 @@ export default function OperatorReviewsPage() {
   async function runRejectFeedback(payload) {
     if (!selectedId) return;
     setActionLoading(true);
-    setError(null);
-    setMessage(null);
+    setActionError(null);
     try {
       const res = await apiFetch(`/api/operator/reviews/${selectedId}/reject-feedback`, {
         method: "POST",
@@ -302,18 +321,18 @@ export default function OperatorReviewsPage() {
       if (!res.ok) throw new Error(await readApiError(res, "Ошибка сохранения отклонения"));
       const data = await res.json();
       setDetail(data);
-      setFinalResponse(data.draft_response || "");
+      setFinalResponse(resolveOperatorFinalResponse(data));
       setRejectModalOpen(false);
-      setMessage("Отклонение зафиксировано — доступна ручная корректировка");
       await loadList();
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setActionLoading(false);
     }
   }
 
   const counters = useMemo(() => queueCounters(reviews), [reviews]);
+  const chMode = detail ? isControlledHybridDetail(detail) : false;
   const lifecycleTimeline = detail ? buildLifecycleTimeline(detail, formatDateTime) : [];
 
   return (
@@ -348,8 +367,7 @@ export default function OperatorReviewsPage() {
           onResetPage={resetPagination}
           selectedId={selectedId}
           onSelect={setSelectedId}
-          error={error}
-          message={message}
+          listError={listError}
         />
 
         <section className="rf-oc-right card" aria-label="Рабочая область проверки AI">
@@ -362,38 +380,60 @@ export default function OperatorReviewsPage() {
             actionLoading={actionLoading}
             loadingDetail={loadingDetail}
             lifecycleTimeline={lifecycleTimeline}
+            actionError={actionError}
             onApprove={runApprove}
             onRejectClick={() => {
               if (detail && isOperatorWorkflowCompleted(detail)) return;
               setRejectModalOpen(true);
             }}
+            onEscalateClick={() => {
+              if (
+                detail &&
+                (isOperatorWorkflowCompleted(detail) || detail.case_resolved || detail.case_escalated)
+              ) {
+                return;
+              }
+              setEscalationModalOpen(true);
+            }}
             onConfirmCase={runConfirmCase}
             onOverrideCase={runOverrideCase}
-            onOpenCandidateModal={() => {
-              if (detail && isOperatorWorkflowCompleted(detail)) return;
-              setCandidateModalOpen(true);
-            }}
           />
         </section>
       </div>
 
-      <RejectionFeedbackModal
-        open={rejectModalOpen}
-        detail={detail}
-        scenarioOptions={classificationRef.scenarios}
-        sentimentOptions={classificationRef.sentiments}
-        priorityOptions={classificationRef.priorities}
-        saving={actionLoading}
-        onClose={() => setRejectModalOpen(false)}
-        onSave={runRejectFeedback}
-      />
+      {!chMode ? (
+        <RejectionFeedbackModal
+          open={rejectModalOpen}
+          detail={detail}
+          scenarioOptions={classificationRef.scenarios}
+          sentimentOptions={classificationRef.sentiments}
+          priorityOptions={classificationRef.priorities}
+          saving={actionLoading}
+          onClose={() => setRejectModalOpen(false)}
+          onSave={runRejectFeedback}
+        />
+      ) : null}
 
-      <CaseCandidateModal
-        open={candidateModalOpen}
-        saving={actionLoading}
-        onClose={() => setCandidateModalOpen(false)}
-        onSave={runCreateCandidate}
-      />
+      {chMode ? (
+        <EscalationModal
+          open={escalationModalOpen}
+          saving={actionLoading}
+          scenarioOptions={classificationRef.scenarios}
+          sentimentOptions={classificationRef.sentiments}
+          priorityOptions={classificationRef.priorities}
+          onClose={() => setEscalationModalOpen(false)}
+          onSave={runEscalate}
+        />
+      ) : null}
+
+      {!chMode ? (
+        <CaseCandidateModal
+          open={candidateModalOpen}
+          saving={actionLoading}
+          onClose={() => setCandidateModalOpen(false)}
+          onSave={runCreateCandidate}
+        />
+      ) : null}
     </OpPage>
   );
 }

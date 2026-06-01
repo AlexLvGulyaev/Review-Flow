@@ -22,6 +22,7 @@ from app.services.controlled_hybrid.decisions import (
     record_feedback,
 )
 from app.services.controlled_hybrid.draft_generation import CaseDraftGenerationService
+from app.services.ch_runtime_settings import ChRuntimeSettingsService
 from app.services.controlled_hybrid.retrieval import ResponseCaseRetrievalService
 from app.services.operational_log import log_event
 
@@ -38,6 +39,7 @@ class ControlledHybridPipeline:
     ) -> tuple[uuid.UUID, str]:
         pipeline_start = time.perf_counter()
         customer_name = customer.customer_name or payload.customer_name or "Клиент"
+        runtime = ChRuntimeSettingsService(self.db).effective()
 
         retrieval_service = ResponseCaseRetrievalService(self.db)
         retrieval = retrieval_service.retrieve(review.review_text)
@@ -82,7 +84,40 @@ class ControlledHybridPipeline:
             return review.id, "pending_review"
 
         top = retrieval.candidates[0]
-        confidence = evaluate_confidence(top.match_score, top.response_case.confidence_threshold)
+        if top.match_score < runtime.minimum_match_score:
+            persist_match_results(
+                self.db,
+                review_id=review.id,
+                ranked=retrieval.candidates,
+                selected_case_id=None,
+                decision_id=None,
+            )
+            record_feedback(
+                self.db,
+                review_id=review.id,
+                feedback_type="new_case_needed",
+                response_case_id=top.response_case.id,
+                comment="Match score below configured minimum",
+            )
+            self._create_pending_response(
+                review,
+                band=ConfidenceBand.LOW,
+                metadata_extra={
+                    "suggested_response_case_id": str(top.response_case.id),
+                    "suggested_case_code": top.response_case.case_code,
+                    "match_confidence": top.match_score,
+                    "minimum_match_score": runtime.minimum_match_score,
+                    "decision_source": "retrieval_suggested",
+                },
+            )
+            self.db.commit()
+            return review.id, "pending_review"
+
+        confidence = evaluate_confidence(
+            top.match_score,
+            top.response_case.confidence_threshold,
+            medium_delta=runtime.confidence_medium_delta,
+        )
         band = confidence.band
 
         log_event(
@@ -116,30 +151,6 @@ class ControlledHybridPipeline:
                     "suggested_case_code": top.response_case.case_code,
                 },
             )
-            persist_match_results(
-                self.db,
-                review_id=review.id,
-                ranked=retrieval.candidates,
-                selected_case_id=None,
-                decision_id=None,
-            )
-            record_feedback(
-                self.db,
-                review_id=review.id,
-                feedback_type="new_case_needed",
-                response_case_id=top.response_case.id,
-                comment="Low confidence — operator must select or propose a case",
-            )
-            self._create_pending_response(
-                review,
-                band=band,
-                metadata_extra={
-                    "suggested_response_case_id": str(top.response_case.id),
-                    "suggested_case_code": top.response_case.case_code,
-                },
-            )
-            self.db.commit()
-            return review.id, "pending_review"
 
         decision_source = "retrieval_auto"
         decision = create_decision(
@@ -175,29 +186,75 @@ class ControlledHybridPipeline:
             },
         )
 
-        resolved = AIProviderRuntime(self.db).resolve(review_id=review.id)
-        self.db.flush()
+        operator_case_confirmed = (
+            band == ConfidenceBand.HIGH and runtime.auto_decision_on_high
+        )
+        requires_operator_case_confirmation = (
+            band in (ConfidenceBand.MEDIUM, ConfidenceBand.LOW)
+            or (band == ConfidenceBand.HIGH and not runtime.auto_decision_on_high)
+        )
+        should_generate_draft = band != ConfidenceBand.MEDIUM or runtime.draft_on_medium
+        if band == ConfidenceBand.LOW:
+            should_generate_draft = True
 
-        generation_service = CaseDraftGenerationService(self.db, resolved)
-        draft, gen_latency, gen_prompt, gen_metadata = generation_service.generate(
-            review=review,
-            response_case=top.response_case,
-            customer_name=customer_name,
-        )
-        gen_metadata.update(
-            {
-                "confidence_band": band.value,
-                "match_confidence": top.match_score,
-                "operator_case_confirmed": band == ConfidenceBand.HIGH,
-                "requires_operator_case_confirmation": band == ConfidenceBand.MEDIUM,
-            }
-        )
+        gen_prompt = None
+        draft = None
+        gen_latency = 0
+        gen_metadata: dict = {
+            "pipeline": "controlled_hybrid",
+            "confidence_band": band.value,
+            "match_confidence": top.match_score,
+            "response_case_id": str(top.response_case.id),
+            "case_code": top.response_case.case_code,
+            "operator_case_confirmed": operator_case_confirmed,
+            "requires_operator_case_confirmation": requires_operator_case_confirmation,
+        }
+
+        if should_generate_draft:
+            resolved = AIProviderRuntime(self.db).resolve(review_id=review.id)
+            self.db.flush()
+
+            generation_service = CaseDraftGenerationService(self.db, resolved)
+            draft, gen_latency, gen_prompt, gen_metadata = generation_service.generate(
+                review=review,
+                response_case=top.response_case,
+                customer_name=customer_name,
+            )
+            gen_metadata.update(
+                {
+                    "pipeline": "controlled_hybrid",
+                    "confidence_band": band.value,
+                    "match_confidence": top.match_score,
+                    "response_case_id": str(top.response_case.id),
+                    "case_code": top.response_case.case_code,
+                    "operator_case_confirmed": operator_case_confirmed,
+                    "requires_operator_case_confirmation": requires_operator_case_confirmation,
+                }
+            )
+
+            pipeline_ms = int((time.perf_counter() - pipeline_start) * 1000)
+            log_event(
+                self.db,
+                event_type="draft_generated",
+                entity_type="review",
+                entity_id=review.id,
+                prompt_version_id=gen_prompt.id,
+                model_name=resolved.provider.model_name,
+                latency_ms=gen_latency,
+                status="ok",
+                metadata={
+                    "pipeline": "controlled_hybrid",
+                    "pipeline_total_ms": pipeline_ms,
+                    "confidence_band": band.value,
+                    "provider_key": resolved.provider_key,
+                },
+            )
 
         response_row = ReviewResponse(
             review_id=review.id,
             classification_id=classification_row.id if classification_row else None,
             template_id=None,
-            prompt_version_id=gen_prompt.id,
+            prompt_version_id=gen_prompt.id if gen_prompt else None,
             draft_response=draft,
             generation_metadata=gen_metadata,
             moderation_status="pending_review",
@@ -206,24 +263,6 @@ class ControlledHybridPipeline:
             updated_at=datetime.now(timezone.utc),
         )
         self.db.add(response_row)
-
-        pipeline_ms = int((time.perf_counter() - pipeline_start) * 1000)
-        log_event(
-            self.db,
-            event_type="draft_generated",
-            entity_type="review",
-            entity_id=review.id,
-            prompt_version_id=gen_prompt.id,
-            model_name=resolved.provider.model_name,
-            latency_ms=gen_latency,
-            status="ok",
-            metadata={
-                "pipeline": "controlled_hybrid",
-                "pipeline_total_ms": pipeline_ms,
-                "confidence_band": band.value,
-                "provider_key": resolved.provider_key,
-            },
-        )
 
         self.db.commit()
         return review.id, "pending_review"
