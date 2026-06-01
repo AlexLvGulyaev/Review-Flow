@@ -30,6 +30,8 @@
 
 ## 2. Какие бизнес-задачи закрывает
 
+**Почему Controlled Hybrid.** Вместо LLM-first (модель сама классифицирует и решает) и полного RAG (ответ собирается из фрагментов без жёсткой политики) выбран **Controlled Hybrid** — управляемая альтернатива: retrieval подбирает типовую ситуацию, а **бизнес-решение (сценарий, тональность, приоритет, политика ответа) зафиксировано в типовой ситуации**, а не принимается LLM. Модель только адаптирует утверждённый текст. Подробное сравнение вариантов: [Обоснование выбора Controlled Hybrid](architecture/controlled_hybrid_architecture_rationale.pdf).
+
 ### 2.1 Классификация отзывов по тональности и теме
 
 **Как реализовано (Controlled Hybrid MVP, основной контур):**
@@ -211,29 +213,29 @@
 
 ## 7. Retrieval-примеры
 
-| Типовая ситуация | Количество примеров |
-|------------------|---------------------|
-| delivery_delay_confirmed_order | 5 |
-| employee_gratitude_message | 6 |
-| order_status_inquiry | 5 |
-| partial_delivery_complaint | 4 |
-| courier_behavior_complaint | 4 |
-| product_quality_complaint | 4 |
-| payment_inquiry | 4 |
-| service_improvement_suggestion | 6 |
-| app_technical_issue | 3 |
-| damaged_packaging_report | 3 |
-| double_payment_complaint | 3 |
-| promo_code_not_applied | 3 |
-| refund_timing_inquiry | 3 |
-| return_initiation_request | 3 |
-| support_wait_complaint | 3 |
-| staff_praise_message | 3 |
-| website_checkout_problem | 3 |
-| wrong_item_delivered | 3 |
-| delivery_delay_post_delivery_complaint | 2 |
-| general_company_question | 1 |
-| **Итого** | **71** |
+| Код / `case_code` | Количество примеров | Пример названия ТС |
+|-------------------|---------------------|--------------------|
+| delivery_delay_confirmed_order | 5 | Задержка поставки подтверждённого заказа |
+| employee_gratitude_message | 6 | Благодарность сотруднику |
+| order_status_inquiry | 5 | Вопрос о статусе заказа |
+| partial_delivery_complaint | 4 | Неполная комплектация заказа |
+| courier_behavior_complaint | 4 | Жалоба на курьера |
+| product_quality_complaint | 4 | Жалоба на качество товара |
+| payment_inquiry | 4 | Вопрос по оплате |
+| service_improvement_suggestion | 6 | Предложение улучшения сервиса |
+| app_technical_issue | 3 | Техническая ошибка приложения |
+| damaged_packaging_report | 3 | Повреждённая упаковка при доставке |
+| double_payment_complaint | 3 | Двойное списание оплаты |
+| promo_code_not_applied | 3 | Промокод не применился |
+| refund_timing_inquiry | 3 | Срок возврата денежных средств |
+| return_initiation_request | 3 | Запрос на возврат товара |
+| support_wait_complaint | 3 | Долгое ожидание в поддержке |
+| staff_praise_message | 3 | Благодарность сотруднику NM |
+| website_checkout_problem | 3 | Не удаётся оформить заказ на сайте |
+| wrong_item_delivered | 3 | Доставлен неверный товар |
+| delivery_delay_post_delivery_complaint | 2 | Жалоба на нарушение сроков поставки после получения товара |
+| general_company_question | 1 | Общий вопрос о компании |
+| **Итого** | **71** | |
 
 ---
 
@@ -377,7 +379,7 @@
 | Ограничение: не публиковать самостоятельно | **Выполнено** | Только оператор |
 | База: формулировки и готовые ответы | **Выполнено** | `response_case_examples` + `approved_response_text` |
 | База: сводки по темам/оценкам | **Выполнено** | Отчёты customer-reviews / business-problems |
-| Документация и инструкция обновления | **Частично выполнено** | Markdown в репозитории, не Google Docs |
+| Документация и инструкция обновления | **Частично выполнено** | Markdown в репозитории, не Google Docs. Загрузка демо-данных в PostgreSQL — SQL-миграции: **НСИ** — [002_seed_data.sql](../infra/db/migrations/002_seed_data.sql) (сценарии, тональности), [010_classification_reference_fk.sql](../backend/migrations/010_classification_reference_fk.sql) (приоритеты), [011_ch_data_model_foundation.sql](../backend/migrations/011_ch_data_model_foundation.sql) (направления, темы), [012_nm_reference_dataset.sql](../backend/migrations/012_nm_reference_dataset.sql) (расширение тем NM), [015_processing_policies_reference.sql](../backend/migrations/015_processing_policies_reference.sql) (политики обработки); **типовые ситуации** — [011_ch_data_model_foundation.sql](../backend/migrations/011_ch_data_model_foundation.sql), [012_nm_reference_dataset.sql](../backend/migrations/012_nm_reference_dataset.sql); **retrieval-примеры** — те же файлы (`INSERT INTO response_case_examples`); **системные промпты** — [002_seed_data.sql](../infra/db/migrations/002_seed_data.sql) (`review_classification`), [003_milestone4_prompt_registry.sql](../backend/migrations/003_milestone4_prompt_registry.sql) (реестр, `review_response_generation`) |
 | Платформа ChatGPT / Google Таблицы | **Не реализовано** | Заменено на Docker + PostgreSQL + web UI — осознанное расширение scope MVP |
 | Удаление сообщений ассистентом | **Не применимо** | Функция не требовалась в коде; отсутствует |
 
