@@ -358,6 +358,366 @@ docker compose logs -f backend
 
 ---
 
+## Развёртывание на VPS
+
+Инструкция для **демонстрационного стенда** на удалённом сервере (Ubuntu/Debian). Используется **тот же** [`docker-compose.yml`](../docker-compose.yml), что и для локального запуска — отдельного production compose в репозитории **нет**. Это не production-ready развёртывание: Vite dev frontend, демо-логин, открытые порты без HTTPS из коробки.
+
+Подробные сценарии в UI: [Руководство пользователя](USER_GUIDE.md).
+
+### Когда нужен VPS-сценарий
+
+- Показать MVP коллегам или заказчику **без** установки Docker на их ноутбуки.
+- Держать **постоянно доступный** демо-стенд (IP или домен).
+- Проверить работу CH pipeline в среде, близкой к «серверу», а не только на localhost.
+
+Локальный запуск (§6–§9) и VPS отличаются главным образом **сетью и `.env`**: на VPS `localhost` в браузере пользователя — это **его компьютер**, а не сервер.
+
+| | Локально (ноутбук) | На VPS |
+|---|-------------------|--------|
+| Где крутится Docker | Ваша машина | Удалённый сервер |
+| `http://localhost:5180` | UI на вашем ПК | UI только **на самом сервере** (SSH/tunnel) |
+| Доступ с другого ПК | Не нужен | Нужны **внешний IP/домен** и открытые порты или reverse proxy |
+| `VITE_API_URL` в `.env` | `http://localhost:8700` | URL API **с точки зрения браузера пользователя** (см. ниже) |
+
+### Минимальные требования к серверу
+
+- **ОС:** Ubuntu 22.04/24.04 LTS или Debian 12 (инструкция ниже — под APT).
+- **RAM:** от 2 ГБ (комфортнее 4 ГБ при первой сборке образов).
+- **Диск:** от 10 ГБ свободного места (образы + volume PostgreSQL).
+- **Сеть:** входящий доступ к портам **5180** (frontend) и **8700** (backend API), если не используете reverse proxy на 80/443.
+- **Права:** пользователь с `sudo` для установки Docker.
+
+### Подготовка сервера
+
+1. Войдите по SSH под непривилегированным пользователем (рекомендуется) с возможностью `sudo`.
+2. Обновите пакеты и установите базовые утилиты:
+
+```bash
+sudo apt update
+sudo apt install -y ca-certificates curl git
+```
+
+3. (Рекомендуется) настройте часовой пояс и при необходимости swap, если RAM ≤ 2 ГБ.
+
+**Проверка:** `git --version` и `curl --version` выполняются без ошибки.
+
+### Установка Docker и Docker Compose plugin
+
+Установка через **официальный репозиторий Docker** (Ubuntu; на Debian замените `ubuntu` на `debian` в URL репозитория).
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Добавьте пользователя в группу `docker` (чтобы не писать `sudo` перед каждой командой compose):
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Выйдите из SSH и зайдите снова (или выполните `newgrp docker`).
+
+**Проверка:**
+
+```bash
+docker --version
+docker compose version
+```
+
+Ожидается: Docker Engine и плагин `docker compose` (v2).
+
+Официальная справка: https://docs.docker.com/engine/install/ubuntu/
+
+### Клонирование репозитория
+
+```bash
+cd ~
+git clone <URL-вашего-репозитория> review-flow
+cd review-flow
+```
+
+Замените `<URL-вашего-репозитория>` на фактический remote (HTTPS или SSH). Имя каталога может отличаться — далее команды из **корня клона**, где лежит `docker-compose.yml`.
+
+**Проверка:** `ls docker-compose.yml .env.example`
+
+### Подготовка `.env`
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+**Обязательно для VPS с доступом по IP** (пример: IP сервера `203.0.113.10`):
+
+```bash
+# Вместо localhost — адрес API с точки зрения браузера пользователя
+VITE_API_URL=http://203.0.113.10:8700
+```
+
+Если позже настроите домен и HTTPS через reverse proxy, `VITE_API_URL` должен указывать на публичный URL API (например `https://api.demo.example.com`).
+
+**Секреты:**
+
+- Задайте **надёжный** `POSTGRES_PASSWORD` (и обновите `DATABASE_URL` с тем же паролем).
+- Ключи `OPENAI_API_KEY`, `PROXYAPI_KEY`, `GIGACHAT_*` — только в `.env` на сервере.
+- **Не коммитьте** `.env` в git (файл должен оставаться только на сервере).
+
+Значения по умолчанию из [`.env.example`](../.env.example): `POSTGRES_USER=reviewflow`, `POSTGRES_DB=reviewflow`.
+
+### Проверка портов и firewall
+
+В [`docker-compose.yml`](../docker-compose.yml) на хост проброшены:
+
+| Порт хоста | Сервис |
+|------------|--------|
+| **5180** | frontend (контейнерный 5173) |
+| **8700** | backend API |
+
+Проверка, что порты свободны на сервере:
+
+```bash
+sudo ss -tlnp | grep -E '5180|8700' || true
+```
+
+Пример открытия портов в UFW (только для **демо**; в production предпочтительнее 80/443 через reverse proxy):
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 5180/tcp
+sudo ufw allow 8700/tcp
+sudo ufw enable
+sudo ufw status
+```
+
+**Проверка с другого компьютера** (подставьте IP сервера): `curl -s http://203.0.113.10:8700/health`
+
+### Первый запуск на VPS
+
+Из корня репозитория:
+
+```bash
+docker compose up -d --build
+```
+
+Первая сборка может занять несколько минут.
+
+**Проверка:** `docker compose ps` — сервисы `running`, у `postgres` и `backend` — `healthy`.
+
+### Проверка контейнеров
+
+```bash
+docker compose ps
+```
+
+Ожидаемые имена: `review-flow-postgres`, `review-flow-backend`, `review-flow-frontend`.
+
+### Проверка backend health
+
+**На сервере:**
+
+```bash
+curl http://localhost:8700/health
+```
+
+Ожидается: `{"status":"ok","database":"connected"}`
+
+**С вашего ПК** (если firewall открыт):
+
+```bash
+curl http://<IP-сервера>:8700/health
+```
+
+### Проверка frontend из браузера
+
+Откройте в браузере на **своём компьютере** (не на сервере):
+
+```text
+http://<IP-сервера>:5180/
+```
+
+Если страница белая или API не отвечает — почти всегда неверный `VITE_API_URL` (остался `localhost`). Исправьте `.env`, затем:
+
+```bash
+docker compose up -d --build
+```
+
+> `http://localhost:5180` на VPS в браузере **самого сервера** работает только при доступе через консоль/RDP; для удалённых пользователей нужен IP или домен.
+
+### Проверка клиентского сценария
+
+1. `http://<IP-сервера>:5180/` → **«Оставить отзыв»** → заполнить форму → получить номер `NL-...`.
+2. **«Проверить статус обращения»** → номер + email.
+
+Подробнее: [USER_GUIDE.md](USER_GUIDE.md) §2.
+
+### Проверка операторского сценария
+
+1. `http://<IP-сервера>:5180/company`
+2. Вход: `operator@northline.local` / `demo`
+3. Очередь: `/operator/reviews` → открыть обращение → **«Одобрить и отправить»**
+
+### Проверка административного сценария
+
+1. Вход: `admin@northline.local` / `demo`
+2. `/admin/response-cases` — список типовых ситуаций
+3. `/reports` — отчёты загружаются
+
+### Обновление проекта на VPS
+
+```bash
+cd ~/review-flow
+git pull
+docker compose up -d --build
+```
+
+**Проверка:** `curl http://localhost:8700/health` и открытие UI в браузере.
+
+> В репозитории **нет** готового CI/CD: обновление — вручную `git pull` + пересборка контейнеров.
+
+### Просмотр логов
+
+```bash
+docker compose logs -f backend
+```
+
+```bash
+docker compose logs -f frontend
+```
+
+```bash
+docker compose logs -f postgres
+```
+
+Остановка просмотра: `Ctrl+C` (контейнеры не останавливаются).
+
+Последние строки без follow:
+
+```bash
+docker compose logs --tail=100 backend
+```
+
+### Перезапуск сервисов
+
+```bash
+docker compose restart
+```
+
+Только backend:
+
+```bash
+docker compose restart backend
+```
+
+### Остановка сервисов
+
+Остановить контейнеры, **сохранить** данные в volume:
+
+```bash
+docker compose down
+```
+
+### Сброс демо-БД
+
+**Удаляет все данные** PostgreSQL (обращения, KB, кандидаты):
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+### Резервное копирование PostgreSQL
+
+Имена пользователя и БД возьмите из `.env` (по умолчанию `reviewflow` / `reviewflow`):
+
+```bash
+docker compose exec postgres pg_dump -U reviewflow -d reviewflow > backup_reviewflow_$(date +%Y%m%d).sql
+```
+
+**Проверка:** файл `backup_reviewflow_*.sql` ненулевого размера.
+
+Скопируйте backup **с сервера** на безопасное хранилище (`scp`, object storage). Backup в git не кладите.
+
+### Восстановление PostgreSQL из backup
+
+1. Остановите приложение (опционально, чтобы не писали в БД во время restore):
+
+```bash
+docker compose stop backend frontend
+```
+
+2. Восстановите дамп (имя файла и учётные данные — как в вашем `.env`):
+
+```bash
+cat backup_reviewflow_20260601.sql | docker compose exec -T postgres psql -U reviewflow -d reviewflow
+```
+
+Для **полной** замены данных на чистой БД часто делают `docker compose down -v`, затем `up -d`, дождаться healthy postgres, и только потом `psql` из backup. Иначе возможны конфликты с существующими строками.
+
+3. Запустите сервисы:
+
+```bash
+docker compose up -d
+```
+
+**Проверка:** `curl http://localhost:8700/health`
+
+### Что делать с доменом и HTTPS
+
+В текущем репозитории **нет** готовой конфигурации nginx, Traefik или Certbot в `docker-compose.yml`. Для публичного стенда рекомендуется **настроить отдельно** на хосте VPS:
+
+1. DNS A-запись домена → IP сервера.
+2. Reverse proxy (nginx / Caddy / Traefik) на **80/443** → проксирование на `127.0.0.1:5180` (UI) и при необходимости `/api` → `127.0.0.1:8700`.
+3. TLS-сертификат (Let's Encrypt).
+4. Обновить `VITE_API_URL` на публичный HTTPS URL API и пересобрать frontend: `docker compose up -d --build`.
+
+Для **демо** допустимо открыть 5180/8700 напрямую по IP, но трафик не шифруется, а демо-пароли видны в [USER_GUIDE](USER_GUIDE.md).
+
+### Ограничения текущего VPS-сценария
+
+- Тот же compose, что локально: **Vite dev** во frontend, не статическая production-сборка.
+- Демо-аутентификация в браузере, без корпоративного SSO/RBAC на API.
+- Нет встроенного HTTPS, мониторинга, автоматических backup по расписанию.
+- Открытые порты 5180/8700 — упрощение для демо, не эталон безопасности.
+- Это **демонстрационный** стенд, а не сертифицированный production deployment.
+
+### Troubleshooting (VPS)
+
+| Симптом | Вероятная причина | Действие |
+|---------|-------------------|----------|
+| С браузера ПК UI не открывается | Firewall / cloud security group | Открыть 5180; проверить `ufw` и правила провайдера |
+| UI открывается, запросы к API падают | `VITE_API_URL=http://localhost:8700` | Заменить на `http://<IP>:8700` или HTTPS URL; `docker compose up -d --build` |
+| `curl localhost:8700/health` OK, с ПК — timeout | Порт 8700 не проброшен наружу | Firewall; или доступ только через SSH tunnel |
+| Backend unhealthy | Postgres / миграции | `docker compose logs backend` |
+| После `git pull` старое поведение | Не пересобрали образы | `docker compose up -d --build` |
+| Закончилось место на диске | Образы Docker | `docker system df`; `docker image prune` (осторожно) |
+
+**SSH-туннель** (если порты наружу открывать нельзя):
+
+```bash
+ssh -L 5180:localhost:5180 -L 8700:localhost:8700 user@<IP-сервера>
+```
+
+После туннеля на ноутбуке: http://localhost:5180 и `VITE_API_URL=http://localhost:8700` в `.env` на сервере остаются согласованными.
+
+### Чек-лист VPS
+
+- [ ] `docker compose ps` — все сервисы healthy
+- [ ] `curl http://localhost:8700/health` на сервере
+- [ ] `http://<IP>:5180` открывается с рабочего ПК
+- [ ] Клиент создаёт обращение; оператор и админ — по [USER_GUIDE](USER_GUIDE.md)
+- [ ] `.env` не в git; backup БД снят
+
+---
+
 ## 18. Что не входит в локальный compose-контур
 
 Следующее **не поставляется** текущим `docker-compose.yml`:
