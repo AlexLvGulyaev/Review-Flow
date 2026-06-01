@@ -2,7 +2,7 @@
 
 Документ описывает работу с системой с точки зрения ролей и интерфейсных контуров.
 
-Важно: Review Flow использует подход **Controlled Hybrid**, где retrieval подбирает **типовую ситуацию (Response Case)**, а LLM используется для адаптации текста ответа, но **не принимает бизнес‑решение**. Подробнее: `docs/CONTROLLED_HYBRID.md`.
+Важно: Review Flow использует подход **Controlled Hybrid**, где retrieval подбирает **типовую ситуацию (Response Case)**, а LLM используется для адаптации текста ответа, но **не принимает бизнес‑решение**. Подробнее: [Controlled Hybrid](CONTROLLED_HYBRID.md).
 
 ---
 
@@ -16,7 +16,7 @@
 - URL: `/`
 - Назначение: входная точка в клиентский сценарий (ссылка на форму и на проверку статуса).
 
-Скриншот: `docs/screenshots/cli-main.png`.
+Скриншот: [cli-main.png](screenshots/cli-main.png).
 
 ### 1.2 Создание обращения
 
@@ -24,7 +24,7 @@
 - Действие: заполнить форму и отправить обращение.
 - Результат: система возвращает **номер обращения** (формат `NL-...`), который нужен для проверки статуса.
 
-Скриншот отправки и подтверждения: `docs/screenshots/cli-new-rev-send.png`.
+Скриншот отправки и подтверждения: [cli-new-rev-send.png](screenshots/cli-new-rev-send.png).
 
 ### 1.3 Получение номера обращения
 
@@ -36,7 +36,7 @@
 - Данные: номер обращения + email
 - Результат: переход на страницу статуса.
 
-Скриншот: `docs/screenshots/cli-new-rev-status.png`.
+Скриншот: [cli-new-rev-status.png](screenshots/cli-new-rev-status.png).
 
 ### 1.5 Просмотр опубликованного ответа
 
@@ -47,8 +47,8 @@
 
 Скриншоты:
 
-- статус “в процессе/на проверке”: `docs/screenshots/cli-new-rev-status.png`
-- завершённый сценарий: `docs/screenshots/cli-new-rev-completed.png`
+- статус “в процессе/на проверке”: [cli-new-rev-status.png](screenshots/cli-new-rev-status.png)
+- завершённый сценарий: [cli-new-rev-completed.png](screenshots/cli-new-rev-completed.png)
 
 ---
 
@@ -61,7 +61,7 @@
 - **Оператор**: обработка очереди обращений;
 - **Администратор**: база знаний, кандидаты, отчётность, настройки.
 
-Скриншот экрана входа/выбора роли: `docs/screenshots/oper-logun.png`.
+Скриншот экрана входа/выбора роли: [oper-logun.png](screenshots/oper-logun.png).
 
 ---
 
@@ -85,7 +85,7 @@
 
 Система показывает уровень уверенности (например: высокая/средняя/низкая). Это помогает понять, насколько вероятно, что предложенная типовая ситуация подходит.
 
-Скриншот примера “низкая уверенность + альтернативы”: `docs/screenshots/oper-rev-low.png`.
+Скриншот примера “низкая уверенность + альтернативы”: [oper-rev-low.png](screenshots/oper-rev-low.png).
 
 ### 3.4 Подтверждение или изменение типовой ситуации
 
@@ -98,7 +98,7 @@
 
 Оператор редактирует текст ответа перед публикацией (human‑in‑the‑loop контроль).
 
-Скриншот “после подтверждения/принятия”: `docs/screenshots/oper-rev-after-accept.png`.
+Скриншот “после подтверждения/принятия”: [oper-rev-after-accept.png](screenshots/oper-rev-after-accept.png).
 
 ### 3.6 Публикация
 
@@ -113,8 +113,8 @@
 
 Скриншоты:
 
-- операторский экран для сценария новой ТС: `docs/screenshots/oper-rev-for-newTS.png`
-- комментарий/описание candidate: `docs/screenshots/oper-comment-for-newTS.png`
+- операторский экран для сценария новой ТС: [oper-rev-for-newTS.png](screenshots/oper-rev-for-newTS.png)
+- комментарий/описание candidate: [oper-comment-for-newTS.png](screenshots/oper-comment-for-newTS.png)
 
 ---
 
@@ -127,13 +127,13 @@
 - UI: `/admin/response-cases`
 - Назначение: создавать и поддерживать типовые ситуации, их политики и примеры.
 
-Скриншот списка: `docs/screenshots/adm-ts-list.png`.
+Скриншот списка: [adm-ts-list.png](screenshots/adm-ts-list.png).
 
 ### 4.2 Retrieval‑примеры
 
 Примеры используются retrieval‑поиском для подбора типовой ситуации. В learning loop candidate становится новым примером.
 
-Скриншот примера после присоединения: `docs/screenshots/adm-ts-after-add-cand-sample.png`.
+Скриншот примера после присоединения: [adm-ts-after-add-cand-sample.png](screenshots/adm-ts-after-add-cand-sample.png).
 
 ### 4.3 Кандидаты (Candidate Learning)
 
@@ -142,18 +142,18 @@
 - создать новую типовую ситуацию;
 - или присоединить candidate к существующей ситуации (как пример).
 
-Скриншот кандидата: `docs/screenshots/adm-ts-cand-new.png`.
+Скриншот кандидата: [adm-ts-cand-new.png](screenshots/adm-ts-cand-new.png).
 
 ### 4.4 Создание новой типовой ситуации
 
 Скриншоты:
 
-- создание: `docs/screenshots/adm-ts-new-create.png`
-- результат: `docs/screenshots/adm-ts-new-created.png`
+- создание: [adm-ts-new-create.png](screenshots/adm-ts-new-create.png)
+- результат: [adm-ts-new-created.png](screenshots/adm-ts-new-created.png)
 
 ### 4.5 Присоединение кандидата к существующей типовой ситуации
 
-Скриншот: `docs/screenshots/adm-ts-after-add-cand-sample.png`.
+Скриншот: [adm-ts-after-add-cand-sample.png](screenshots/adm-ts-after-add-cand-sample.png).
 
 ### 4.6 Отчётность
 
@@ -162,9 +162,9 @@
 
 Скриншоты:
 
-- отчёт по клиентским обращениям: `docs/screenshots/adm-repcli.png`
-- отчёты по Controlled Hybrid: `docs/screenshots/adm-repCH.png`
-- “бизнес‑сводка”/агрегации: `docs/screenshots/adm-repbus.png`
+- отчёт по клиентским обращениям: [adm-repcli.png](screenshots/adm-repcli.png)
+- отчёты по Controlled Hybrid: [adm-repCH.png](screenshots/adm-repCH.png)
+- “бизнес‑сводка”/агрегации: [adm-repbus.png](screenshots/adm-repbus.png)
 
 ### 4.7 Системные настройки
 
@@ -173,7 +173,7 @@
 
 Скриншоты:
 
-- системные настройки: `docs/screenshots/adm-sys.png`
+- системные настройки: [adm-sys.png](screenshots/adm-sys.png)
 
 ---
 
@@ -181,5 +181,5 @@
 
 - Backend не стартует: `docker compose logs backend`, проверить `DATABASE_URL`
 - Frontend не видит API: проверить `VITE_API_URL` в `.env`
-- AI выдаёт “заглушку”: в демо может быть активен `mock`‑провайдер (см. `docs/architecture/ch_pipeline_forensics_after_ch_integration.md`)
+- AI выдаёт “заглушку”: в демо может быть активен `mock`‑провайдер (см. [CH pipeline forensics](architecture/ch_pipeline_forensics_after_ch_integration.md))
 

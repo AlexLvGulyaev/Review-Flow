@@ -1,6 +1,6 @@
 # Запуск и деплой (локально через Docker Compose)
 
-Этот документ описывает запуск **в текущем состоянии репозитория**. Команды и порты взяты из `docker-compose.yml`, `.env.example`, `backend/Dockerfile`, `frontend/Dockerfile`.
+Этот документ описывает запуск **в текущем состоянии репозитория**. Команды и порты взяты из [`docker-compose.yml`](../docker-compose.yml), [`.env.example`](../.env.example), [`backend/Dockerfile`](../backend/Dockerfile), [`frontend/Dockerfile`](../frontend/Dockerfile).
 
 ---
 
@@ -29,7 +29,7 @@ docker compose up --build
 
 ## 3. Переменные окружения
 
-Пример конфигурации: `.env.example`.
+Пример конфигурации: [`.env.example`](../.env.example).
 
 Ключевые параметры:
 

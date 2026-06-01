@@ -19,8 +19,8 @@
 - решение опирается на **управляемую базу типовых ситуаций** и аудитируемый retrieval;
 - LLM используется там, где он уместен: **переформулирование/адаптация текста** в рамках `response_policy`.
 
-Подробное обоснование: `docs/architecture/controlled_hybrid_architecture_rationale.pdf`.  
-Главные документы по архитектуре: `docs/CONTROLLED_HYBRID.md`, `docs/ARCHITECTURE.md`.
+Подробное обоснование: [Обоснование выбора Controlled Hybrid](docs/architecture/controlled_hybrid_architecture_rationale.pdf).  
+Главные документы по архитектуре: [Controlled Hybrid](docs/CONTROLLED_HYBRID.md), [Архитектура](docs/ARCHITECTURE.md).
 
 ## Основные возможности
 
@@ -31,7 +31,7 @@
 
 ## Роли и контуры
 
-В проекте различаются интерфейсные контуры (см. `docs/architecture/ui_contour_separation_plan.md`):
+В проекте различаются интерфейсные контуры (см. [План разделения UI‑контуров](docs/architecture/ui_contour_separation_plan.md)):
 
 - **Клиентский контур**: публичные страницы `/`, `/review`, `/review/status`.
 - **Контур компании (оператор)**: `/operator/reviews`.
@@ -85,7 +85,7 @@
 ![Админ: отчёты](docs/screenshots/adm-repbus.png)
 ![Админ: системные настройки](docs/screenshots/adm-sys.png)
 
-Полная галерея и пояснения: `docs/SCREENSHOTS.md`.
+Полная галерея и пояснения: [Галерея экранов](docs/SCREENSHOTS.md).
 
 ## Технологический стек
 
@@ -108,20 +108,20 @@ docker compose up --build
 - Backend API: `http://localhost:8700`
 - Health: `http://localhost:8700/health`
 
-Подробные инструкции: `docs/DEPLOYMENT.md`.
+Подробные инструкции: [Запуск и деплой](docs/DEPLOYMENT.md).
 
 ## Подробная документация
 
-- `docs/ARCHITECTURE.md` — архитектура (контуры, API, БД, pipeline)
-- `docs/CONTROLLED_HYBRID.md` — Controlled Hybrid в терминах Review Flow
-- `docs/USER_GUIDE.md` — как пользоваться системой (клиент/оператор/админ)
-- `docs/SCREENSHOTS.md` — галерея экранов
-- `docs/PROJECT_HISTORY.md` — краткая история развития
-- Нормативный SOT: `Архитектурные_и_продуктовые_решения_проекта_SOT_v4.md`
-- План реализации: `IMPLEMENTATION_PLAN.md`
+- [Архитектура](docs/ARCHITECTURE.md) — контуры, API, БД, pipeline
+- [Controlled Hybrid](docs/CONTROLLED_HYBRID.md) — подход в терминах Review Flow
+- [Руководство пользователя](docs/USER_GUIDE.md) — клиент/оператор/админ
+- [Галерея экранов](docs/SCREENSHOTS.md)
+- [История проекта](docs/PROJECT_HISTORY.md)
+- Нормативный SOT: [Архитектурные и продуктовые решения](Архитектурные_и_продуктовые_решения_проекта_SOT_v4.md)
+- План реализации: [Implementation plan](IMPLEMENTATION_PLAN.md)
 
 ## Ограничения демо
 
 - Это **демонстрационный MVP**: часть функций может быть реализована в упрощённом виде (например, mock‑провайдер LLM).
-- Роли переключаются в рамках одного приложения (см. `docs/architecture/ui_contour_separation_plan.md`).
+- Роли переключаются в рамках одного приложения (см. [План разделения UI‑контуров](docs/architecture/ui_contour_separation_plan.md)).
 - Содержимое базы типовых ситуаций — учебный seed‑набор для демонстрации retrieval и learning loop.
