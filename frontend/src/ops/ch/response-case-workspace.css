@@ -1,0 +1,576 @@
+/* UX-01 / 025A — Response Case Workspace */
+
+.op-page--response-cases-full {
+  max-width: none;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px 10px;
+  box-sizing: border-box;
+}
+
+.op-page--response-cases-full .rf-oc-global-header,
+.op-page--response-cases-full .rf-oc-workspace-header {
+  flex-shrink: 0;
+}
+
+.op-page--response-cases-full .rf-oc-console.rf-rc-console,
+.op-page--response-cases-full .rf-rc-workspace-main,
+.op-page--response-cases-full .rf-rc-candidates-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+.rf-rc-workspace-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.op-page--response-cases-full .rf-oc-console.rf-rc-console {
+  height: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.op-page--response-cases-full .rf-rc-candidates-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.op-page--response-cases-full .rf-rc-candidates-wrap .rf-oc-console,
+.op-page--response-cases-full .rf-rc-candidate-console {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+.rf-rc-candidate-right {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rf-rc-candidate-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 0;
+}
+
+.rf-rc-candidate-summary {
+  margin-top: 0.25rem;
+}
+
+.rf-rc-candidate-alternatives {
+  margin-top: 0.5rem;
+}
+
+.rf-rc-candidate-alternatives .rf-oc-detail-block__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rf-rc-candidate-collapsible {
+  margin-top: 0.35rem;
+}
+
+.rf-rc-candidate-timeline {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+}
+
+.rf-rc-candidate-timeline li + li {
+  margin-top: 0.35rem;
+}
+
+/* === Toolbar: вкладки слева, действия справа (сетка как у консоли) === */
+
+.rf-rc-toolbar {
+  display: grid;
+  grid-template-columns: 460px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.35rem 0;
+  flex-shrink: 0;
+  margin-bottom: 0.35rem;
+}
+
+.rf-rc-toolbar__left,
+.rf-rc-toolbar__right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.rf-rc-toolbar__right {
+  padding-left: 0.55rem;
+  border-left: none;
+}
+
+.rf-rc-toolbar__tab {
+  border: 1px solid var(--rf-oc-border);
+  background: var(--rf-oc-surface-panel);
+  color: var(--rf-oc-text-secondary);
+  padding: 0.22rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rf-rc-toolbar__tab.active {
+  background: var(--rf-oc-selected-bg);
+  border-color: rgba(37, 99, 235, 0.4);
+  color: var(--rf-oc-text);
+  font-weight: 600;
+}
+
+.rf-rc-toolbar__sep {
+  width: 1px;
+  height: 1.1rem;
+  margin: 0 0.15rem;
+  background: var(--rf-oc-border);
+  flex-shrink: 0;
+}
+
+.rf-rc-toolbar__action.op-btn,
+.rf-rc-toolbar__action--minor.op-btn,
+.rf-rc-toolbar__action--muted.op-btn {
+  padding: 0.22rem 0.45rem !important;
+  font-size: 0.72rem !important;
+  line-height: 1.2;
+  border-radius: 5px;
+}
+
+.rf-rc-toolbar__action--muted {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.rf-rc-workspace-main .rf-oc-right.card {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Detail scroll === */
+
+.rf-rc-detail-scroll {
+  overflow: auto;
+  padding: 0.85rem 1rem 1rem;
+  min-height: 0;
+  flex: 1;
+}
+
+.rf-rc-summary-top {
+  align-items: stretch;
+}
+
+.rf-rc-summary-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.rf-rc-exploitation {
+  min-height: 100%;
+}
+
+/* KV — regular weight values (Паспорт / Обработка / Эксплуатация) */
+.op-page--response-cases-full .rf-oc-kv-list dd {
+  font-weight: 400;
+}
+
+.op-page--response-cases-full .rf-oc-item__preview {
+  font-weight: 500;
+}
+
+/* Compact TS badge — центр первой строки */
+.op-page--response-cases-full .rf-rc-item__row--head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.35rem;
+}
+
+.op-page--response-cases-full .rf-rc-item__row--head .rf-oc-item__ts {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.op-page--response-cases-full .rf-rc-item__row--head .rf-oc-item__status {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.op-page--response-cases-full .rf-rc-ts-badge {
+  grid-column: 2;
+  justify-self: center;
+  align-self: center;
+  display: inline-block;
+  min-width: 1.65rem;
+  font-size: 0.62rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: center;
+  color: #1e40af;
+  background: rgba(37, 99, 235, 0.16);
+  border: 1px solid rgba(37, 99, 235, 0.42);
+  border-radius: 4px;
+  padding: 0.06rem 0.32rem;
+  margin-top: -1px;
+  box-shadow: 0 0 0 1px #fff;
+}
+
+.op-page--response-cases-full .rf-oc-item__ref {
+  display: none;
+}
+
+.rf-rc-approved-block {
+  margin: 0.65rem 0;
+}
+
+.rf-rc-approved-block .rf-oc-text-panel {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.rf-rc-approved-block .rf-oc-text-panel__title {
+  color: var(--rf-oc-text);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.rf-rc-approved-block .rf-oc-text-panel__body {
+  font-size: 0.92rem;
+  line-height: 1.42;
+  font-weight: 500;
+  min-height: calc(1.42em * 5 + 12px);
+  max-height: calc(1.42em * 5 + 12px);
+}
+
+.rf-rc-chunks-section {
+  margin-top: 0.75rem;
+}
+
+.rf-rc-chunks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.rf-rc-chunk {
+  border: 1px solid var(--rf-oc-border);
+  border-radius: 8px;
+  background: var(--rf-oc-surface-panel);
+  padding: 0.55rem 0.65rem;
+}
+
+.rf-rc-chunk--inactive {
+  opacity: 0.65;
+}
+
+.rf-rc-chunk__head {
+  display: none;
+}
+
+.rf-rc-chunk__meta-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.62rem;
+  line-height: 1.25;
+  color: var(--rf-oc-text-label);
+}
+
+.rf-rc-chunk__source,
+.rf-rc-chunk__status {
+  font-weight: 400;
+}
+
+.rf-rc-chunk__status {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.rf-rc-chunk__content-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.45rem;
+}
+
+.rf-rc-chunk__text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.32;
+  font-weight: 500;
+  color: var(--rf-oc-text);
+  white-space: pre-wrap;
+}
+
+.rf-rc-chunk__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.22rem;
+  align-items: flex-start;
+}
+
+.rf-rc-chunk__body {
+  display: none;
+}
+
+.rf-rc-chunk__edit,
+.rf-rc-chunk__foot {
+  display: none;
+}
+
+.rf-rc-edit-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.55rem 0.75rem;
+}
+
+.rf-rc-edit-fields--inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  grid-template-columns: unset;
+}
+
+.rf-rc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.78rem;
+  color: var(--rf-oc-text-label);
+}
+
+.rf-rc-field span {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.76rem;
+}
+
+.rf-rc-field .op-textarea,
+.rf-rc-field .op-input,
+.rf-rc-field .op-select {
+  width: 100%;
+}
+
+.rf-rc-form-modal .rf-rc-field {
+  display: grid;
+  grid-template-columns: 10.75rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.65rem;
+  row-gap: 0;
+}
+
+.rf-rc-form-modal .rf-rc-field--textarea {
+  align-items: start;
+}
+
+.rf-rc-form-modal .rf-rc-field span {
+  justify-self: end;
+  text-align: right;
+  padding-top: 0;
+  line-height: 1.25;
+}
+
+.rf-rc-form-modal .rf-rc-field--textarea span {
+  padding-top: 0.38rem;
+}
+
+.rf-rc-form-modal .op-input,
+.rf-rc-form-modal .op-select,
+.rf-rc-form-modal .op-textarea {
+  padding: 0.34rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.rf-rc-form-modal .rf-rc-field--textarea .op-textarea {
+  resize: none;
+  height: calc(1.3em * 3 + 0.68rem);
+  min-height: unset;
+  overflow-y: auto;
+}
+
+.rf-rc-candidate-mini {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+}
+
+/* Modals */
+.rf-oc-modal--compact {
+  width: min(480px, 100%);
+  padding: 12px 14px;
+}
+
+.rf-rc-form-modal--wide {
+  width: min(920px, calc(100vw - 32px));
+  max-height: none;
+  overflow: visible;
+}
+
+.rf-oc-modal--compact .rf-oc-modal__actions .op-btn {
+  padding: 0.22rem 0.45rem !important;
+  font-size: 0.72rem !important;
+}
+
+.rf-rc-form-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.rf-rc-form-modal__head .rf-oc-modal__title {
+  margin: 0;
+  flex: 1;
+}
+
+.rf-rc-form-modal__close {
+  border: none;
+  background: transparent;
+  color: var(--rf-oc-text-secondary);
+  font-size: 1.35rem;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.rf-rc-form-modal__close:hover {
+  color: var(--rf-oc-text);
+}
+
+.rf-rc-form-modal .rf-rc-edit-fields--inline {
+  margin-bottom: 10px;
+}
+
+/* Queue alignment with operator console */
+.op-page--response-cases-full .rf-oc-filters .op-select.rf-oc-select,
+.op-page--response-cases-full .rf-oc-filters .op-input.rf-oc-search {
+  font-family: inherit;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  border-radius: 6px;
+}
+
+.op-page--response-cases-full .rf-oc-filters .op-select.rf-oc-select {
+  padding: 0.34rem 0.38rem;
+}
+
+.op-page--response-cases-full .rf-oc-filters .op-input.rf-oc-search {
+  padding: 0.38rem 0.45rem;
+}
+
+.op-page--response-cases-full .rf-oc-item__ts {
+  font-size: 0.68rem;
+}
+
+.op-page--response-cases-full .rf-oc-item__status {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.op-page--response-cases-full .rf-oc-item__preview {
+  font-size: 0.8rem;
+  line-height: 1.32;
+}
+
+.op-page--response-cases-full .rf-oc-item__telemetry {
+  font-size: 0.68rem;
+  line-height: 1.28;
+}
+
+.op-page--response-cases-full .rf-oc-workspace-header__title {
+  font-size: 1.28rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.op-page--response-cases-full .rf-oc-workspace-header__subtitle {
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.op-page--response-cases-full .rf-oc-detail-identity__title {
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.op-page--response-cases-full .rf-oc-detail-identity__status {
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+}
+
+.op-page--response-cases-full .rf-oc-summary-col__label {
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.op-page--response-cases-full .rf-oc-kv-list {
+  font-size: 0.74rem;
+  line-height: 1.32;
+}
+
+.op-page--response-cases-full .rf-oc-kv-list dt {
+  font-size: 0.66rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.op-page--response-cases-full .rf-oc-text-panel .rf-oc-text-panel__title {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rf-oc-text-secondary);
+}
+
+.op-page--response-cases-full .rf-oc-text-panel .rf-oc-text-panel__body {
+  font-size: 0.72rem;
+  line-height: 1.32;
+  font-weight: 400;
+  color: var(--rf-oc-text-secondary);
+}
+
+.op-page--response-cases-full .rf-rc-chunk__text {
+  font-size: 0.8rem;
+  line-height: 1.32;
+  font-weight: 500;
+}

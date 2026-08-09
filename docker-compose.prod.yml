@@ -1,0 +1,112 @@
+services:
+  # ============================================================
+  # PostgreSQL 16 — Review Flow operational database
+  # ============================================================
+  review-flow-apl-postgres:
+    image: postgres:16-alpine
+    container_name: review-flow-apl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-reviewflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-reviewflow}
+      POSTGRES_DB: ${POSTGRES_DB:-reviewflow}
+    volumes:
+      - review-flow-apl-postgres-data:/var/lib/postgresql/data
+      - ./infra/db/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./infra/db/migrations/002_seed_data.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+      - ./infra/db/migrations/003_milestone4_prompt_registry.sql:/docker-entrypoint-initdb.d/03_milestone4.sql:ro
+      - ./infra/db/migrations/004_milestone5_observability_metadata.sql:/docker-entrypoint-initdb.d/04_milestone5.sql:ro
+      - ./infra/db/migrations/005_rejection_feedback.sql:/docker-entrypoint-initdb.d/05_rejection_feedback.sql:ro
+    networks:
+      - review-flow-apl
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reviewflow} -d ${POSTGRES_DB:-reviewflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================================
+  # Backend — FastAPI + Controlled Hybrid pipeline
+  # ============================================================
+  review-flow-apl-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: review-flow-apl-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://reviewflow:reviewflow@review-flow-apl-postgres:5432/reviewflow}
+      BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
+      BACKEND_PORT: ${BACKEND_PORT:-8700}
+    networks:
+      - review-flow-apl
+      - n8n_default
+    depends_on:
+      review-flow-apl-postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.review-flow-api.rule=Host(`${REVIEW_FLOW_API_HOST:-review-flow-api.alex-n8n.site}`)"
+      - "traefik.http.routers.review-flow-api.entrypoints=websecure"
+      - "traefik.http.routers.review-flow-api.tls.certresolver=myresolver"
+      - "traefik.http.services.review-flow-api.loadbalancer.server.port=8700"
+
+  # ============================================================
+  # Web UI — production static build served by nginx
+  # ============================================================
+  review-flow-apl-web-ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://review-flow-api.alex-n8n.site}
+    container_name: review-flow-apl-web-ui
+    restart: unless-stopped
+    networks:
+      - review-flow-apl
+      - n8n_default
+    depends_on:
+      - review-flow-apl-backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.review-flow-web.rule=Host(`${REVIEW_FLOW_WEB_HOST:-review-flow.alex-n8n.site}`)"
+      - "traefik.http.routers.review-flow-web.entrypoints=websecure"
+      - "traefik.http.routers.review-flow-web.tls.certresolver=myresolver"
+      - "traefik.http.services.review-flow-web.loadbalancer.server.port=80"
+
+  # ============================================================
+  # Admin Console — production static build served by nginx
+  #   Currently mirrors the web UI. In the future this can become
+  #   a separate admin-only build or route.
+  # ============================================================
+  review-flow-apl-admin-console:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://review-flow-api.alex-n8n.site}
+    container_name: review-flow-apl-admin-console
+    restart: unless-stopped
+    networks:
+      - review-flow-apl
+      - n8n_default
+    depends_on:
+      - review-flow-apl-backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.review-flow-admin.rule=Host(`${REVIEW_FLOW_ADMIN_HOST:-review-flow-admin.alex-n8n.site}`)"
+      - "traefik.http.routers.review-flow-admin.entrypoints=websecure"
+      - "traefik.http.routers.review-flow-admin.tls.certresolver=myresolver"
+      - "traefik.http.services.review-flow-admin.loadbalancer.server.port=80"
+
+volumes:
+  review-flow-apl-postgres-data:
+
+networks:
+  review-flow-apl:
+    driver: bridge
+  n8n_default:
+    external: true

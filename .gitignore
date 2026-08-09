@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node.js
+node_modules/
+dist/
+.npm
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docker
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+frontend/dist/
+backend/.pytest_cache/
+backend/__pycache__/
+*.tar.gz
+
+# APL internal artifacts (not part of public repository)
+task_history/
+attachments/
+.claude/
+

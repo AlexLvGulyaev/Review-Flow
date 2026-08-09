@@ -1,0 +1,11 @@
+/**
+ * Review Flow — shared surface tokens (company / operator / admin workspaces).
+ * Import before ops.css and operator-console.css.
+ */
+
+:root {
+  /* Panel/card outline — was #cbd5e1 (slate-300); slightly stronger for light RF surfaces */
+  --rf-border: #adb9c9;
+  /* Inner dividers (list rows, section separators) — lighter than panel border */
+  --rf-border-subtle: #c2cad6;
+}
