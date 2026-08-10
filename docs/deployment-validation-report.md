@@ -2,7 +2,7 @@
 
 **Кейс:** `review-flow`  
 **Дата Validation:** 2026-08-09  
-**Окружение:** Локальный Docker Compose на машине разработки (`/opt/ai-automation-portfolio-lab/cases/review-flow/`).  
+**Окружение:** Репозиторий `cases/review-flow/` в AI Automation Portfolio Lab, изолированный Docker Compose контур.  
 **Источник инструкций:** [`docs/DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md).  
 **Статус Validation:** ✅ PASS
 
@@ -10,7 +10,9 @@
 
 ## Краткая сводка
 
-Выполнено чистое развёртывание кейса Review Flow в каталоге APL согласно `DEPLOYMENT_GUIDE.md`. Все сервисы стартовали, миграции применились, health endpoint отвечает, frontend и API доступны. Проведены smoke-тесты клиентского, операторского и административного контуров.
+Validation подтверждает, что развёртывание Review Flow из публичного репозитория по `docs/DEPLOYMENT_GUIDE.md` приводит к работоспособной системе в контексте AI Automation Portfolio Lab. Проверка выполнена как часть официального переноса кейса в `cases/review-flow/`: использованы только публичные файлы репозитория, без опоры на внутренние артефакты лаборатории. Все сервисы стартовали, миграции применились, health endpoint отвечает, frontend и API доступны. Проведены smoke-тесты клиентского, операторского и административного контуров.
+
+**Примечание:** публичное prod-размещение с HTTPS-эндпоинтами зафиксировано отдельно в [`docs/deployment-validation-report-prod.md`](deployment-validation-report-prod.md).
 
 ---
 
@@ -50,6 +52,10 @@
 | `A value is required for bind parameter 'true'` | SQLAlchemy `text()` интерпретировала JSON литерал `true` в `{"nm_demo":true}` как именованный параметр | Выполнение миграций переведено на сырой DBAPI cursor, bypass SQLAlchemy | ✅ Устранено |
 
 ---
+
+## Ограничения и область применения
+
+Эта Validation подтверждает воспроизводимость развёртывания внутри AI Automation Portfolio Lab на стандартной машине разработки. Она не является проверкой на абсолютно «голом» VPS — отдельный чистый хост не использовался. Публичное prod-размещение на выделенных HTTPS-субдоменах прошло отдельную проверку и задокументировано в [`deployment-validation-report-prod.md`](deployment-validation-report-prod.md).
 
 ## Вывод
 
