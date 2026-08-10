@@ -2,26 +2,26 @@
 
 Документ описывает **направления развития** после завершения демонстрационного MVP с архитектурой Controlled Hybrid (срез **2026-06-01**). Roadmap опирается на фактическую реализацию, ограничения демо и выводы разработки — не на абстрактный wish-list.
 
-**Источник текущего состояния системы:** [Отчёт о соответствии ТЗ](TZ_COMPLIANCE_REPORT.md) (данные БД, контуры, ограничения). Дополнительно: [SOT](../architecture-decisions-sot-v4.md), [Implementation plan](IMPLEMENTATION_PLAN.md), [Controlled Hybrid](CONTROLLED_HYBRID.md), [CH pipeline forensics](architecture/ch_pipeline_forensics_after_ch_integration.md).
+**Источник текущего состояния системы:** [📋 Отчёт о соответствии ТЗ](TZ_COMPLIANCE_REPORT.md) (данные БД, контуры, ограничения). Дополнительно: [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md), [📋 `docs/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md), [🏗️ `docs/ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ---
 
 ## 1. Текущее состояние проекта
 
-На **2026-06-01** демонстрационный MVP **работоспособен**: клиентский контур, CH pipeline по умолчанию (`CH_PIPELINE_ENABLED=true`), операторская публикация, администрирование KB, отчётность и документация. Циклы C1–C7 из SOT **закрыты** в коде и UI.
+На **2026-06-01** демонстрационный MVP **работоспособен**: клиентский контур, CH pipeline по умолчанию (`CH_PIPELINE_ENABLED=true`), операторская публикация, администрирование KB, отчётность и документация. Циклы Controlled Hybrid закрыты в коде и UI.
 
 | Область | Что реализовано |
 |---------|-----------------|
-| **Controlled Hybrid Pipeline** | Приём обращения → retrieval по примерам (`rapidfuzz.token_set_ratio`) → confidence → `response_case_decision` → draft по `response_policy` / `approved_response_text` → адаптация LLM в ограниченном режиме |
+| **Controlled Hybrid Pipeline** | Приём обращения → retrieval по примерам → confidence → `response_case_decision` → draft по `response_policy` / `approved_response_text` → адаптация LLM в ограниченном режиме |
 | **Response Cases** | Типовые ситуации как SOT бизнес-решения: policy, утверждённый текст, НСИ-атрибуты, порог уверенности; admin CRUD |
 | **Retrieval Examples** | `response_case_examples` — основа подбора ТС; seed в миграциях + ручное добавление и learning loop |
 | **Candidate Learning Loop** | Эскалация оператора → кандидат → решение администратора (новая ТС / merge как пример / отклонение) |
 | **Reports** | `/reports`: обращения клиентов, бизнес-сводка, качество CH; экспорт CSV/XLSX/PDF |
 | **System Settings** | `/settings/system`: параметры retrieval/confidence, маршрутизация AI-провайдеров, промпт адаптации; runtime в БД |
 | **Multi-provider AI** | OpenAI-compatible, ProxyAPI, GigaChat, **mock** (часто активен в демо — заглушка текста) |
-| **Documentation Package** | README, ARCHITECTURE, CONTROLLED_HYBRID, USER_GUIDE, DEPLOYMENT, SCREENSHOTS, PROJECT_HISTORY, TZ compliance |
+| **Documentation Package** | README, ARCHITECTURE, CONTROLLED_HYBRID, USER_GUIDE, OPERATOR_GUIDE, ADMIN_GUIDE, FAQ, DEPLOYMENT, SCREENSHOTS, PROJECT_HISTORY, API_CONTRACT, SPEC, TZ compliance |
 
-**Ограничения демо (не «поломка», а границы MVP):** демо-логин в браузере; единое React-приложение для всех ролей; лексический retrieval без reranking; базовые метрики CH в отчётах без глубокой телеметрии промахов; mock может маскировать качество адаптации LLM ([forensics](architecture/ch_pipeline_forensics_after_ch_integration.md)).
+**Ограничения демо (не «поломка», а границы MVP):** демо-логин в браузере; единое React-приложение для всех ролей; лексический retrieval без reranking; базовые метрики CH в отчётах без глубокой телеметрии промахов; mock может маскировать качество адаптации LLM.
 
 Legacy path (`CH_PIPELINE_ENABLED=false`, template-guided + LLM-классификация) сохранён для регрессии и **не развивается**.
 
@@ -49,7 +49,7 @@ Legacy path (`CH_PIPELINE_ENABLED=false`, template-guided + LLM-классифи
 
 ### Нормализация retrieval-примеров
 
-**Зачем:** сейчас сравнение идёт с сырым текстом примера (`example_text`); разный стиль, лишние детали и опечатки снижают стабильность `token_set_ratio`.
+**Зачем:** сейчас сравнение идёт с сырым текстом примера (`example_text`); разный стиль, лишние детали и опечатки снижают стабильность.
 
 **Ожидаемый эффект:** более сопоставимые score между обращениями одной темы; меньше «случайных» побед коротких или слишком общих примеров.
 
@@ -95,7 +95,7 @@ Legacy path (`CH_PIPELINE_ENABLED=false`, template-guided + LLM-классифи
 
 ## 5. Приоритет 3 — Analytics
 
-Расширение существующих `/reports` и `/admin/ch-quality` (SOT: «расширенная аналитика retrieval misses» — в backlog).
+Расширение существующих `/reports` и `/admin/ch-quality`.
 
 | Направление | Зачем | Ожидаемый эффект |
 |-------------|-------|------------------|
@@ -113,10 +113,10 @@ MVP **пригоден для демо и обучения**; переход к 
 
 | Направление | Зачем | Ожидаемый эффект |
 |-------------|-------|------------------|
-| **Полноценная авторизация** | Сейчас демо-учётки в localStorage ([USER_GUIDE](USER_GUIDE.md)) | Безопасный доступ сотрудников |
+| **Полноценная авторизация** | Сейчас демо-учётки в localStorage ([📖 USER_GUIDE](USER_GUIDE.md)) | Безопасный доступ сотрудников |
 | **Развитие RBAC** | Роли operator/administrator заданы в UI; нет серверной политики на все endpoint | Разделение обязанностей на уровне API |
 | **Аудит действий пользователей** | Operational logs фиксируют события pipeline; не полный audit trail UI-действий | Расследование инцидентов, compliance |
-| **Резервное копирование** | Postgres volume в Compose без стратегии backup ([DEPLOYMENT](DEPLOYMENT.md)) | Восстановление KB и обращений |
+| **Резервное копирование** | Postgres volume в Compose без стратегии backup ([🚀 DEPLOYMENT_GUIDE](DEPLOYMENT_GUIDE.md)) | Восстановление KB и обращений |
 | **Эксплуатационная готовность** | Vite dev frontend в контейнере, нет HTTPS/reverse proxy | Стабильный стенд: prod-сборка, health, мониторинг, секреты |
 
 ---
@@ -128,18 +128,16 @@ MVP **пригоден для демо и обучения**; переход к 
 | Направление | Зачем | Ожидаемый эффект |
 |-------------|-------|------------------|
 | **Reranking** | Лексический Top-N может неверно упорядочить близкие case | Лучший Top-1 при том же наборе кандидатов |
-| **Hybrid retrieval** | Чистый `token_set_ratio` не ловит перефразирования | Recall по смыслу при сохранении explainability |
+| **Hybrid retrieval** | Чистый лексический поиск не ловит перефразирования | Recall по смыслу при сохранении explainability |
 | **Сравнительные тесты моделей** | Несколько провайдеров в настройках; качество адаптации не измерено системно | Выбор модели по качеству **текста**, не по выбору ТС |
-| **Evaluation datasets** | Subsystem evaluation (Milestone 4) ориентирован на legacy/prompts | Регрессия CH draft и policy adherence |
+| **Evaluation datasets** | Subsystem evaluation ориентирован на legacy/prompts | Регрессия CH draft и policy adherence |
 | **Автоматизированная оценка качества** | Сейчас операторский score/evaluation — вручную | CI-гейты на промпт адаптации и retrieval fixtures |
-
-Дополнительно по forensics: CH-aware mock для локальной разработки; использование `BOUNDED_SYSTEM_PROMPT` вместо legacy `review_response_generation` system text при активном production-провайдере.
 
 ---
 
 ## 8. Что не планируется
 
-Следующие направления **противоречат** зафиксированной модели Controlled Hybrid ([PDF-обоснование](architecture/controlled_hybrid_architecture_rationale.pdf), [CONTROLLED_HYBRID](CONTROLLED_HYBRID.md)) и не входят в roadmap как целевое состояние:
+Следующие направления **противоречат** зафиксированной модели Controlled Hybrid ([🧠 CONTROLLED_HYBRID](CONTROLLED_HYBRID.md)) и не входят в roadmap как целевое состояние:
 
 | Не планируется | Обоснование |
 |----------------|-------------|
@@ -148,9 +146,9 @@ MVP **пригоден для демо и обучения**; переход к 
 | **Автоматическая публикация без сотрудника** | SOT допускает auto-publish как *future work* по policy case, но **не** как отказ от HITL; учебное ТЗ и MVP требуют публикации оператором |
 | **«Полный RAG» как единственный контур** | Документы без явной ТС и policy снижают операционный контроль; RAG — возможное усиление retrieval (п.7), не замена Response Case |
 | **Развитие legacy pipeline** | `CH_PIPELINE_ENABLED=false` — только регрессия; инвестиции в template-guided path не планируются |
-| **Замена web+MVP на «только ChatGPT Playground»** | Форма поставки из исходного тех. ТЗ сознательно расширена ([TZ compliance](TZ_COMPLIANCE_REPORT.md)) |
+| **Замена web+MVP на «только ChatGPT Playground»** | Форма поставки из исходного тех. ТЗ сознательно расширена ([📋 TZ compliance](TZ_COMPLIANCE_REPORT.md)) |
 
-Вне архитектуры CH, но **не в фокусе** ближайших этапов: интеграция с внешней CRM/тикет-системой (в TZ — частичное соответствие); `response_case_versions` и отдельная очередь `knowledge_base_change_requests` (в SOT как future work, в MVP — `response_case_candidates`).
+Вне архитектуры CH, но **не в фокусе** ближайших этапов: интеграция с внешней CRM/тикет-системой; `response_case_versions` и отдельная очередь `knowledge_base_change_requests`.
 
 ---
 
@@ -164,13 +162,13 @@ MVP **пригоден для демо и обучения**; переход к 
 | Расширенная аналитика (confidence, кандидаты, эффективность ТС, метрики retrieval) | 3 | **Среднесрочная перспектива** |
 | Production readiness (auth, RBAC, audit, backup, deploy hardening) | 4 | **Среднесрочная перспектива** |
 | AI evolution (rerank, hybrid retrieval, eval, automated quality) | 5 | **Долгосрочная перспектива** |
-| Формализованная регрессия клиентского UX (C3 backlog) | — | **Среднесрочная перспектива** |
-| Визуальное разделение client / company UI | — | **Долгосрочная перспектива** (план разделения UI-контуров) |
+| Формализованная регрессия клиентского UX | — | **Среднесрочная перспектива** |
+| Визуальное разделение client / company UI | — | **Долгосрочная перспектива** |
 
 ---
 
 ## Связанные документы
 
-- [Отчёт о соответствии ТЗ](TZ_COMPLIANCE_REPORT.md) — фактическое состояние на дату среза
-- [Архитектура](ARCHITECTURE.md) · [История проекта](PROJECT_HISTORY.md)
-- [Развёртывание](DEPLOYMENT.md) · [Руководство пользователя](USER_GUIDE.md)
+- [📋 Отчёт о соответствии ТЗ](TZ_COMPLIANCE_REPORT.md) — фактическое состояние на дату среза
+- [🏗️ Архитектура](ARCHITECTURE.md) · [📝 История проекта](PROJECT_HISTORY.md)
+- [🚀 Развёртывание](DEPLOYMENT_GUIDE.md) · [📖 Руководство пользователя](USER_GUIDE.md) · [🔧 Руководство оператора](OPERATOR_GUIDE.md) · [🎛️ Руководство администратора](ADMIN_GUIDE.md)

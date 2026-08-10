@@ -8,8 +8,8 @@
 
 Цель Implementation Plan — разложить разработку на управляемые этапы, чтобы Cursor выполнял задачи последовательно, без расползания scope и без архитектурных разворотов по ходу реализации.
 
-Нормативный SOT: [Архитектурные и продуктовые решения](architecture-decisions-sot-v4.md).  
-Документация MVP: [README](README.md), [Архитектура](docs/ARCHITECTURE.md), [Controlled Hybrid](docs/CONTROLLED_HYBRID.md), [История](docs/PROJECT_HISTORY.md), [Скриншоты](docs/SCREENSHOTS.md).
+Нормативный источник: [🧠 `docs/CONTROLLED_HYBRID.md`](docs/CONTROLLED_HYBRID.md) и [📋 `docs/SPEC.md`](docs/SPEC.md).  
+Документация MVP: [🏠 README](README.md), [🏗️ Архитектура](docs/ARCHITECTURE.md), [🧠 Controlled Hybrid](docs/CONTROLLED_HYBRID.md), [📝 История](docs/PROJECT_HISTORY.md), [🖼️ Скриншоты](docs/SCREENSHOTS.md).
 
 ---
 
@@ -93,7 +93,7 @@
 - Добавить `.gitignore`.
 - Добавить `README.md`.
 - Добавить папку `docs/`.
-- Положить SOT в корень (`architecture-decisions-sot-v4.md`), Implementation Plan в `docs/IMPLEMENTATION_PLAN.md`.
+- Положить Implementation Plan в `docs/IMPLEMENTATION_PLAN.md`.
 
 ### Ожидаемый результат
 Проект готов к разработке и дальнейшей работе Cursor.
@@ -522,16 +522,20 @@ Backend запускается, подключается к БД и отдаёт
 
 ### Документы
 - `README.md`
-- `architecture-decisions-sot-v4.md`
 - `docs/PROJECT_STATE.md`
 - `docs/IMPLEMENTATION_PLAN.md`
 - `docs/DEPLOYMENT_GUIDE.md`
 - `docs/ARCHITECTURE.md`
 - `docs/CONTROLLED_HYBRID.md`
 - `docs/USER_GUIDE.md`
+- `docs/OPERATOR_GUIDE.md`
+- `docs/ADMIN_GUIDE.md`
+- `docs/FAQ.md`
 - `docs/SCREENSHOTS.md`
 - `docs/PROJECT_HISTORY.md`
 - `docs/TZ_COMPLIANCE_REPORT.md`
+- `docs/API_CONTRACT.md`
+- `docs/SPEC.md`
 
 ### Ожидаемый результат
 Проект можно:
@@ -681,8 +685,7 @@ Scenario / sentiment / priority — reference data entities (`interaction_scenar
 
 # Controlled Hybrid — статус реализации (актуализация 2026-06-01)
 
-> **Нормативный источник:** SOT §3A, §3B ([Архитектурные и продуктовые решения](architecture-decisions-sot-v4.md)).  
-> **Операционная модель:** операционная модель Controlled Hybrid.
+> **Нормативный источник:** [🧠 `docs/CONTROLLED_HYBRID.md`](docs/CONTROLLED_HYBRID.md) и [📋 `docs/SPEC.md`](docs/SPEC.md).
 
 ### Зафиксированное решение
 
@@ -720,7 +723,7 @@ Scenario / sentiment / priority — reference data entities (`interaction_scenar
 - Operator API: confirm/override/candidate, case detail
 - Admin API: `backend/app/api/response_cases_admin.py`, reports API
 - Frontend: operator console, `ResponseCasesAdminWorkspace`, `ReportsWorkspace`, system settings
-- Forensics: [ch_pipeline_forensics_after_ch_integration.md](docs/ch-pipeline-forensics.md)
+- API contract: [🔌 `docs/API_CONTRACT.md`](docs/API_CONTRACT.md)
 
 ### Future work (не представлять как реализованное)
 

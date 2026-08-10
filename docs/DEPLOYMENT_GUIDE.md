@@ -2,7 +2,9 @@
 
 Пошаговая инструкция для человека, который **впервые открыл репозиторий** и хочет запустить демо на своём компьютере **без чтения исходного кода**. Все команды и порты взяты из [`docker-compose.yml`](../docker-compose.yml), [`.env.example`](../.env.example), [`backend/Dockerfile`](../backend/Dockerfile), [`frontend/Dockerfile`](../frontend/Dockerfile).
 
-Дополнительно о работе с интерфейсом: [Руководство пользователя](USER_GUIDE.md).
+Дополнительно о работе с интерфейсом: [📖 Руководство пользователя](USER_GUIDE.md), [🔧 Руководство оператора](OPERATOR_GUIDE.md), [🎛️ Руководство администратора](ADMIN_GUIDE.md), [❓ Ответы на частые вопросы](FAQ.md).
+
+**Deployment Validation:** инструкция прошла практическую проверку — см. [✅ `deployment-validation-report.md`](deployment-validation-report.md) (локальный Docker Compose) и [✅ `deployment-validation-report-prod.md`](deployment-validation-report-prod.md) (публичное размещение на VPS).
 
 ---
 
@@ -352,7 +354,7 @@ docker compose logs -f backend
 | Frontend открывается, API не отвечает | Backend не healthy | `docker compose logs backend`, `curl http://localhost:8700/health` |
 | Пустая очередь оператора | Обращение не создано или сброшена БД | Повторите §10; убедитесь, что не делали `down -v` после создания |
 | CORS / сеть: запросы к API падают | `VITE_API_URL` | В `.env` должно быть `http://localhost:8700`; после смены: `docker compose up --build` |
-| Черновик ответа — явная заглушка | AI-провайдер | В демо часто активен **mock**; ключи в `.env` + настройка в `/settings/ai-providers` (см. [CH pipeline forensics](ch-pipeline-forensics.md)) |
+| Черновик ответа — явная заглушка | AI-провайдер | В демо часто активен **mock**; ключи в `.env` + настройка в `/settings/ai-providers` (см. [🎛️ ADMIN_GUIDE.md](ADMIN_GUIDE.md) раздел AI-провайдеры) |
 | Init-скрипты не применились | Старый volume | `docker compose down -v` и полный перезапуск (§15) |
 | Backend падает на миграции | Логи | `docker compose logs backend` — имя файла в `schema_migrations` / текст SQL-ошибки |
 
@@ -360,7 +362,7 @@ docker compose logs -f backend
 
 ## Развёртывание на VPS через центральный Traefik
 
-Инструкция для **демонстрационного стенда** на удалённом сервере (Ubuntu/Debian), когда на том же сервере уже работает центральный Traefik (например, из `/opt/n8n/docker-compose.yml`). Review Flow подключается к существующей `n8n_default` сети и получает HTTPS через Traefik-лейблы.
+Инструкция для **демонстрационного стенда** на удалённом сервере (Ubuntu/Debian), когда на том же сервере уже работает центральный Traefik. Review Flow подключается к существующей внешней Docker-сети и получает HTTPS через Traefik-лейблы.
 
 Публичные точки:
 
@@ -373,7 +375,7 @@ docker compose logs -f backend
 
 Для локального запуска без публичного домена используйте [`docker-compose.yml`](../docker-compose.yml) (см. §6–§9). Для публичного размещения используйте [`docker-compose.prod.yml`](../docker-compose.prod.yml).
 
-Подробные сценарии в UI: [Руководство пользователя](USER_GUIDE.md).
+Подробные сценарии в UI: [📖 Руководство пользователя](USER_GUIDE.md), [🔧 Руководство оператора](OPERATOR_GUIDE.md), [🎛️ Руководство администратора](ADMIN_GUIDE.md).
 
 ### Когда нужен VPS-сценарий
 
@@ -499,15 +501,14 @@ DATABASE_URL=postgresql+psycopg2://reviewflow:reviewflow@review-flow-apl-postgre
 Проверьте, что Traefik запущен и слушает 80/443:
 
 ```bash
-cd /opt/n8n
 docker compose ps
 ```
 
-Traefik уже должен быть настроен на сервере (см. другие проекты: AI Curator, AI Portfolio и т.д.).
+Traefik уже должен быть настроен на сервере.
 
 ### Добавление маршрутов в центральный Traefik
 
-Отредактируйте `/opt/n8n/dynamic.yml` (файл центрального Traefik). Добавьте роутеры и сервисы для Review Flow:
+Отредактируйте файл динамической конфигурации центрального Traefik (обычно `dynamic.yml` рядом с Compose Traefik). Добавьте роутеры и сервисы для Review Flow:
 
 ```yaml
 http:
@@ -620,7 +621,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 1. https://review-flow.alex-n8n.site/ → **«Оставить отзыв»** → заполнить форму → получить номер `NL-...`.
 2. **«Проверить статус обращения»** → номер + email.
 
-Подробнее: [USER_GUIDE.md](USER_GUIDE.md) §2.
+Подробнее: [📖 USER_GUIDE.md](USER_GUIDE.md).
 
 ### Проверка операторского сценария
 
@@ -742,7 +743,7 @@ docker compose up -d
 3. TLS-сертификат (Let's Encrypt).
 4. Обновить `VITE_API_URL` на публичный HTTPS URL API и пересобрать frontend: `docker compose up -d --build`.
 
-Для **демо** допустимо открыть 5180/8700 напрямую по IP, но трафик не шифруется, а демо-пароли видны в [USER_GUIDE](USER_GUIDE.md).
+Для **демо** допустимо открыть 5180/8700 напрямую по IP, но трафик не шифруется, а демо-пароли видны в руководствах: [📖 USER_GUIDE](USER_GUIDE.md), [🔧 OPERATOR_GUIDE](OPERATOR_GUIDE.md), [🎛️ ADMIN_GUIDE](ADMIN_GUIDE.md).
 
 ### Ограничения текущего VPS-сценария
 
@@ -776,7 +777,7 @@ ssh -L 5180:localhost:5180 -L 8700:localhost:8700 user@<IP-сервера>
 - [ ] `docker compose ps` — все сервисы healthy
 - [ ] `curl http://localhost:8700/health` на сервере
 - [ ] `http://<IP>:5180` открывается с рабочего ПК
-- [ ] Клиент создаёт обращение; оператор и админ — по [USER_GUIDE](USER_GUIDE.md)
+- [ ] Клиент создаёт обращение; оператор и админ — по [📖 USER_GUIDE](USER_GUIDE.md), [🔧 OPERATOR_GUIDE](OPERATOR_GUIDE.md), [🎛️ ADMIN_GUIDE](ADMIN_GUIDE.md)
 - [ ] `.env` не в git; backup БД снят
 
 ---
@@ -812,5 +813,11 @@ ssh -L 5180:localhost:5180 -L 8700:localhost:8700 user@<IP-сервера>
 ## Связанные документы
 
 - [README.md](../README.md) — обзор проекта
-- [USER_GUIDE.md](USER_GUIDE.md) — сценарии по ролям
-- [TZ_COMPLIANCE_REPORT.md](TZ_COMPLIANCE_REPORT.md) — соответствие ТЗ и SQL-источники данных
+- [📖 USER_GUIDE.md](USER_GUIDE.md) — руководство клиента
+- [🔧 OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) — руководство оператора
+- [🎛️ ADMIN_GUIDE.md](ADMIN_GUIDE.md) — руководство администратора
+- [❓ FAQ.md](FAQ.md) — ответы на частые вопросы
+- [📋 TZ_COMPLIANCE_REPORT.md](TZ_COMPLIANCE_REPORT.md) — соответствие ТЗ и SQL-источники данных
+- [⚙️ OPERATIONS.md](OPERATIONS.md) — эксплуатация, логи, backup, AI-провайдеры
+- [✅ deployment-validation-report.md](deployment-validation-report.md) — отчёт о локальном Deployment Validation
+- [✅ deployment-validation-report-prod.md](deployment-validation-report-prod.md) — отчёт о публичном размещении

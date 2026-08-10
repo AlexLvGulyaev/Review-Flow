@@ -51,4 +51,8 @@ backend/__pycache__/
 task_history/
 attachments/
 .claude/
+architecture-decisions-sot-v4.md
+initial-requirements.md
+docs/ch-pipeline-forensics.md
+docs/controlled-hybrid-architecture-rationale.pdf
 

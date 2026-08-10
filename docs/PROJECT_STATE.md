@@ -8,7 +8,7 @@ AI-система обработки клиентских обращений с 
 
 ## Current Status
 
-**Портфельный актив — в продакшн-размещении.** Код Review Flow размещён в `cases/review-flow/`, структура приведена к стандартам AI Automation Portfolio Lab, документация адаптирована. Локальный запуск через `docker compose up --build` подтверждён (Deployment Verification), публичные HTTPS-эндпоинты развёрнуты через центральный Traefik (Deployment Validation).
+**Портфельный актив — в продакшн-размещении.** Структура приведена к стандартам AI Automation Portfolio Lab, документация адаптирована. Локальный запуск через `docker compose up --build` подтверждён (Deployment Verification), публичные HTTPS-эндпоинты развёрнуты через центральный Traefik (Deployment Validation).
 
 **Публичные адреса:**
 - Web UI (клиент + оператор): https://review-flow.alex-n8n.site
@@ -61,7 +61,7 @@ AI-система обработки клиентских обращений с 
 ## Next Steps
 
 1. ✅ **Demo-production**: публичные эндпоинты для веб UI и админки (VPS, reverse proxy, HTTPS, статическая сборка frontend).
-2. ✅ **Публикация обновлённого кейса в GitHub**: `https://github.com/AlexLvGulyaev/Review-Flow` обновлён актуальной версией из `cases/review-flow/`.
+2. ✅ **Публикация обновлённого кейса в GitHub**: `https://github.com/AlexLvGulyaev/Review-Flow` обновлён актуальной версией.
 3. Создание модуля интеграции с Kommo CRM.
 4. Создание модуля интеграции с Bitrix24.
 5. Адаптация pipeline для работы с n8n (в рамках n8n-lead-qualification).
@@ -71,6 +71,7 @@ AI-система обработки клиентских обращений с 
 | Date | Status | Reason |
 |--------|--------|--------|
 | 2026-06-09 | Портфельный актив | Зарегистрирован как портфельный проект по результатам анализа существующего репозитория |
-| 2026-08-09 | Перенесён в APL | Код и документация Review Flow перенесены в `cases/review-flow/`, локальная работоспособность подтверждена |
+| 2026-08-09 | Перенесён в APL | Код и документация Review Flow перенесены в лабораторию, локальная работоспособность подтверждена |
+| 2026-08-09 | Документация приведена к стандарту APL | Созданы API_CONTRACT.md, SPEC.md, ролевые гиды, FAQ.md; обновлены внутренние ссылки; внутренние артефакты исключены из публичного репозитория |
 | 2026-08-09 | В продакшн-размещении | Публичные HTTPS-эндпоинты развёрнуты: `review-flow.alex-n8n.site`, `review-flow-admin.alex-n8n.site`, `review-flow-api.alex-n8n.site` |
-| 2026-08-09 | Опубликован на GitHub | Репозиторий `https://github.com/AlexLvGulyaev/Review-Flow` синхронизирован с `cases/review-flow/`, `.env` и `task_history/` исключены из публичной поставки |
+| 2026-08-09 | Опубликован на GitHub | Репозиторий `https://github.com/AlexLvGulyaev/Review-Flow` синхронизирован, `.env` и внутренние APL-материалы исключены из публичной поставки |

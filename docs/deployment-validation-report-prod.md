@@ -2,7 +2,7 @@
 
 **Кейс:** `review-flow`  
 **Дата Validation:** 2026-08-09  
-**Окружение:** Production-like размещение на VPS через центральный Traefik (`/opt/n8n/`).  
+**Окружение:** Production-like размещение на VPS через центральный Traefik.  
 **Источник инструкций:** [`docs/DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md), раздел «Развёртывание на VPS через центральный Traefik».  
 **Статус Validation:** ✅ PASS
 
@@ -10,7 +10,7 @@
 
 ## Краткая сводка
 
-Review Flow развёрнут на публичных HTTPS-адресах через центральный Traefik на том же VPS, где работают AI Curator, AI Portfolio и другие проекты. Все три субдомена получили валидные Let’s Encrypt сертификаты. Проведены smoke-тесты через интернет.
+Review Flow развёрнут на публичных HTTPS-адресах через центральный Traefik. Все три субдомена получили валидные Let’s Encrypt сертификаты. Проведены smoke-тесты через интернет.
 
 ---
 
@@ -48,7 +48,7 @@ Review Flow развёрнут на публичных HTTPS-адресах че
 Интернет
    │
    ▼
-Traefik (центральный, /opt/n8n/)
+Traefik (центральный reverse proxy)
    │ 443 / Let's Encrypt
    ├─→ review-flow.alex-n8n.site → review-flow-apl-web-ui:80
    ├─→ review-flow-admin.alex-n8n.site → review-flow-apl-admin-console:80
@@ -79,5 +79,4 @@ Review Flow Compose (docker-compose.prod.yml)
 
 ---
 
-**Подпись:** AI Automation Portfolio Lab  
 **Дата:** 2026-08-09

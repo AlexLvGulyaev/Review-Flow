@@ -3,10 +3,10 @@
 Документ описывает **реализованную архитектуру** Review Flow как демонстрационного MVP, а также отделяет:
 
 - **as‑is (реализовано в коде)**;
-- **target (описано в SOT/архитдоках, но может быть не реализовано целиком)**;
+- **target (описано в спецификации, но может быть не реализовано целиком)**;
 - **roadmap/future work**.
 
-Нормативный источник решений: [Архитектурные и продуктовые решения (SOT)](../architecture-decisions-sot-v4.md).
+Нормативный источник решений: [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md) и [📋 `docs/SPEC.md`](SPEC.md).
 
 ---
 
@@ -41,7 +41,7 @@ PostgreSQL
 ### 2.1 Клиентский контур
 
 **Назначение:** анонимный доступ клиента к созданию обращения и просмотру статуса.  
-**Ключевой инвариант (Controlled Hybrid):** клиент **не видит** внутренних сущностей `Response Case`, confidence и результаты retrieval (см. [операционную модель CH](CONTROLLED_HYBRID.md), раздел о C3).
+**Ключевой инвариант (Controlled Hybrid):** клиент **не видит** внутренних сущностей `Response Case`, confidence и результаты retrieval (см. [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md)).
 
 Реализованные маршруты (frontend):
 
@@ -93,7 +93,7 @@ Backend — FastAPI приложение (`backend/app/main.py`), использ
   - отчётность: `/api/admin/reports...`
   - настройки: `/api/settings/*`
 
-Документация пользователя опирается на UI‑маршруты и “видимые” функции; точный контракт API лучше сверять по OpenAPI схеме backend.
+Точный контракт API см. в [🔌 `docs/API_CONTRACT.md`](API_CONTRACT.md) или OpenAPI по адресу `/docs` backend.
 
 ---
 
@@ -126,8 +126,7 @@ Backend при старте выполняет `run_pending_migrations()` и п�
 - LLM (или mock‑провайдер) используется для **адаптации текста** в рамках `response_policy` и `approved_response_text`;
 - оператор подтверждает или меняет решение, а при отсутствии подходящей ситуации запускает learning loop через candidate.
 
-Нормативное описание: [Controlled Hybrid](CONTROLLED_HYBRID.md).  
-Forensics после интеграции CH: [CH pipeline forensics](docs/ch-pipeline-forensics.md).
+Нормативное описание: [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md).
 
 ### 5.1 Переключение режима
 
@@ -151,7 +150,7 @@ Forensics после интеграции CH: [CH pipeline forensics](docs/ch-pi
 → опубликовано (клиент видит final_response)
 ```
 
-Детальная семантика статусов для клиентского UX описана в [операционной модели CH](CONTROLLED_HYBRID.md) (раздел о C3: клиент не должен видеть внутренние статусы/сущности).
+Детальная семантика статусов для клиентского UX описана в [📖 `docs/USER_GUIDE.md`](USER_GUIDE.md) и [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md).
 
 ---
 
@@ -181,8 +180,8 @@ Forensics после интеграции CH: [CH pipeline forensics](docs/ch-pi
 
 ## 9. Ограничения MVP (as‑is)
 
-- UI контуры реализованы как одно приложение с role‑переключением (см. план разделения UI-контуров).
-- Возможен `mock`‑провайдер AI, который **не является LLM** и возвращает шаблонный текст (см. forensics документ).
+- UI контуры реализованы как одно приложение с role‑переключением.
+- Возможен `mock`‑провайдер AI, который **не является LLM** и возвращает шаблонный текст (см. [🔌 `docs/API_CONTRACT.md`](API_CONTRACT.md) раздел AI Provider Settings).
 - Содержимое KB и справочников — демонстрационные seed‑данные.
 
 ---
@@ -191,7 +190,6 @@ Forensics после интеграции CH: [CH pipeline forensics](docs/ch-pi
 
 Ниже — направления, которые в документах помечены как целевые, но не обязательно реализованы целиком в текущем MVP:
 
-- визуальное разделение client site и company workspace (план разделения UI-контуров);
+- визуальное разделение client site и company workspace;
 - усиление контракта “operational console” (AF‑alignment) для рабочих мест (семантическое выравнивание);
 - развитие аналитики качества Controlled Hybrid (ошибки retrieval, частые override, coverage KB).
-

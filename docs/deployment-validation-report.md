@@ -1,8 +1,8 @@
-# Deployment Validation Report: Review Flow в AI Automation Portfolio Lab
+# Deployment Validation Report: Review Flow
 
 **Кейс:** `review-flow`  
 **Дата Validation:** 2026-08-09  
-**Окружение:** Репозиторий `cases/review-flow/` в AI Automation Portfolio Lab, изолированный Docker Compose контур.  
+**Окружение:** Локальный Docker Compose контур.  
 **Источник инструкций:** [`docs/DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md).  
 **Статус Validation:** ✅ PASS
 
@@ -10,9 +10,9 @@
 
 ## Краткая сводка
 
-Validation подтверждает, что развёртывание Review Flow из публичного репозитория по `docs/DEPLOYMENT_GUIDE.md` приводит к работоспособной системе в контексте AI Automation Portfolio Lab. Проверка выполнена как часть официального переноса кейса в `cases/review-flow/`: использованы только публичные файлы репозитория, без опоры на внутренние артефакты лаборатории. Все сервисы стартовали, миграции применились, health endpoint отвечает, frontend и API доступны. Проведены smoke-тесты клиентского, операторского и административного контуров.
+Validation подтверждает, что развёртывание Review Flow по `docs/DEPLOYMENT_GUIDE.md` приводит к работоспособной системе. Все сервисы стартовали, миграции применились, health endpoint отвечает, frontend и API доступны. Проведены smoke-тесты клиентского, операторского и административного контуров.
 
-**Примечание:** публичное prod-размещение с HTTPS-эндпоинтами зафиксировано отдельно в [`docs/deployment-validation-report-prod.md`](deployment-validation-report-prod.md).
+**Примечание:** публичное prod-размещение с HTTPS-эндпоинтами зафиксировано отдельно в [🚀 `docs/deployment-validation-report-prod.md`](deployment-validation-report-prod.md).
 
 ---
 
@@ -55,13 +55,12 @@ Validation подтверждает, что развёртывание Review Fl
 
 ## Ограничения и область применения
 
-Эта Validation подтверждает воспроизводимость развёртывания внутри AI Automation Portfolio Lab на стандартной машине разработки. Она не является проверкой на абсолютно «голом» VPS — отдельный чистый хост не использовался. Публичное prod-размещение на выделенных HTTPS-субдоменах прошло отдельную проверку и задокументировано в [`deployment-validation-report-prod.md`](deployment-validation-report-prod.md).
+Эта Validation подтверждает воспроизводимость развёртывания локально по `docs/DEPLOYMENT_GUIDE.md`. Публичное prod-размещение на выделенных HTTPS-субдоменах прошло отдельную проверку и задокументировано в [🚀 `deployment-validation-report-prod.md`](deployment-validation-report-prod.md).
 
 ## Вывод
 
-Процесс развёртывания Review Flow в `cases/review-flow/` из публичной документации (`DEPLOYMENT_GUIDE.md`) воспроизводим и приводит к работоспособной системе. Все обязательные проверки пройдены. Кейс готов к дальнейшему этапу — подготовке демо-продакшн контура.
+Процесс развёртывания Review Flow по `docs/DEPLOYMENT_GUIDE.md` воспроизводим и приводит к работоспособной системе. Все обязательные проверки пройдены.
 
 ---
 
-**Подпись:** AI Automation Portfolio Lab  
 **Дата:** 2026-08-09

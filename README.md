@@ -1,39 +1,34 @@
-# Review Flow
+# 🛡️ Review Flow
 
-**Review Flow** — демонстрационный MVP для обработки клиентских обращений, в котором AI используется **управляемо**: бизнес-решения фиксируются в базе типовых ситуаций, а не передаются модели «на усмотрение».
+⚡ **Снижайте нагрузку на поддержку и сохраняйте контроль над ответами клиентам.**
 
-**Статус:** Активный портфельный актив  
-**GitHub:** https://github.com/AlexLvGulyaev/Review-Flow  
-**Тип:** AI-система обработки клиентских обращений  
+Review Flow — AI-система обработки клиентских обращений, в которой бизнес-решения фиксируются в управляемой базе знаний, а не передаются языковой модели «на усмотрение». Система подбирает типовую ситуацию по похожим примерам, формирует черновик ответа в рамках утверждённой политики и оставляет финальное решение за оператором.
 
-Проект показывает полный цикл: от обращения клиента до публикации ответа и последующего **обучения базы знаний** через реальные кейсы операторов.
+- Клиент оставляет отзыв или вопрос — получает номер обращения и понятный статус.
+- Оператор видит предложенную типовую ситуацию, уровень confidence и альтернативы — и публикует ответ.
+- Администратор развивает базу знаний: новые типовые ситуации и retrieval-примеры из реальных кейсов.
 
-## Быстрая навигация
+Review Flow не публикует ответы без оператора, не делегирует бизнес-решения модели и не оставляет повторяющиеся кейсы без знания.
 
-### Для знакомства с проектом
-
-- [Отчёт о соответствии ТЗ](docs/TZ_COMPLIANCE_REPORT.md)
-- [Руководство пользователя](docs/USER_GUIDE.md)
-- [Руководство по развёртыванию](docs/DEPLOYMENT_GUIDE.md)
-
-### Для изучения архитектуры
-
-- [Архитектура](docs/ARCHITECTURE.md)
-- [Controlled Hybrid](docs/CONTROLLED_HYBRID.md)
-- [Обоснование выбора Controlled Hybrid (PDF)](docs/controlled-hybrid-architecture-rationale.pdf)
-
-### Для развития проекта
-
-- [Дорожная карта](docs/ROADMAP.md)
-- [История проекта](docs/PROJECT_HISTORY.md)
-- [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
-- [Архитектурные и продуктовые решения (SOT)](architecture-decisions-sot-v4.md)
+[▶️ Попробовать live demo](https://review-flow.alex-n8n.site) · [📈 Бизнес-ценность](docs/BUSINESS_VALUE.md) · [🎬 Как это работает](docs/SYSTEM_DEMO.md)
 
 ---
 
-## Проблема
+## ▶️ Live Demo
 
-Три типичных крайности не дают устойчивой операционной модели:
+🌐 **Клиенту:** [▶️ Открыть веб-интерфейс](https://review-flow.alex-n8n.site)
+
+Нажмите **«Оставить отзыв»**, заполните форму и получите номер обращения. Затем проверьте статус по номеру и email — после публикации оператором вы увидите финальный ответ.
+
+![Клиент: форма обращения](docs/screenshots/cli-new-rev.png)
+
+Скриншоты, live demo и бизнес-сценарии — в [`docs/SYSTEM_DEMO.md`](docs/SYSTEM_DEMO.md) и [`docs/E2E_SCENARIOS.md`](docs/E2E_SCENARIOS.md).
+
+---
+
+## ❓ Зачем нужен Review Flow
+
+Команды поддержки сталкиваются с тремя типичными крайностями:
 
 | Подход | Ограничение |
 |--------|-------------|
@@ -41,228 +36,176 @@
 | **Полностью автоматический LLM** | решения плохо контролируются и воспроизводятся; сложно аудировать |
 | **«Модель решает за бизнес»** | организация не может формально делегировать принятие решений black-box модели |
 
-Review Flow ищет баланс: **автоматизация там, где она прозрачна**, и **человек там, где нужна ответственность**.
+**Review Flow решает эту проблему**, используя архитектуру **Controlled Hybrid**:
+
+- **Response Case** — Source of Truth бизнес-решения: политика ответа, утверждённая основа текста, атрибуты случая.
+- **Retrieval** подбирает наиболее подходящую типовую ситуацию по примерам обращений.
+- **Confidence** рассчитывается системой на основе результатов retrieval.
+- **LLM не выбирает типовую ситуацию и не принимает бизнес-решение** — только адаптирует текст ответа в рамках `response_policy` / `approved_response_text`.
+- **Оператор** остаётся Human-in-the-Loop: подтверждает, меняет или эскалирует.
+- **Администратор** развивает базу знаний через типовые ситуации, retrieval-примеры и кандидатов.
+
+Больше о бизнес-ценности — в [`docs/BUSINESS_VALUE.md`](docs/BUSINESS_VALUE.md).
 
 ---
 
-## Архитектура
+## 🎯 Для кого
 
-**Controlled Hybrid pipeline** — комбинация retrieval, confidence assessment и bounded LLM adaptation:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Входящее обращение                        │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-                          ▼
-                ┌─────────────────┐
-                │   Retrieval     │
-                │ (поиск ТС по    │
-                │  примерам)      │
-                └────────┬────────┘
-                         │
-                          ▼
-                ┌─────────────────┐
-                │  Confidence     │
-                │   Assessment    │
-                └────────┬────────┘
-                         │
-          ┌──────────────┼──────────────┐
-          │              │              │
-          ▼              ▼              ▼
-    ┌──────────┐  ┌──────────┐  ┌──────────┐
-    │  High    │  │  Medium  │  │   Low    │
-    │ Confidence│ │ Confidence│ │ Confidence│
-    └────┬─────┘  └────┬─────┘  └────┬─────┘
-         │             │              │
-         ▼             ▼              ▼
-    ┌──────────┐  ┌──────────┐  ┌──────────┐
-    │Авто-     │  │LLM       │  │Кандидат  │
-    │публикация│  │адаптация │  │для эксперта│
-    └──────────┘  └──────────┘  └──────────┘
-         │             │              │
-         └──────────────┼──────────────┘
-                        ▼
-              ┌─────────────────┐
-              │    Оператор     │
-              │ (Human-in-Loop) │
-              └─────────────────┘
-```
-
-**Ключевые модули:**
-- `backend/` — FastAPI API, Controlled Hybrid pipeline
-- `frontend/` — React-приложение
-- `docs/` — документация, скриншоты
-
-**База знаний:**
-- Response Cases (типовые ситуации)
-- Retrieval-примеры
-- Candidates (кандидаты для пополнения БЗ)
+- Службы поддержки e-commerce и маркетплейсов.
+- Компании с повторяющимися клиентскими обращениями (доставка, оплата, возврат, качество).
+- Команды, которые хотят автоматизировать черновики ответов, но сохранить операторский контроль.
+- Поставщики CRM и тикет-систем, желающие добавить Controlled Hybrid в экосистему.
 
 ---
 
-## Почему Controlled Hybrid
+## ✨ Ключевые возможности
 
-**Controlled Hybrid** — архитектура, в которой:
-
-- **типовая ситуация (Response Case)** — Source of Truth бизнес-решения (политика ответа, утверждённая основа текста);
-- **retrieval** подбирает наиболее подходящую типовую ситуацию по примерам обращений;
-- **confidence** рассчитывается системой на основе результата retrieval;
-- **LLM не выбирает типовую ситуацию и не принимает бизнес-решение** — только адаптирует текст ответа в рамках `response_policy` / `approved_response_text`;
-- **оператор** остаётся Human-in-the-Loop: подтверждает, меняет или эскалирует;
-- **администратор** развивает базу знаний: типовые ситуации, retrieval-примеры, кандидаты.
-
-Чем отличается от типичного LLM-first: решение не «рождается в промпте», а **находит опору в управляемой KB** и правилах backend.
-
-Подробное обоснование: [Обоснование выбора Controlled Hybrid (PDF)](docs/controlled-hybrid-architecture-rationale.pdf) · [Controlled Hybrid](docs/CONTROLLED_HYBRID.md) · [Архитектура](docs/ARCHITECTURE.md)
+- **Публичный клиентский портал** — обращение, номер `NL-…`, проверка статуса, опубликованный ответ.
+- **Controlled Hybrid pipeline** — retrieval, confidence assessment, bounded LLM adaptation.
+- **Human-in-the-Loop** — оператор проверяет предложенную типовую ситуацию, confidence и альтернативы перед публикацией.
+- **Candidate learning loop** — операторский сигнал превращается в новую или дополненную типовую ситуацию.
+- **Управляемая база знаний** — CRUD Response Cases, retrieval-примеры, архивирование/активация.
+- **Отчётность** — обращения клиентов, бизнес-сводка, качество Controlled Hybrid, экспорт CSV/XLSX/PDF.
+- **Настройки AI-провайдеров и промптов** — версионирование, fallback, runtime-параметры.
+- **Честные границы** — demo-аутентификация через localStorage, без корпоративного SSO; MVP перед production.
 
 ---
 
-## Controlled Hybrid Learning Loop
-
-Главный сценарий проекта — **замыкание цикла обучения**: операционный сигнал превращается в новое знание, которое улучшает последующий retrieval.
+## 🏗️ Краткий обзор архитектуры
 
 ```mermaid
-flowchart LR
-  A["Обращение клиента"] --> B["Retrieval:<br/>низкая уверенность<br/>или неверная ТС"]
-  B --> C["Оператор:<br/>«ни одна ТС не подходит»"]
-  C --> D["Candidate<br/>(кандидат)"]
-  D --> E["Администратор:<br/>новая ТС или<br/>присоединение к ТС"]
-  E --> F["Candidate →<br/>retrieval-пример"]
-  F --> G["Похожее обращение:<br/>высокая уверенность,<br/>автоматический подбор"]
+flowchart TB
+    subgraph "Внешние пользователи"
+        Client[Клиент]
+        Operator[Оператор]
+        Admin[Администратор]
+        Manager[Руководитель / аналитик]
+    end
+
+    subgraph "Review Flow"
+        WebUI[Веб-интерфейс клиента]
+        CompanyUI[Контур компании: оператор + администратор]
+
+        subgraph "Backend — FastAPI"
+            API[API Gateway]
+            CH[Controlled Hybrid pipeline]
+            KB[Response Case Service]
+            Reports[Reports Service]
+            Logs[Operational Logs]
+        end
+    end
+
+    subgraph "Инфраструктура"
+        DB[(PostgreSQL 16)]
+        LLM[LLM Provider — OpenAI-compatible]
+    end
+
+    Client --> WebUI
+    Operator --> CompanyUI
+    Admin --> CompanyUI
+    Manager --> CompanyUI
+
+    WebUI --> API
+    CompanyUI --> API
+
+    API --> CH
+    API --> KB
+    API --> Reports
+    API --> Logs
+
+    CH --> KB
+    CH --> LLM
+
+    API --> DB
+    KB --> DB
+    Reports --> DB
+    Logs --> DB
 ```
 
-**Шаги в системе:**
+- **Response Case** — Source of Truth бизнес-решений в базе знаний.
+- **Controlled Hybrid pipeline** — retrieval, confidence, LLM-адаптация под контролем оператора.
+- **Backend** — FastAPI, SQLAlchemy, PostgreSQL.
 
-1. Клиент создаёт обращение.
-2. Retrieval предлагает неподходящую или недостаточно уверенную типовую ситуацию.
-3. Оператор фиксирует: «ни одна типовая ситуация не подходит», создаёт **candidate**.
-4. Администратор обрабатывает кандидата: создаёт новую типовую ситуацию или присоединяет к существующей.
-5. Обращение-кандидат становится **retrieval-примером**.
-6. Следующее похожее обращение распознаётся с **высокой уверенностью** — без смены бизнес-логики «вручную» на каждый раз.
-
-Скриншоты этого сценария — в разделе [Демонстрация системы](#демонстрация-системы) (оператор → администратор).
+Подробнее — в [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) и [`docs/CONTROLLED_HYBRID.md`](docs/CONTROLLED_HYBRID.md).
 
 ---
 
-## Демонстрация системы
+## 🌐 Публичные точки входа
 
-Ниже — сквозная история по ролям. Все изображения из [`docs/screenshots/`](docs/screenshots/).
+| Роль | Сервис | Домен | Назначение |
+|------|--------|-------|-----------|
+| Клиент | Веб-интерфейс | [review-flow.alex-n8n.site](https://review-flow.alex-n8n.site) | Оставить обращение, проверить статус |
+| Оператор | Контур компании | [review-flow.alex-n8n.site/company](https://review-flow.alex-n8n.site/company) | Очередь обращений, модерация, публикация |
+| Администратор | Admin Console | [review-flow-admin.alex-n8n.site](https://review-flow-admin.alex-n8n.site) | Типовые ситуации, кандидаты, настройки |
+| Интегратор | Backend API | [review-flow-api.alex-n8n.site](https://review-flow-api.alex-n8n.site) | REST API Review Flow |
 
-### Клиент
-
-Публичный контур: клиент не видит внутренних инструментов, confidence и типовых ситуаций.
-
-**Главная** — вход в сценарий «оставить обращение» / «проверить статус».
-
-![Клиент: главная](docs/screenshots/cli-main.png)
-
-**Создание обращения** — форма и отправка; система выдаёт номер обращения (`NL-…`).
-
-![Клиент: форма обращения](docs/screenshots/cli-new-rev.png)
-![Клиент: обращение отправлено](docs/screenshots/cli-new-rev-send.png)
-
-**Отслеживание статуса** — этапы обработки и опубликованный ответ после действий оператора.
-
-![Клиент: статус](docs/screenshots/cli-new-rev-status.png)
-![Клиент: опубликованный ответ](docs/screenshots/cli-new-rev-completed.png)
+> 🔓 **Demo-входы сотрудников:** `operator@northline.local` / `demo` и `admin@northline.local` / `demo`. Аутентификация через localStorage, не корпоративный SSO.
 
 ---
 
-### Оператор
+## 📚 Документация
 
-Рабочее место: очередь обращений, предложенная типовая ситуация, confidence, правка и публикация ответа.
+### Для заказчиков и менеджеров
 
-**Карточка обращения** — human-in-the-loop: редактирование ответа перед публикацией.
+| Документ | Описание |
+|----------|----------|
+| [📈 `docs/BUSINESS_VALUE.md`](docs/BUSINESS_VALUE.md) | Бизнес-проблема, решение, эффект, выгода |
+| [🎬 `docs/SYSTEM_DEMO.md`](docs/SYSTEM_DEMO.md) | Скриншоты, live demo, бизнес-сценарии |
+| [🎬 `docs/E2E_SCENARIOS.md`](docs/E2E_SCENARIOS.md) | Сквозные бизнес-сценарии без технических деталей |
 
-![Оператор: карточка обращения](docs/screenshots/oper-rev-after-accept.png)
+### Для пользователей и операторов
 
-**Confidence и альтернативы** — retrieval предлагает ТС; при низкой уверенности оператор видит Top-N и принимает решение осознанно.
+| Документ | Описание |
+|----------|----------|
+| [📖 `docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Как пользоваться клиентским порталом |
+| [🔧 `docs/OPERATOR_GUIDE.md`](docs/OPERATOR_GUIDE.md) | Руководство оператора |
+| [🎛️ `docs/ADMIN_GUIDE.md`](docs/ADMIN_GUIDE.md) | Руководство администратора |
+| [❓ `docs/FAQ.md`](docs/FAQ.md) | Частые вопросы |
 
-![Оператор: низкая уверенность и альтернативы](docs/screenshots/oper-rev-low.png)
+### Для инженеров и интеграторов
 
-**Запуск learning loop** — «нет подходящей ТС» → candidate.
-
-![Оператор: сценарий новой ТС](docs/screenshots/oper-rev-for-newTS.png)
-![Оператор: описание candidate](docs/screenshots/oper-comment-for-newTS.png)
-
-**Результат после расширения KB** — похожее обращение обрабатывается с высокой уверенностью.
-
-![Оператор: после создания новой ТС](docs/screenshots/oper-rev-after-create-newTS.png)
-
-Вход в контур компании (выбор роли): [`oper-logun.png`](docs/screenshots/oper-logun.png)
-
----
-
-### Администратор
-
-Управление базой знаний Controlled Hybrid.
-
-**Типовые ситуации (Response Cases)** — SOT бизнес-решений: политика, утверждённый текст, пороги.
-
-![Админ: список типовых ситуаций](docs/screenshots/adm-ts-list.png)
-
-**Кандидаты** — очередь предложений от операторов.
-
-![Админ: новый кандидат](docs/screenshots/adm-ts-cand-new.png)
-
-**Создание новой типовой ситуации** — кандидат превращается в элемент KB.
-
-![Админ: создание ТС](docs/screenshots/adm-ts-new-create.png)
-![Админ: ТС создана](docs/screenshots/adm-ts-new-created.png)
-
-**Retrieval-пример** — candidate добавлен к типовой ситуации; последующий подбор улучшается.
-
-![Админ: candidate как пример](docs/screenshots/adm-ts-after-add-cand-sample.png)
+| Документ | Описание |
+|----------|----------|
+| [🏗️ `docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Архитектурные решения, контуры, lifecycle |
+| [🧠 `docs/CONTROLLED_HYBRID.md`](docs/CONTROLLED_HYBRID.md) | Подробное описание Controlled Hybrid |
+| [📋 `docs/SPEC.md`](docs/SPEC.md) | Продуктовая спецификация |
+| [📅 `docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | План реализации и развёртывания |
+| [📍 `docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) | Текущее состояние и roadmap |
+| [🔌 `docs/API_CONTRACT.md`](docs/API_CONTRACT.md) | REST API контракт backend |
+| [🧪 `docs/examples/`](docs/examples/) | Примеры запросов и ответов API |
+| [🚀 `docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md) | Развёртывание с нуля |
+| [✅ `docs/deployment-validation-report.md`](docs/deployment-validation-report.md) | Отчёт о локальном Deployment Validation |
+| [✅ `docs/deployment-validation-report-prod.md`](docs/deployment-validation-report-prod.md) | Отчёт о публичном размещении |
+| [⚙️ `docs/OPERATIONS.md`](docs/OPERATIONS.md) | Эксплуатация, логи, backup, AI-провайдеры |
+| [🖼️ `docs/SCREENSHOTS.md`](docs/SCREENSHOTS.md) | Галерея экранов интерфейса |
+| [🖼️ `docs/screenshots/MEDIA_INDEX.md`](docs/screenshots/MEDIA_INDEX.md) | Каталог медиаматериалов |
+| [📋 `docs/TZ_COMPLIANCE_REPORT.md`](docs/TZ_COMPLIANCE_REPORT.md) | Соответствие исходному техническому заданию |
+| [🗺️ `docs/ROADMAP.md`](docs/ROADMAP.md) | Направления развития проекта |
+| [📝 `docs/PROJECT_HISTORY.md`](docs/PROJECT_HISTORY.md) | История проекта |
 
 ---
 
-### Руководитель
+## ✅ Статус проекта
 
-Отчётность по обращениям и качеству обработки (демо-витрина MVP).
+Реализованы все ключевые компоненты MVP: публичный клиентский портал, Controlled Hybrid pipeline, операторская консоль, административный контур базы знаний, candidate learning loop, отчётность, operational logs, настройки AI-провайдеров и промптов, публичные HTTPS-эндпоинты.
 
-![Отчёт: клиентские обращения](docs/screenshots/adm-repcli.png)
-![Отчёт: Controlled Hybrid](docs/screenshots/adm-repCH.png)
-![Бизнес-сводка](docs/screenshots/adm-repbus.png)
+**GitHub:** https://github.com/AlexLvGulyaev/Review-Flow
 
----
-
-### Настройка системы
-
-Системные параметры и AI-провайдеры (в демо возможен `mock`-провайдер).
-
-![Системные настройки](docs/screenshots/adm-sys.png)
-
-Полная галерея с пояснениями: [Галерея экранов](docs/SCREENSHOTS.md)
+Текущее состояние и следующий шаг — в [📍 `docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md).
 
 ---
 
-## Основные возможности
+## 🛠️ Технологии
 
-- Публичный клиентский портал: обращение, номер, статус, опубликованный ответ
-- Controlled Hybrid pipeline: retrieval, confidence, decision, bounded LLM adaptation
-- Операторская консоль: очередь, override, candidate, публикация
-- Админ KB: CRUD типовых ситуаций и retrieval-примеров
-- Candidate learning loop (демонстрационный end-to-end сценарий)
-- Отчётность и operational logs
-- Настройки AI-провайдеров и системные параметры
-- Промпты, evaluation, legacy KB (параллельно CH, учебный контур)
+- **Backend** — FastAPI, Python 3.12, SQLAlchemy.
+- **Frontend** — React, Vite, React Router, Tailwind CSS.
+- **Database** — PostgreSQL 16.
+- **AI** — OpenAI-compatible API (в демо — `mock`).
+- **Deploy** — Docker Compose, nginx, Traefik.
 
 ---
 
-## Технологический стек
-
-| Слой | Технология |
-|------|------------|
-| Frontend | React, Vite, React Router |
-| Backend | FastAPI, Python 3.12, SQLAlchemy |
-| Database | PostgreSQL 16 |
-| AI | OpenAI-compatible API (в демо — `mock`) |
-| Deploy | Docker Compose |
-
----
-
-## Быстрый запуск
+## 🚀 Быстрый запуск
 
 ### Локально
 
@@ -286,106 +229,62 @@ docker compose up --build
 | Backend API | https://review-flow-api.alex-n8n.site |
 | Health | https://review-flow-api.alex-n8n.site/health |
 
-> Демо-входы сотрудников: `operator@northline.local` / `demo` и `admin@northline.local` / `demo`.
-
-Подробные инструкции: [Руководство по развёртыванию](docs/DEPLOYMENT_GUIDE.md)
+Подробные инструкции: [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md)
 
 ---
 
-## Документация
+## ⚠️ Ограничения демо
 
-- [Отчёт о соответствии исходному ТЗ](docs/TZ_COMPLIANCE_REPORT.md)
-- [Архитектура](docs/ARCHITECTURE.md)
-- [Controlled Hybrid](docs/CONTROLLED_HYBRID.md)
-- [Руководство пользователя](docs/USER_GUIDE.md)
-- [Галерея экранов](docs/SCREENSHOTS.md)
-- [История проекта](docs/PROJECT_HISTORY.md)
-- [Архитектурные и продуктовые решения (SOT)](architecture-decisions-sot-v4.md)
-- [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
-
----
-
-## Ограничения демо
-
-- **Демонстрационный MVP**: упрощённые сценарии; возможен `mock`-провайдер LLM (заглушка текста, не полноценная адаптация) — см. [CH pipeline forensics](docs/ch-pipeline-forensics.md).
-- Роли переключаются в одном приложении.
+- **Демонстрационный MVP**: упрощённые сценарии; возможен `mock`-провайдер LLM (заглушка текста, не полноценная адаптация) — см. [`🔌 API контракт`](docs/API_CONTRACT.md) раздел AI Provider Settings.
+- Роли переключаются в одном приложении через demo-входы.
 - База типовых ситуаций — учебный seed для демонстрации retrieval и learning loop.
+- Перед production требуется добавить корпоративную аутентификацию, бэкапы, мониторинг, CI/CD и интеграции с CRM/тикет-системами.
 
 ---
 
-## Коммерческие задачи
+## 🔑 Ключевые принципы
 
-Проект подтверждает компетенции для следующих типов заказов:
-
-1. **Обработка обращений**
-   - Автоматизация работы с клиентскими обращениями
-   - Классификация и маршрутизация
-   - AI-генерация ответов
-
-2. **Классификация**
-   - Автоматическая классификация по категориям
-   - Подбор типовых решений
-   - Confidence-оценка
-
-3. **Операторские системы**
-   - Консоли операторов
-   - Human-in-the-Loop системы
-   - Контроль качества
-
-4. **Базы знаний**
-   - Управление типовыми ситуациями
-   - Learning loop (candidate → approved)
-   - Экспертные системы
+1. **LLM не принимает бизнес-решения** — только адаптирует текст в рамках `response_policy`.
+2. **Response Case — Source of Truth** — бизнес-решение фиксируется в управляемой базе знаний.
+3. **Оператор — Human-in-the-Loop** — финальная проверка, override и публикация.
+4. **Администратор развивает KB** — типовые ситуации, примеры, кандидаты.
 
 ---
 
-## Направления AI Automation Portfolio Lab
+## 📁 Структура проекта
 
-| Направление | Покрытие |
-|-------------|----------|
-| **Обработка обращений** | ✅ Полное |
-| **Классификация** | ✅ Полное |
-| **AI-генерация ответов** | ✅ Полное (bounded) |
-| **Операторские системы** | ✅ Полное |
-| **Базы знаний** | ⚠️ Частичное (типовые ситуации) |
+```
+review-flow/
+├── README.md                      # Точка входа в проект
+├── docs/                          # Документация кейса
+│   ├── BUSINESS_VALUE.md          # Бизнес-ценность
+│   ├── SYSTEM_DEMO.md             # Скриншоты и live demo
+│   ├── E2E_SCENARIOS.md           # Сквозные бизнес-сценарии
+│   ├── USER_GUIDE.md              # Руководство клиента
+│   ├── OPERATOR_GUIDE.md          # Руководство оператора
+│   ├── ADMIN_GUIDE.md             # Руководство администратора
+│   ├── FAQ.md                     # Частые вопросы
+│   ├── ARCHITECTURE.md            # Архитектурные решения
+│   ├── CONTROLLED_HYBRID.md       # Controlled Hybrid
+│   ├── SPEC.md                    # Продуктовая спецификация
+│   ├── IMPLEMENTATION_PLAN.md     # План реализации
+│   ├── PROJECT_STATE.md           # Текущий статус и roadmap
+│   ├── API_CONTRACT.md            # REST API контракт
+│   ├── examples/                  # Примеры запросов и ответов API
+│   ├── DEPLOYMENT_GUIDE.md        # Развёртывание с нуля
+│   ├── OPERATIONS.md              # Эксплуатация
+│   ├── SCREENSHOTS.md             # Галерея экранов
+│   ├── screenshots/               # Скриншоты интерфейса
+│   ├── MEDIA_INDEX.md             # Каталог медиаматериалов
+│   ├── TZ_COMPLIANCE_REPORT.md    # Соответствие ТЗ
+│   ├── ROADMAP.md                 # Дорожная карта
+│   ├── PROJECT_HISTORY.md         # История проекта
+│   └── screenshots/               # Скриншоты интерфейса
+├── backend/                       # FastAPI backend
+├── frontend/                      # React frontend
+├── docker-compose.yml             # Docker Compose
+├── Dockerfile                     # Backend-сервис
+└── .env.example                   # Пример переменных окружения
+```
 
----
-
-## Переиспользуемые элементы
-
-### Промпты
-- Промпты классификации обращений
-- Промпты для bounded LLM adaptation
-- Промпты для работы с response_policy
-
-### Архитектурные паттерны
-- Controlled Hybrid pipeline
-- Human-in-the-Loop
-- Candidate learning loop
-- Confidence-based routing
-
-### Компоненты
-- Классификатор обращений
-- Retrieval-движок по примерам
-- Система управления типовыми ситуациями
-- Операторская консоль
-
-### Утилиты
-- Confidence calculator
-- Response policy processor
-- Candidate management system
-
----
-
-## Ключевые принципы
-
-1. **LLM не принимает бизнес-решения** — только адаптирует текст в рамках `response_policy`
-2. **Оператор — Human-in-the-Loop** — подтверждает, меняет или эскалирует
-3. **Администратор развивает KB** — типовые ситуации, примеры, кандидаты
-
----
-
-## Связанные кейсы
-
-- [[assistant-flow]] — база знаний и RAG
-- [[prompt-library]] — библиотека промптов
+> **Примечание:** внутренние материалы AI Automation Portfolio Lab (например, `task_history/`, `attachments/`, черновики архитектурных решений, forensics) хранятся вне публичного репозитория и не включены в структуру выше.

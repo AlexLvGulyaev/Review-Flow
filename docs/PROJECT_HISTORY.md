@@ -2,7 +2,7 @@
 
 Этот документ объясняет эволюцию проекта как демонстрационного MVP. Он не является session log и не перечисляет внутренние итерации разработки.
 
-Основной нормативный контекст: [Архитектурные и продуктовые решения (SOT)](../architecture-decisions-sot-v4.md) и [Implementation plan](IMPLEMENTATION_PLAN.md).
+Основной нормативный контекст: [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md), [📋 `docs/SPEC.md`](SPEC.md) и [📋 `docs/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
 ---
 
@@ -41,7 +41,7 @@
 - оператор подтверждает/меняет решение в спорных случаях;
 - LLM используется для адаптации текста в рамках утверждённой политики.
 
-Обоснование выбора подхода: [обоснование выбора Controlled Hybrid (PDF)](docs/controlled-hybrid-architecture-rationale.pdf).
+Обоснование выбора подхода см. в [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md) разделы 2 и 3.
 
 ---
 
@@ -65,7 +65,7 @@
 - администратор превращает candidate в новую типовую ситуацию или добавляет как пример;
 - retrieval начинает увереннее находить подходящую ситуацию для будущих обращений.
 
-Сценарий и скриншоты: [Controlled Hybrid](CONTROLLED_HYBRID.md) и [Галерея экранов](SCREENSHOTS.md).
+Сценарий и скриншоты: [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md) и [🖼️ `docs/SCREENSHOTS.md`](SCREENSHOTS.md).
 
 ---
 
@@ -77,4 +77,3 @@
 - документация (архитектура, user guide, Controlled Hybrid, деплой, галерея экранов).
 
 Цель текущего состояния — демонстрационный MVP, который можно развернуть и показать как целостную систему с понятными ролями и жизненным циклом обращения.
-
