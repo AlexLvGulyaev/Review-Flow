@@ -13,9 +13,9 @@ AI-система обработки клиентских обращений с 
 Применены APL-стандарты публичных демо-ресурсов: **tokenized demo sessions** (защита `POST /api/reviews` демо-сессиями с квотой, rate-limit и IP-лимитом) и **read-only demo RBAC** для ops-консоли (Bearer-токены `administrator`/`operator`/`demo`; роль `demo` — только чтение, мутации enforced на backend). Изменение конфигурации развёртывания требует повторной Deployment Validation в чистом окружении.
 
 **Публичные адреса:**
-- Web UI (клиент + оператор): https://review-flow.alex-n8n.site
-- Admin Console: https://review-flow-admin.alex-n8n.site
-- Backend API: https://review-flow-api.alex-n8n.site
+- Web UI (клиент): https://review-flow.alex-n8n.site
+- Контур компании (оператор + администратор): https://review-flow-admin.alex-n8n.site/company
+- Backend API: https://review-flow-api.alex-n8n.site/docs
 
 ## Market Validation
 

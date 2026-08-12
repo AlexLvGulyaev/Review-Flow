@@ -3,7 +3,7 @@
 **Проект:** review-flow  
 **Дата:** 2026-08-09
 
-🌐 **Консоль оператора:** [▶️ Открыть рабочее место оператора](https://review-flow.alex-n8n.site/company)
+🌐 **Консоль оператора:** [▶️ Открыть рабочее место оператора](https://review-flow-admin.alex-n8n.site/company)
 
 ---
 
@@ -24,7 +24,7 @@
 
 ### 2.1. Открыть контур компании
 
-**Действие:** откройте https://review-flow.alex-n8n.site/company (локально — http://localhost:5180/company).
+**Действие:** откройте https://review-flow-admin.alex-n8n.site/company (локально — http://localhost:5180/company).
 
 **Зачем:** отделить публичный сайт от рабочих инструментов сотрудников.
 

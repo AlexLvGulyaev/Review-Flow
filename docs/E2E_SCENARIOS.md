@@ -75,7 +75,7 @@
 
 **Шаги:**
 
-1. Оператор открывает https://review-flow.alex-n8n.site/company и входит по Bearer-токену `OPS_OPERATOR_TOKEN`.
+1. Оператор открывает https://review-flow-admin.alex-n8n.site/company и входит по Bearer-токену `OPS_OPERATOR_TOKEN`.
 2. Открывает очередь обращений `/operator/reviews`.
 3. Выбирает обращение из списка — справа загружается карточка.
 4. Видит:
@@ -142,7 +142,7 @@
 
 **Шаги:**
 
-1. Администратор открывает https://review-flow-admin.alex-n8n.site и входит по Bearer-токену `OPS_ADMIN_TOKEN`.
+1. Администратор открывает https://review-flow-admin.alex-n8n.site/company и входит по Bearer-токену `OPS_ADMIN_TOKEN`.
 2. Переходит в **Controlled Hybrid → Типовые ситуации** → вкладка **«Кандидаты»**.
 3. Видит нового кандидата с контекстом обращения и комментарием оператора.
 4. Принимает одно из решений:

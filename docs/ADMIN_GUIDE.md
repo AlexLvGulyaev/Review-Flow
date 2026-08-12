@@ -3,7 +3,7 @@
 **Проект:** review-flow  
 **Дата:** 2026-08-09
 
-🌐 **Консоль администратора:** [▶️ Открыть админ-панель](https://review-flow-admin.alex-n8n.site)
+🌐 **Консоль администратора:** [▶️ Открыть админ-панель](https://review-flow-admin.alex-n8n.site/company)
 
 ---
 
@@ -22,7 +22,7 @@
 
 ## 🔐 2. Вход в консоль
 
-**Действие:** откройте https://review-flow-admin.alex-n8n.site (локально — http://localhost:5180/company).
+**Действие:** откройте https://review-flow-admin.alex-n8n.site/company (локально — http://localhost:5180/company).
 
 Вход — по **Bearer-токену**, выданному администратором при развёртывании (значения `OPS_*_TOKEN` в `.env`; локально — `dev-admin-token`). Вставьте токен в поле «Bearer токен» и нажмите **Войти**.
 

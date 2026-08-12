@@ -434,9 +434,9 @@ docker compose logs -f backend
 
 | Сервис | URL |
 |--------|-----|
-| Web UI | https://review-flow.alex-n8n.site |
-| Admin Console | https://review-flow-admin.alex-n8n.site |
-| Backend API | https://review-flow-api.alex-n8n.site |
+| Web UI (клиент) | https://review-flow.alex-n8n.site |
+| Контур компании (оператор + администратор) | https://review-flow-admin.alex-n8n.site/company |
+| Backend API | https://review-flow-api.alex-n8n.site/docs |
 | Health | https://review-flow-api.alex-n8n.site/health |
 
 Для локального запуска без публичного домена используйте [`docker-compose.yml`](../docker-compose.yml) (см. §6–§9). Для публичного размещения используйте [`docker-compose.prod.yml`](../docker-compose.prod.yml).
@@ -702,13 +702,13 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ### Проверка операторского сценария
 
-1. https://review-flow.alex-n8n.site/company
+1. https://review-flow-admin.alex-n8n.site/company
 2. Вход по Bearer-токену: вставьте `OPS_OPERATOR_TOKEN` в поле «Bearer токен» → **«Войти»**
 3. Очередь: `/operator/reviews` → открыть обращение → **«Одобрить и отправить»**
 
 ### Проверка административного сценария
 
-1. Войдите как администратор по Bearer-токену: вставьте `OPS_ADMIN_TOKEN` в поле «Bearer токен» → **«Войти»**
+1. Откройте https://review-flow-admin.alex-n8n.site/company и войдите по Bearer-токену: вставьте `OPS_ADMIN_TOKEN` в поле «Bearer токен» → **«Войти»**
 2. `/admin/response-cases` — список типовых ситуаций
 3. `/reports` — отчёты загружаются
 

@@ -131,8 +131,8 @@ Review Flow — демонстрационный MVP системы обрабо
 | Контур | URL |
 |---|---|
 | Web UI клиента | https://review-flow.alex-n8n.site |
-| Admin Console | https://review-flow-admin.alex-n8n.site |
-| Backend API | https://review-flow-api.alex-n8n.site |
+| Admin Console | https://review-flow-admin.alex-n8n.site/company |
+| Backend API | https://review-flow-api.alex-n8n.site/docs |
 
 ---
 

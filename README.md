@@ -135,9 +135,9 @@ flowchart TB
 | Роль | Сервис | Домен | Назначение |
 |------|--------|-------|-----------|
 | Клиент | Веб-интерфейс | [review-flow.alex-n8n.site](https://review-flow.alex-n8n.site) | Оставить обращение, проверить статус |
-| Оператор | Контур компании | [review-flow.alex-n8n.site/company](https://review-flow.alex-n8n.site/company) | Очередь обращений, модерация, публикация |
-| Администратор | Admin Console | [review-flow-admin.alex-n8n.site](https://review-flow-admin.alex-n8n.site) | Типовые ситуации, кандидаты, настройки |
-| Интегратор | Backend API | [review-flow-api.alex-n8n.site](https://review-flow-api.alex-n8n.site) | REST API Review Flow |
+| Оператор | Контур компании | [review-flow-admin.alex-n8n.site/company](https://review-flow-admin.alex-n8n.site/company) | Очередь обращений, модерация, публикация |
+| Администратор | Admin Console | [review-flow-admin.alex-n8n.site/company](https://review-flow-admin.alex-n8n.site/company) | Типовые ситуации, кандидаты, настройки |
+| Интегратор | Backend API | [review-flow-api.alex-n8n.site/docs](https://review-flow-api.alex-n8n.site/docs) | REST API Review Flow |
 
 > 🔓 **Вход сотрудников:** по Bearer-токену (`OPS_ADMIN_TOKEN` / `OPS_OPERATOR_TOKEN`). Публичный demo-вход — кнопка «Войти в демо-режим (только просмотр)» (`VITE_OPS_DEMO_TOKEN`), read-only RBAC. Не корпоративный SSO.
 
@@ -224,9 +224,9 @@ docker compose up --build
 
 | Сервис | URL |
 |--------|-----|
-| Web UI (клиент + оператор) | https://review-flow.alex-n8n.site |
-| Admin Console | https://review-flow-admin.alex-n8n.site |
-| Backend API | https://review-flow-api.alex-n8n.site |
+| Web UI (клиент) | https://review-flow.alex-n8n.site |
+| Контур компании (оператор + администратор) | https://review-flow-admin.alex-n8n.site/company |
+| Backend API | https://review-flow-api.alex-n8n.site/docs |
 | Health | https://review-flow-api.alex-n8n.site/health |
 
 Подробные инструкции: [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md)
