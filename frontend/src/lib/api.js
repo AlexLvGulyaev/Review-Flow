@@ -1,9 +1,19 @@
-import { getStoredRole } from "./role.js";
+import { getStoredRole, setStoredRole, ROLES } from "./role.js";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8700";
 
 export function getApiUrl() {
   return API_URL;
+}
+
+/** Clear a stale/invalid ops session and force re-login. */
+function clearOpsSession() {
+  try {
+    localStorage.removeItem("review-flow-company-session");
+  } catch {
+    /* ignore */
+  }
+  setStoredRole(ROLES.CLIENT);
 }
 
 /** Read the ops Bearer token from the persisted session, if any. */
@@ -77,6 +87,16 @@ export async function apiFetch(path, options = {}) {
     headers["Content-Type"] = "application/json";
   }
   const res = await fetch(`${API_URL}${path}`, { ...fetchOptions, headers });
+  // Ops session invalid/expired: we sent a Bearer but the backend rejected it
+  // on an ops endpoint. Clear the stale session and send the user back to the
+  // staff login. Demo-limiter 401s come from /api/demo/* and are handled by
+  // DemoContext (clearDemo), so we leave those alone.
+  if (res.status === 401 && opsToken && !path.startsWith("/api/demo")) {
+    clearOpsSession();
+    if (typeof window !== "undefined" && window.location.pathname !== "/company") {
+      window.location.replace("/company");
+    }
+  }
   return res;
 }
 
