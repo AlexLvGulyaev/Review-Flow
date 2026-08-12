@@ -1,10 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import {
-  authenticateDemoUser,
-  clearCompanySession,
-  loadCompanySession,
-  saveCompanySession,
+  getStoredOpsSession,
+  signInDemo,
+  signInWithToken,
+  signOut,
 } from "../lib/companyAuth.js";
 import { ROLES } from "../lib/role.js";
 import { useRole } from "./RoleContext.jsx";
@@ -13,40 +13,50 @@ const CompanyAuthContext = createContext(null);
 
 export function CompanyAuthProvider({ children }) {
   const { setRole } = useRole();
-  const [session, setSession] = useState(() => loadCompanySession());
+  const [session, setSession] = useState(() => getStoredOpsSession());
 
   useEffect(() => {
     if (session) {
       setRole(session.role);
     }
-  }, [session, setRole]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   const login = useCallback(
-    async (email, password) => {
-      const user = authenticateDemoUser(email, password);
-      const next = { email: user.email, role: user.role, label: user.label };
-      saveCompanySession(next);
+    async (token) => {
+      const next = await signInWithToken(token);
       setSession(next);
-      setRole(user.role);
+      setRole(next.role);
       return next;
     },
     [setRole]
   );
 
+  const loginDemo = useCallback(async () => {
+    const next = await signInDemo();
+    setSession(next);
+    setRole(next.role);
+    return next;
+  }, [setRole]);
+
   const logout = useCallback(() => {
-    clearCompanySession();
+    signOut();
     setSession(null);
     setRole(ROLES.CLIENT);
   }, [setRole]);
+
+  const isDemo = Boolean(session?.isDemo || session?.role === ROLES.DEMO);
 
   const value = useMemo(
     () => ({
       session,
       isStaffSignedIn: Boolean(session),
+      isDemo,
       login,
+      loginDemo,
       logout,
     }),
-    [session, login, logout]
+    [session, isDemo, login, loginDemo, logout]
   );
 
   return <CompanyAuthContext.Provider value={value}>{children}</CompanyAuthContext.Provider>;

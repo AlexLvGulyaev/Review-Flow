@@ -1,6 +1,8 @@
 import { Link, Outlet } from "react-router-dom";
 
 import { ClientModalProvider, useClientModals } from "../context/ClientModalContext.jsx";
+import { DemoProvider } from "../context/DemoContext.jsx";
+import DemoBadge from "../components/client/DemoBadge.jsx";
 
 function ClientHeader() {
   const { openReviewModal, openStatusModal } = useClientModals();
@@ -22,6 +24,7 @@ function ClientHeader() {
           <a href="/#support">Поддержка</a>
         </nav>
         <div className="client-header-actions">
+          <DemoBadge />
           <button type="button" className="client-btn-header outline" onClick={() => openStatusModal()}>
             Проверить статус
           </button>
@@ -113,12 +116,14 @@ function ClientFooter() {
 
 export default function ClientLayout() {
   return (
-    <ClientModalProvider>
-      <div className="client-shell">
-        <ClientHeader />
-        <Outlet />
-        <ClientFooter />
-      </div>
-    </ClientModalProvider>
+    <DemoProvider>
+      <ClientModalProvider>
+        <div className="client-shell">
+          <ClientHeader />
+          <Outlet />
+          <ClientFooter />
+        </div>
+      </ClientModalProvider>
+    </DemoProvider>
   );
 }

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin, require_admin_read
 from app.db.session import get_db
 from app.schemas.ch_runtime_settings import ChRuntimeSettingsOut, ChRuntimeSettingsPatch
 from app.services.ch_runtime_settings import ChRuntimeSettingsService
@@ -10,7 +10,7 @@ from app.services.operational_log import log_event
 router = APIRouter(
     prefix="/api/settings/ch-runtime",
     tags=["ch-runtime-settings"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 
@@ -31,7 +31,7 @@ def get_ch_runtime_settings(db: Session = Depends(get_db)) -> ChRuntimeSettingsO
     return _to_out(ChRuntimeSettingsService(db).get_row())
 
 
-@router.patch("", response_model=ChRuntimeSettingsOut)
+@router.patch("", response_model=ChRuntimeSettingsOut, dependencies=[Depends(require_admin)])
 def patch_ch_runtime_settings(
     body: ChRuntimeSettingsPatch,
     db: Session = Depends(get_db),

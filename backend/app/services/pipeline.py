@@ -30,11 +30,13 @@ class ReviewPipeline:
         self.db = db
         self.ai_runtime = AIProviderRuntime(db)
 
-    def ingest_and_process(self, payload: ReviewCreateRequest) -> tuple[uuid.UUID, str]:
+    def ingest_and_process(
+        self, payload: ReviewCreateRequest, demo_mode: bool = False
+    ) -> tuple[uuid.UUID, str]:
         ingest_start = time.perf_counter()
         customer = self._get_or_create_customer(payload)
         service_case = self._create_service_case(customer, payload)
-        review = self._create_review(customer, service_case, payload)
+        review = self._create_review(customer, service_case, payload, demo_mode=demo_mode)
 
         ingest_ms = int((time.perf_counter() - ingest_start) * 1000)
         log_event(
@@ -126,6 +128,7 @@ class ReviewPipeline:
         customer: Customer,
         service_case: ServiceCase,
         payload: ReviewCreateRequest,
+        demo_mode: bool = False,
     ) -> Review:
         order_number = (payload.order_number or "").strip()
         if not order_number:
@@ -148,6 +151,7 @@ class ReviewPipeline:
             request_number=request_number,
             source_channel="web_form",
             created_at=datetime.now(timezone.utc),
+            demo_mode=demo_mode,
         )
         self.db.add(review)
         self.db.flush()

@@ -63,6 +63,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - VITE_API_URL=${VITE_API_URL:-https://review-flow-api.alex-n8n.site}
+        - VITE_OPS_DEMO_TOKEN=${VITE_OPS_DEMO_TOKEN:-}
     container_name: review-flow-apl-web-ui
     restart: unless-stopped
     networks:
@@ -88,6 +89,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - VITE_API_URL=${VITE_API_URL:-https://review-flow-api.alex-n8n.site}
+        - VITE_OPS_DEMO_TOKEN=${VITE_OPS_DEMO_TOKEN:-}
     container_name: review-flow-apl-admin-console
     restart: unless-stopped
     networks:

@@ -1,9 +1,13 @@
 import { useReviewForm } from "../../hooks/useReviewForm.js";
+import useDemo from "../../hooks/useDemo.js";
 import ClientModal from "./ClientModal.jsx";
 import ReviewFormFields from "./ReviewFormFields.jsx";
 
 export default function ReviewCreationModal({ open, onClose, onCheckStatus }) {
   const review = useReviewForm();
+  const { isDemoActive, token, status, startDemo, isLoading: demoLoading } = useDemo();
+  const quotaExhausted =
+    isDemoActive && !!status && (status.requests_remaining ?? 1) <= 0;
 
   function handleClose() {
     review.reset();
@@ -11,6 +15,14 @@ export default function ReviewCreationModal({ open, onClose, onCheckStatus }) {
   }
 
   async function handleSubmit(e) {
+    // Ensure an active demo token before hitting the gated AI pipeline.
+    if (isDemoActive && !token) {
+      try {
+        await startDemo();
+      } catch {
+        /* error surfaced via demo state / API response */
+      }
+    }
     await review.submit(e);
   }
 
@@ -89,9 +101,24 @@ export default function ReviewCreationModal({ open, onClose, onCheckStatus }) {
                 >
                   Отмена
                 </button>
-                <button type="submit" className="client-btn primary" disabled={review.loading}>
-                  {review.loading ? "Отправка…" : "Отправить обращение"}
-                </button>
+                {quotaExhausted ? (
+                  <button
+                    type="button"
+                    className="client-btn primary"
+                    onClick={() => startDemo()}
+                    disabled={demoLoading}
+                  >
+                    {demoLoading ? "Запуск…" : "Начать новую демо-сессию"}
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="client-btn primary"
+                    disabled={review.loading || demoLoading}
+                  >
+                    {review.loading ? "Отправка…" : "Отправить обращение"}
+                  </button>
+                )}
               </div>
             </form>
           </>

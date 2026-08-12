@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminApiFetch, readApiError } from "../../lib/api.js";
+import { useCompanyAuth } from "../../context/CompanyAuthContext.jsx";
 import { fetchClassificationReference } from "../../lib/classificationReference.js";
 import { OpPage } from "../components/OpPage.jsx";
 import { AdminConsoleHeader, ResponseCaseWorkspaceHeader } from "./AdminConsoleHeader.jsx";
@@ -90,6 +91,7 @@ function caseToFormModel(data) {
 }
 
 export default function ResponseCasesAdminWorkspace() {
+  const { isDemo } = useCompanyAuth();
   const [tab, setTab] = useState("cases");
   const [cases, setCases] = useState([]);
   const [candidates, setCandidates] = useState([]);
@@ -624,6 +626,7 @@ export default function ResponseCasesAdminWorkspace() {
             onAddExample={() => setExampleModalOpen(true)}
             onArchive={() => handleLifecycle(false)}
             onActivate={() => handleLifecycle(true)}
+            readOnly={isDemo}
           />
           <div className="rf-oc-console rf-rc-console">
             <ResponseCaseLeftPanel
@@ -694,6 +697,7 @@ export default function ResponseCasesAdminWorkspace() {
             onAddExample={() => {}}
             onArchive={() => {}}
             onActivate={() => {}}
+            readOnly={isDemo}
           />
           <ResponseCaseCandidatesPanel
             candidates={candidates}

@@ -22,6 +22,7 @@ export function ResponseCaseUnifiedToolbar({
   onAddExample,
   onArchive,
   onActivate,
+  readOnly = false,
 }) {
   return (
     <div className="rf-rc-toolbar" role="toolbar" aria-label="Панель типовых ситуаций">
@@ -83,14 +84,14 @@ export function ResponseCaseUnifiedToolbar({
           </>
         ) : showCaseActions ? (
           <>
-            <OpButton type="button" className="rf-rc-toolbar__action" onClick={onAdd} disabled={loading || saving}>
+            <OpButton type="button" className="rf-rc-toolbar__action" onClick={onAdd} disabled={loading || saving || readOnly}>
               Добавить
             </OpButton>
             <OpButton
               type="button"
               className="rf-rc-toolbar__action"
               onClick={onEdit}
-              disabled={!hasCase || loading || saving}
+              disabled={!hasCase || loading || saving || readOnly}
             >
               Изменить
             </OpButton>
@@ -99,18 +100,18 @@ export function ResponseCaseUnifiedToolbar({
                 type="button"
                 className="rf-rc-toolbar__action"
                 onClick={onAddExample}
-                disabled={loading || saving}
+                disabled={loading || saving || readOnly}
               >
                 Добавить пример
               </OpButton>
             ) : null}
             {hasCase && isActive ? (
-              <OpButton type="button" className="rf-rc-toolbar__action" onClick={onArchive} disabled={saving}>
+              <OpButton type="button" className="rf-rc-toolbar__action" onClick={onArchive} disabled={saving || readOnly}>
                 Архивировать
               </OpButton>
             ) : null}
             {hasCase && !isActive ? (
-              <OpButton type="button" className="rf-rc-toolbar__action" onClick={onActivate} disabled={saving}>
+              <OpButton type="button" className="rf-rc-toolbar__action" onClick={onActivate} disabled={saving || readOnly}>
                 Активировать
               </OpButton>
             ) : null}

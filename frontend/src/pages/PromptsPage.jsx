@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { apiFetch, readApiError } from "../lib/api.js";
+import { useCompanyAuth } from "../context/CompanyAuthContext.jsx";
 import { OpPage, OpPageHeader } from "../ops/components/OpPage.jsx";
 import { OpToolbar, OpButton, OpInput, OpTextarea } from "../ops/components/OpToolbar.jsx";
 import { OpSplitView } from "../ops/components/OpSplitView.jsx";
@@ -10,6 +11,7 @@ import { OpEditorSection } from "../ops/kb/components/OpEditorSection.jsx";
 import { OpPayloadBlock } from "../ops/observability/OpPayloadBlock.jsx";
 
 export default function PromptsPage() {
+  const { isDemo } = useCompanyAuth();
   const [prompts, setPrompts] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -205,7 +207,7 @@ export default function PromptsPage() {
                     title="Prompt header"
                     right={
                       !detail.is_active ? (
-                        <OpButton type="button" onClick={handleActivate} variant="primary">
+                        <OpButton type="button" onClick={handleActivate} variant="primary" disabled={isDemo} title={isDemo ? "Демо-режим: только просмотр" : undefined}>
                           Activate
                         </OpButton>
                       ) : null
@@ -258,7 +260,7 @@ export default function PromptsPage() {
                       />
                     </label>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      <OpButton type="submit" variant="primary">
+                      <OpButton type="submit" variant="primary" disabled={isDemo} title={isDemo ? "Демо-режим: только просмотр" : undefined}>
                         Create version
                       </OpButton>
                     </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { getApiUrl, readApiError } from "../lib/api.js";
+import { apiFetch, readApiError } from "../lib/api.js";
 import { normalizeOrderNumber } from "../lib/reviewIds.js";
 
 export const REVIEW_INITIAL_FORM = {
@@ -82,9 +82,8 @@ export function useReviewForm() {
     setLoading(true);
     try {
       const product_area = TOPIC_TO_PRODUCT_AREA[form.topic] || "general";
-      const res = await fetch(`${getApiUrl()}/api/reviews`, {
+      const res = await apiFetch(`/api/reviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_name: customerName,
           email: email || null,
@@ -97,7 +96,13 @@ export function useReviewForm() {
       });
 
       if (!res.ok) {
-        throw new Error(await readApiError(res, "Не удалось отправить обращение"));
+        const base = await readApiError(res, "Не удалось отправить обращение");
+        // Demo-limiter signals: 403 (no/expired token), 401 (expired session),
+        // 429 (quota exhausted / rate limited). Surface a helpful hint.
+        if (res.status === 401 || res.status === 403 || res.status === 429) {
+          throw new Error(`${base} Начните новую демо-сессию и попробуйте снова.`);
+        }
+        throw new Error(base);
       }
 
       const data = await res.json();

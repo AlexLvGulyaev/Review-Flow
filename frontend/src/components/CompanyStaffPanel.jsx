@@ -6,19 +6,24 @@ import { OpButton } from "../ops/components/OpToolbar.jsx";
 
 /** Compact staff footer at bottom of company sidebar. */
 export default function CompanyStaffPanel() {
-  const { session, logout } = useCompanyAuth();
+  const { session, isDemo, logout } = useCompanyAuth();
   if (!session) return null;
 
   return (
     <footer className="company-staff-footer">
       <div className="company-staff-footer__meta">
-        <span className="company-staff-footer__email" title={session.email}>
-          {session.email}
+        <span className="company-staff-footer__email" title={session.label || session.role}>
+          {session.label || ROLE_LABELS[session.role] || session.role}
         </span>
         <span className="company-staff-footer__role muted">
           {ROLE_LABELS[session.role] || session.role}
         </span>
       </div>
+      {isDemo ? (
+        <span className="company-staff-footer__demo" title="Изменения запрещены на уровне backend">
+          Демо-режим: только просмотр
+        </span>
+      ) : null}
       <OpButton
         type="button"
         className="company-staff-footer__logout"

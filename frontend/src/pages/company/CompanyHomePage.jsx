@@ -2,32 +2,47 @@ import { FormEvent, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useCompanyAuth } from "../../context/CompanyAuthContext.jsx";
-import { DEMO_COMPANY_USERS, getStaffHomePath } from "../../lib/companyAuth.js";
+import { getStaffHomePath } from "../../lib/companyAuth.js";
+
+const DEMO_TOKEN = import.meta.env.VITE_OPS_DEMO_TOKEN || "";
 
 export default function CompanyHomePage() {
-  const { isStaffSignedIn, session, login } = useCompanyAuth();
+  const { isStaffSignedIn, session, login, loginDemo } = useCompanyAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [demoSubmitting, setDemoSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   if (isStaffSignedIn && session) {
     return <Navigate to={getStaffHomePath(session.role)} replace />;
   }
 
-  async function onSubmit(e) {
+  async function onTokenSubmit(e) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      const user = await login(email, password);
+      const user = await login(token);
       navigate(getStaffHomePath(user.role), { replace: true });
     } catch (err) {
       setError(err.message || "Ошибка входа");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function onDemoLogin() {
+    setError(null);
+    setDemoSubmitting(true);
+    try {
+      const user = await loginDemo();
+      navigate(getStaffHomePath(user.role), { replace: true });
+    } catch (err) {
+      setError(err.message || "Ошибка входа в демо-режим");
+    } finally {
+      setDemoSubmitting(false);
     }
   }
 
@@ -49,29 +64,17 @@ export default function CompanyHomePage() {
           </p>
         ) : null}
 
-        <form className="company-login-form" onSubmit={onSubmit}>
+        <form className="company-login-form" onSubmit={onTokenSubmit}>
           <label className="company-login-form__field">
-            <span className="company-login-form__label">Email</span>
-            <input
-              type="email"
-              name="email"
-              autoComplete="username"
-              className="company-login-form__input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={submitting}
-            />
-          </label>
-          <label className="company-login-form__field">
-            <span className="company-login-form__label">Пароль</span>
+            <span className="company-login-form__label">Bearer токен</span>
             <input
               type="password"
-              name="password"
-              autoComplete="current-password"
+              name="token"
+              autoComplete="off"
+              placeholder="Вставьте токен доступа…"
               className="company-login-form__input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
               required
               disabled={submitting}
             />
@@ -88,15 +91,22 @@ export default function CompanyHomePage() {
           </button>
         </form>
 
+        {DEMO_TOKEN ? (
+          <button
+            type="button"
+            className="company-login-form__submit company-login-form__submit--outline"
+            onClick={onDemoLogin}
+            disabled={demoSubmitting}
+          >
+            {demoSubmitting ? "Вход…" : "Войти в демо-режим (только просмотр)"}
+          </button>
+        ) : null}
+
         <footer className="company-login-card__footer muted">
-          <p className="company-login-card__hint">Демо-учётные записи:</p>
-          <ul className="company-login-card__accounts">
-            {DEMO_COMPANY_USERS.map((u) => (
-              <li key={u.email}>
-                <code>{u.email}</code> · пароль <code>{u.password}</code> ({u.label})
-              </li>
-            ))}
-          </ul>
+          <p className="company-login-card__hint">
+            Токен выдаётся администратором при развёртывании. Демо-вход открывает
+            консоль в режиме только для чтения.
+          </p>
           <p>
             <Link to="/">← На сайт для клиентов</Link>
           </p>

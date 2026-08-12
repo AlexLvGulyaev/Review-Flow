@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin, require_admin_read
 from app.db.session import get_db
 from app.models.entities import (
     InteractionScenario,
@@ -33,7 +33,7 @@ from app.services.operational_log import log_event
 router = APIRouter(
     prefix="/api/admin",
     tags=["admin"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 
@@ -116,7 +116,7 @@ def get_phrase(item_id: UUID, db: Session = Depends(get_db)) -> PhraseOut:
     return _phrase_out(refs, p)
 
 
-@router.post("/phrases", response_model=PhraseOut, status_code=201)
+@router.post("/phrases", response_model=PhraseOut, status_code=201, dependencies=[Depends(require_admin)])
 def create_phrase(body: PhraseCreate, db: Session = Depends(get_db)) -> PhraseOut:
     refs = ClassificationRefsService(db)
     scenario, sentiment, priority = _resolve_phrase_refs(refs, body)
@@ -144,7 +144,7 @@ def create_phrase(body: PhraseCreate, db: Session = Depends(get_db)) -> PhraseOu
     return _phrase_out(refs, p)
 
 
-@router.patch("/phrases/{item_id}", response_model=PhraseOut)
+@router.patch("/phrases/{item_id}", response_model=PhraseOut, dependencies=[Depends(require_admin)])
 def update_phrase(
     item_id: UUID, body: PhraseUpdate, db: Session = Depends(get_db)
 ) -> PhraseOut:
@@ -204,7 +204,7 @@ def get_template(item_id: UUID, db: Session = Depends(get_db)) -> TemplateOut:
     return _template_out(refs, t)
 
 
-@router.post("/templates", response_model=TemplateOut, status_code=201)
+@router.post("/templates", response_model=TemplateOut, status_code=201, dependencies=[Depends(require_admin)])
 def create_template(body: TemplateCreate, db: Session = Depends(get_db)) -> TemplateOut:
     refs = ClassificationRefsService(db)
     scenario, sentiment, priority = _resolve_template_refs(refs, body)
@@ -231,7 +231,7 @@ def create_template(body: TemplateCreate, db: Session = Depends(get_db)) -> Temp
     return _template_out(refs, t)
 
 
-@router.patch("/templates/{item_id}", response_model=TemplateOut)
+@router.patch("/templates/{item_id}", response_model=TemplateOut, dependencies=[Depends(require_admin)])
 def update_template(
     item_id: UUID, body: TemplateUpdate, db: Session = Depends(get_db)
 ) -> TemplateOut:
@@ -289,7 +289,7 @@ def get_scenario(item_id: UUID, db: Session = Depends(get_db)) -> ScenarioOut:
     return _scenario_out(s)
 
 
-@router.post("/scenarios", response_model=ScenarioOut, status_code=201)
+@router.post("/scenarios", response_model=ScenarioOut, status_code=201, dependencies=[Depends(require_admin)])
 def create_scenario(body: ScenarioCreate, db: Session = Depends(get_db)) -> ScenarioOut:
     existing = db.scalars(
         select(InteractionScenario).where(InteractionScenario.scenario_code == body.code)
@@ -315,7 +315,7 @@ def create_scenario(body: ScenarioCreate, db: Session = Depends(get_db)) -> Scen
     return _scenario_out(s)
 
 
-@router.patch("/scenarios/{item_id}", response_model=ScenarioOut)
+@router.patch("/scenarios/{item_id}", response_model=ScenarioOut, dependencies=[Depends(require_admin)])
 def update_scenario(
     item_id: UUID, body: ScenarioUpdate, db: Session = Depends(get_db)
 ) -> ScenarioOut:
@@ -358,7 +358,7 @@ def get_sentiment(item_id: UUID, db: Session = Depends(get_db)) -> SentimentOut:
     return _sentiment_out(s)
 
 
-@router.post("/sentiments", response_model=SentimentOut, status_code=201)
+@router.post("/sentiments", response_model=SentimentOut, status_code=201, dependencies=[Depends(require_admin)])
 def create_sentiment(body: SentimentCreate, db: Session = Depends(get_db)) -> SentimentOut:
     existing = db.scalars(
         select(SentimentProfile).where(SentimentProfile.sentiment_code == body.code)
@@ -384,7 +384,7 @@ def create_sentiment(body: SentimentCreate, db: Session = Depends(get_db)) -> Se
     return _sentiment_out(s)
 
 
-@router.patch("/sentiments/{item_id}", response_model=SentimentOut)
+@router.patch("/sentiments/{item_id}", response_model=SentimentOut, dependencies=[Depends(require_admin)])
 def update_sentiment(
     item_id: UUID, body: SentimentUpdate, db: Session = Depends(get_db)
 ) -> SentimentOut:

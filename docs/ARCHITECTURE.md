@@ -74,6 +74,25 @@ PostgreSQL
 - системные настройки: `/settings/system`
 - справочники/KB: `/admin/*` (включая `response-cases`)
 
+### 2.4 Аутентификация и RBAC
+
+Защита контуров реализована на двух независимых слоях (эталоны — APL-паттерны `web-ui-tokenized-demo-limiter` и `admin-console-read-only-demo-rbac`).
+
+**Ops/admin консоль — read-only demo RBAC (`app/core/roles.py`, `app/api/auth.py`).**
+
+- При наличии `OPS_ADMIN_TOKEN` в окружении ops-эндпоинты требуют `Authorization: Bearer <token>`. Зависимость `ops_identity` выводит роль из токена: `administrator` (`OPS_ADMIN_TOKEN`) / `operator` (`OPS_OPERATOR_TOKEN`) / `demo` (`OPS_DEMO_TOKEN`).
+- Роль `demo` — **только чтение**: read-guards (`require_admin_read`, `require_ops_read`) включают `demo`; мутационные guards (`require_admin`, `require_operator`) — нет, поэтому `demo` получает `403` на любой мутации, а отказ фиксируется в операционном логе (`role_access_denied`). Backend — единственный source of truth; UI-отключение кнопок носит вспомогательный характер.
+- `GET /api/auth/whoami` валидирует токен и возвращает авторитетную роль для консоли.
+- **Обратная совместимость:** если `OPS_ADMIN_TOKEN` пуст (или `YOUR_*`), `ops_identity` откатывается к заголовку `X-Role` — локальная разработка и существующие тесты с `X-Role` не ломаются.
+
+**Публичный контур — tokenized demo sessions (`app/services/demo_limiter.py`, `app/api/demo.py`).**
+
+- При `DEMO_LIMITER_ENABLED=true` эндпоинт `POST /api/reviews` требует `X-Demo-Token`. Токен выпускается `POST /api/demo/start` и защищён тремя слоями лимита:
+  1. **IP-лимит** — не более `DEMO_MAX_SESSIONS_PER_IP_PER_HOUR` сессий с одного IP в час (защита от масс-создания сессий) → `429`.
+  2. **Rate-limit** — минимальный интервал `60 / DEMO_RATE_LIMIT_PER_MINUTE` секунд между запросами → `429` + `Retry-After`.
+  3. **Квота** — не более `DEMO_MAX_REQUESTS_PER_SESSION` запросов на сессию с TTL `DEMO_SESSION_TTL_MINUTES` → `429` / `401`.
+- Квота списывается на этапе валидации токена (до запуска AI-пайплайна), поэтому ошибочный payload не возвращает квоту. Дешёвые GET status/detail остаются открытыми. Созданные в demo-режиме отзывы помечаются `demo_mode=true` (модель `reviews`, миграция `016`).
+
 ---
 
 ## 3. Backend API (as‑is)

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin_read
 from app.db.session import get_db
 from app.schemas.reports import BusinessProblemsReport, ChQualityReport, CustomerReviewsReport
 from app.services.operational_log import log_event
@@ -14,7 +14,7 @@ from app.services.reports import ReportsService
 router = APIRouter(
     prefix="/api/admin/reports",
     tags=["admin-reports"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 REPORT_BUILDERS = {

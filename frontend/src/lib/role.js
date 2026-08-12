@@ -2,12 +2,14 @@ export const ROLES = {
   CLIENT: "client",
   OPERATOR: "operator",
   ADMINISTRATOR: "administrator",
+  DEMO: "demo",
 };
 
 export const ROLE_LABELS = {
   [ROLES.CLIENT]: "Клиент",
   [ROLES.OPERATOR]: "Оператор",
   [ROLES.ADMINISTRATOR]: "Администратор",
+  [ROLES.DEMO]: "Демо (только просмотр)",
 };
 
 export function formatRolesList(roles) {

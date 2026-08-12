@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin_read
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -13,7 +13,7 @@ from app.services.operational_log import log_event
 router = APIRouter(
     prefix="/api/logs",
     tags=["logs"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 

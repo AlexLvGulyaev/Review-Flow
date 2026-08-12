@@ -58,6 +58,9 @@ class Review(Base):
     source_channel: Mapped[str | None] = mapped_column(String(64), default="web_form")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     raw_metadata: Mapped[dict] = mapped_column(JSONB, default=dict)
+    demo_mode: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     customer: Mapped["Customer"] = relationship(back_populates="reviews")
     service_case: Mapped["ServiceCase | None"] = relationship(back_populates="reviews")

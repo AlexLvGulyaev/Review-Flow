@@ -4,6 +4,12 @@ FROM node:20-alpine AS builder
 ARG VITE_API_URL=https://review-flow-api.alex-n8n.site
 ENV VITE_API_URL=${VITE_API_URL}
 
+# Build-time read-only demo token for the ops/admin console. When set, the
+# console shows a "Войти в демо-режим (только просмотр)" button that uses this
+# token. Leave empty to disable the demo-login button.
+ARG VITE_OPS_DEMO_TOKEN=
+ENV VITE_OPS_DEMO_TOKEN=${VITE_OPS_DEMO_TOKEN}
+
 WORKDIR /app
 
 COPY package.json package-lock.json* ./

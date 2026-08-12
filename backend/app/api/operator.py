@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.roles import require_operator
+from app.core.roles import require_operator, require_ops_read
 from sqlalchemy.orm import Session, joinedload
 
 from app.db.session import get_db
@@ -40,7 +40,7 @@ from app.services.review_helpers import latest_response, review_text_preview
 router = APIRouter(
     prefix="/api/operator/reviews",
     tags=["operator"],
-    dependencies=[Depends(require_operator)],
+    dependencies=[Depends(require_ops_read)],
 )
 
 
@@ -107,7 +107,7 @@ def get_operator_review(
     return detail
 
 
-@router.post("/{review_id}/approve", response_model=OperatorReviewDetail)
+@router.post("/{review_id}/approve", response_model=OperatorReviewDetail, dependencies=[Depends(require_operator)])
 def approve_operator_review(
     review_id: UUID,
     payload: ApproveRequest,
@@ -116,7 +116,7 @@ def approve_operator_review(
     return approve_review(db, review_id, payload.final_response)
 
 
-@router.post("/{review_id}/reject", response_model=ModerationActionResponse)
+@router.post("/{review_id}/reject", response_model=ModerationActionResponse, dependencies=[Depends(require_operator)])
 def reject_operator_review(
     review_id: UUID,
     payload: ModerationActionRequest,
@@ -131,7 +131,7 @@ def reject_operator_review(
     )
 
 
-@router.post("/{review_id}/reject-feedback", response_model=OperatorReviewDetail)
+@router.post("/{review_id}/reject-feedback", response_model=OperatorReviewDetail, dependencies=[Depends(require_operator)])
 def reject_feedback_operator_review(
     review_id: UUID,
     payload: RejectionFeedbackRequest,
@@ -140,7 +140,7 @@ def reject_feedback_operator_review(
     return submit_ai_draft_rejection_feedback(db, review_id, payload)
 
 
-@router.post("/{review_id}/confirm-case", response_model=OperatorReviewDetail)
+@router.post("/{review_id}/confirm-case", response_model=OperatorReviewDetail, dependencies=[Depends(require_operator)])
 def confirm_case_operator_review(
     review_id: UUID,
     db: Session = Depends(get_db),
@@ -148,7 +148,7 @@ def confirm_case_operator_review(
     return confirm_response_case(db, review_id)
 
 
-@router.post("/{review_id}/override-case", response_model=OperatorReviewDetail)
+@router.post("/{review_id}/override-case", response_model=OperatorReviewDetail, dependencies=[Depends(require_operator)])
 def override_case_operator_review(
     review_id: UUID,
     payload: ResponseCaseOverrideRequest,
@@ -157,7 +157,7 @@ def override_case_operator_review(
     return override_response_case(db, review_id, payload)
 
 
-@router.post("/{review_id}/case-candidates", response_model=OperatorReviewDetail)
+@router.post("/{review_id}/case-candidates", response_model=OperatorReviewDetail, dependencies=[Depends(require_operator)])
 def create_case_candidate_operator_review(
     review_id: UUID,
     payload: CaseCandidateCreateRequest,
@@ -166,7 +166,7 @@ def create_case_candidate_operator_review(
     return create_case_candidate(db, review_id, payload)
 
 
-@router.post("/{review_id}/escalate", response_model=OperatorReviewDetail)
+@router.post("/{review_id}/escalate", response_model=OperatorReviewDetail, dependencies=[Depends(require_operator)])
 def escalate_operator_review(
     review_id: UUID,
     payload: OperatorEscalationRequest,
@@ -175,7 +175,7 @@ def escalate_operator_review(
     return escalate_response_case(db, review_id, payload)
 
 
-@router.post("/{review_id}/revision", response_model=ModerationActionResponse)
+@router.post("/{review_id}/revision", response_model=ModerationActionResponse, dependencies=[Depends(require_operator)])
 def revision_operator_review(
     review_id: UUID,
     payload: ModerationActionRequest,

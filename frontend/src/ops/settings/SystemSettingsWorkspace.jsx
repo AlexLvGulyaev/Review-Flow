@@ -6,6 +6,7 @@ import {
   validateProviderEdit,
 } from "../../lib/aiProviderValidation.js";
 import { adminApiFetch, apiFetch, readApiError } from "../../lib/api.js";
+import { useCompanyAuth } from "../../context/CompanyAuthContext.jsx";
 import { fetchClassificationReference } from "../../lib/classificationReference.js";
 import { OpPage, OpPageHeader } from "../components/OpPage.jsx";
 import { OpButton, OpInput, OpSelect, OpTextarea } from "../components/OpToolbar.jsx";
@@ -87,10 +88,11 @@ function ProviderCard({
   onFieldBlur,
   onSave,
   saving,
+  readOnly = false,
 }) {
   const p = provider;
   if (!p) return null;
-  const disabled = saving || p.implementation_status === "not_implemented";
+  const disabled = saving || readOnly || p.implementation_status === "not_implemented";
   const endpoint = p.effective_base_url || "—";
 
   return (
@@ -161,6 +163,7 @@ function ProviderCard({
 }
 
 export default function SystemSettingsWorkspace() {
+  const { isDemo } = useCompanyAuth();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -603,7 +606,7 @@ export default function SystemSettingsWorkspace() {
                   <OpButton
                     type="button"
                     variant="primary"
-                    disabled={actionLoading}
+                    disabled={actionLoading || isDemo}
                     onClick={saveSearchSettings}
                   >
                     Сохранить
@@ -655,7 +658,7 @@ export default function SystemSettingsWorkspace() {
                     <OpButton
                       type="button"
                       variant="primary"
-                      disabled={actionLoading || !activeKey}
+                      disabled={actionLoading || !activeKey || isDemo}
                       onClick={saveRouting}
                     >
                       Сохранить
@@ -685,6 +688,7 @@ export default function SystemSettingsWorkspace() {
                       onFieldBlur={(field, force) => handleProviderFieldBlur(key, field, force)}
                       onSave={() => saveProvider(key)}
                       saving={actionLoading}
+                      readOnly={isDemo}
                     />
                   );
                 })}
@@ -703,7 +707,7 @@ export default function SystemSettingsWorkspace() {
                 <OpButton
                   type="button"
                   variant="primary"
-                  disabled={actionLoading || !promptDetail || !promptSystemText.trim()}
+                  disabled={actionLoading || !promptDetail || !promptSystemText.trim() || isDemo}
                   onClick={saveAdaptationPrompt}
                 >
                   Сохранить

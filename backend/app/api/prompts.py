@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin, require_admin_read
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -14,7 +14,7 @@ from app.services.prompt_service import PromptService
 router = APIRouter(
     prefix="/api/prompts",
     tags=["prompts"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 
@@ -59,7 +59,7 @@ def get_prompt(prompt_id: UUID, db: Session = Depends(get_db)) -> PromptDetail:
     )
 
 
-@router.post("", response_model=PromptDetail, status_code=201)
+@router.post("", response_model=PromptDetail, status_code=201, dependencies=[Depends(require_admin)])
 def create_prompt(
     payload: PromptCreateRequest,
     db: Session = Depends(get_db),
@@ -86,7 +86,7 @@ def create_prompt(
     )
 
 
-@router.post("/{prompt_id}/activate", response_model=PromptDetail)
+@router.post("/{prompt_id}/activate", response_model=PromptDetail, dependencies=[Depends(require_admin)])
 def activate_prompt(prompt_id: UUID, db: Session = Depends(get_db)) -> PromptDetail:
     service = PromptService(db)
     prompt = service.activate(prompt_id)

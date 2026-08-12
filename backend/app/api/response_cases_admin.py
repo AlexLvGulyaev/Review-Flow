@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin, require_admin_read
 from app.db.session import get_db
 from app.models.ch_entities import ResponseCaseCandidate
 from app.schemas.response_case import ResponseCaseExampleOut, ResponseCaseOut
@@ -31,7 +31,7 @@ from app.services.response_cases import ResponseCaseService
 router = APIRouter(
     prefix="/api/admin",
     tags=["admin-response-cases"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 
@@ -112,7 +112,7 @@ def list_response_cases(
     )
 
 
-@router.post("/response-cases", response_model=ResponseCaseOut, status_code=201)
+@router.post("/response-cases", response_model=ResponseCaseOut, status_code=201, dependencies=[Depends(require_admin)])
 def create_response_case(body: ResponseCaseCreate, db: Session = Depends(get_db)) -> ResponseCaseOut:
     return ResponseCaseService(db).create_case(body)
 
@@ -126,19 +126,19 @@ def get_response_case(case_id: UUID, db: Session = Depends(get_db)) -> ResponseC
     return row
 
 
-@router.patch("/response-cases/{case_id}", response_model=ResponseCaseOut)
+@router.patch("/response-cases/{case_id}", response_model=ResponseCaseOut, dependencies=[Depends(require_admin)])
 def update_response_case(
     case_id: UUID, body: ResponseCaseUpdate, db: Session = Depends(get_db)
 ) -> ResponseCaseOut:
     return ResponseCaseService(db).update_case(case_id, body)
 
 
-@router.post("/response-cases/{case_id}/archive", response_model=ResponseCaseOut)
+@router.post("/response-cases/{case_id}/archive", response_model=ResponseCaseOut, dependencies=[Depends(require_admin)])
 def archive_response_case(case_id: UUID, db: Session = Depends(get_db)) -> ResponseCaseOut:
     return ResponseCaseService(db).set_case_active(case_id, is_active=False)
 
 
-@router.post("/response-cases/{case_id}/activate", response_model=ResponseCaseOut)
+@router.post("/response-cases/{case_id}/activate", response_model=ResponseCaseOut, dependencies=[Depends(require_admin)])
 def activate_response_case(case_id: UUID, db: Session = Depends(get_db)) -> ResponseCaseOut:
     return ResponseCaseService(db).set_case_active(case_id, is_active=True)
 
@@ -147,6 +147,7 @@ def activate_response_case(case_id: UUID, db: Session = Depends(get_db)) -> Resp
     "/response-cases/{case_id}/examples",
     response_model=ResponseCaseExampleOut,
     status_code=201,
+    dependencies=[Depends(require_admin)],
 )
 def create_response_case_example(
     case_id: UUID, body: ResponseCaseExampleCreate, db: Session = Depends(get_db)
@@ -154,7 +155,7 @@ def create_response_case_example(
     return ResponseCaseService(db).create_example(case_id, body)
 
 
-@router.patch("/response-case-examples/{example_id}", response_model=ResponseCaseExampleOut)
+@router.patch("/response-case-examples/{example_id}", response_model=ResponseCaseExampleOut, dependencies=[Depends(require_admin)])
 def update_response_case_example(
     example_id: UUID, body: ResponseCaseExampleUpdate, db: Session = Depends(get_db)
 ) -> ResponseCaseExampleOut:
@@ -184,7 +185,7 @@ def get_response_case_candidate(
     return build_candidate_detail(db, candidate_id)
 
 
-@router.post("/response-case-candidates/{candidate_id}/complete", status_code=204)
+@router.post("/response-case-candidates/{candidate_id}/complete", status_code=204, dependencies=[Depends(require_admin)])
 def complete_response_case_candidate(
     candidate_id: UUID,
     body: CandidateCompleteBody,
@@ -193,7 +194,7 @@ def complete_response_case_candidate(
     complete_candidate_with_case(db, candidate_id, response_case_id=body.response_case_id)
 
 
-@router.post("/response-case-candidates/{candidate_id}/approve", response_model=ResponseCaseOut)
+@router.post("/response-case-candidates/{candidate_id}/approve", response_model=ResponseCaseOut, dependencies=[Depends(require_admin)])
 def approve_response_case_candidate(
     candidate_id: UUID,
     body: CandidatePromoteBody | None = None,
@@ -203,7 +204,7 @@ def approve_response_case_candidate(
     return promote_candidate(db, candidate_id, merge_into_case_id=merge_id)
 
 
-@router.post("/response-case-candidates/{candidate_id}/reject", response_model=ResponseCaseCandidateOut)
+@router.post("/response-case-candidates/{candidate_id}/reject", response_model=ResponseCaseCandidateOut, dependencies=[Depends(require_admin)])
 def reject_response_case_candidate(
     candidate_id: UUID,
     body: CandidateRejectBody | None = None,

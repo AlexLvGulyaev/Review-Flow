@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.admin import router as admin_router
+from app.api.auth import router as auth_router
 from app.api.response_cases_admin import router as response_cases_admin_router
 from app.api.ch_analytics import router as ch_analytics_router
 from app.api.reports import router as reports_router
@@ -17,6 +18,7 @@ from app.api.prompts import router as prompts_router
 from app.api.settings_ai_providers import router as ai_providers_router
 from app.api.settings_ch_runtime import router as ch_runtime_settings_router
 from app.api.reviews import router as reviews_router
+from app.api.demo import router as demo_router
 from app.core.errors import register_exception_handlers
 from app.db.migrate import run_pending_migrations
 
@@ -39,7 +41,9 @@ app.add_middleware(
 
 register_exception_handlers(app)
 app.include_router(health_router)
+app.include_router(auth_router)
 app.include_router(reviews_router)
+app.include_router(demo_router)
 app.include_router(operator_router)
 app.include_router(prompts_router)
 app.include_router(evaluation_router)

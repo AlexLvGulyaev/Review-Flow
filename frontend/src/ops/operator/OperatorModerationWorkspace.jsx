@@ -37,6 +37,7 @@ export function OperatorModerationWorkspace({
   onConfirmCase,
   onOverrideCase,
   actionError,
+  readOnly = false,
 }) {
   if (loadingDetail) {
     return <p className="rf-oc-empty">Загрузка обращения…</p>;
@@ -48,7 +49,7 @@ export function OperatorModerationWorkspace({
   const cls = detail.classification;
   const workflowCompleted = isOperatorWorkflowCompleted(detail);
   const locked = workflowCompleted || (editorLocked ?? isEditorLocked(detail));
-  const actionsDisabled = actionLoading || workflowCompleted;
+  const actionsDisabled = actionLoading || workflowCompleted || readOnly;
   const showActions = !workflowCompleted;
   const completedTooltip = workflowCompleted ? WORKFLOW_COMPLETED_TOOLTIP : undefined;
   const modUpper = labelModeration(detail.moderation_status).toUpperCase();
@@ -71,7 +72,7 @@ export function OperatorModerationWorkspace({
     !detail.case_confirmation_not_required &&
     selected?.requires_operator_confirmation &&
     !selected?.operator_confirmed;
-  const escalationDisabled = actionsDisabled || detail.case_resolved || detail.case_escalated;
+  const escalationDisabled = actionsDisabled || detail.case_resolved || detail.case_escalated || readOnly;
   const escalationTitle = detail.case_resolved
     ? "Типовая ситуация уже выбрана оператором — эскалация недоступна"
     : detail.case_escalated

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiFetch, readApiError } from "../lib/api.js";
+import { useCompanyAuth } from "../context/CompanyAuthContext.jsx";
 import { fetchClassificationReference } from "../lib/classificationReference.js";
 import { OpPage } from "../ops/components/OpPage.jsx";
 import { OperatorConsoleHeader, OperatorWorkspaceHeader } from "../ops/operator/OperatorConsoleHeader.jsx";
@@ -20,6 +21,7 @@ function safeLower(s) {
 }
 
 export default function OperatorReviewsPage() {
+  const { isDemo } = useCompanyAuth();
   const listRef = useRef(null);
   const [reviews, setReviews] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -397,6 +399,7 @@ export default function OperatorReviewsPage() {
             }}
             onConfirmCase={runConfirmCase}
             onOverrideCase={runOverrideCase}
+            readOnly={isDemo}
           />
         </section>
       </div>

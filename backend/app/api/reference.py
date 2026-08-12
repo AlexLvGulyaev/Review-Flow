@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.roles import Role, require_roles
+from app.core.roles import require_ops_read
 from app.db.session import get_db
 from app.schemas.reference import ClassificationReferenceBundle
 from app.services.classification_refs import ClassificationRefsService
@@ -9,7 +9,7 @@ from app.services.classification_refs import ClassificationRefsService
 router = APIRouter(
     prefix="/api/reference",
     tags=["reference"],
-    dependencies=[Depends(require_roles(Role.OPERATOR, Role.ADMINISTRATOR))],
+    dependencies=[Depends(require_ops_read)],
 )
 
 

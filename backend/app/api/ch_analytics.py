@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin_read
 from app.db.session import get_db
 from app.schemas.ch_analytics import ChAnalyticsDashboard, ChAuditTrail
 from app.services.ch_analytics import ChAnalyticsService
@@ -12,7 +12,7 @@ from app.services.operational_log import log_event
 router = APIRouter(
     prefix="/api/admin/ch-analytics",
     tags=["admin-ch-analytics"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 

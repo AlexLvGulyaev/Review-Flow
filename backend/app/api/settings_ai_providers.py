@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin, require_admin_read
 from app.db.session import get_db
 from app.schemas.ai_provider import (
     AIProviderEffectiveOut,
@@ -14,7 +14,7 @@ from app.services.ai_provider_settings import AIProviderSettingsService
 router = APIRouter(
     prefix="/api/settings/ai-providers",
     tags=["ai-provider-settings"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 
@@ -28,7 +28,7 @@ def get_effective_settings(db: Session = Depends(get_db)) -> AIProviderEffective
     return AIProviderSettingsService(db).get_effective_overview()
 
 
-@router.patch("/{provider_key}", response_model=AIProviderSettingOut)
+@router.patch("/{provider_key}", response_model=AIProviderSettingOut, dependencies=[Depends(require_admin)])
 def patch_ai_provider(
     provider_key: str,
     body: AIProviderSettingPatch,
@@ -39,7 +39,7 @@ def patch_ai_provider(
     )
 
 
-@router.post("/{provider_key}/activate", response_model=AIProviderSettingOut)
+@router.post("/{provider_key}/activate", response_model=AIProviderSettingOut, dependencies=[Depends(require_admin)])
 def activate_ai_provider(
     provider_key: str,
     db: Session = Depends(get_db),
@@ -47,7 +47,7 @@ def activate_ai_provider(
     return AIProviderSettingsService(db).activate(provider_key)
 
 
-@router.post("/{provider_key}/set-fallback", response_model=AIProviderSettingOut)
+@router.post("/{provider_key}/set-fallback", response_model=AIProviderSettingOut, dependencies=[Depends(require_admin)])
 def set_fallback_ai_provider(
     provider_key: str,
     db: Session = Depends(get_db),
@@ -55,7 +55,7 @@ def set_fallback_ai_provider(
     return AIProviderSettingsService(db).set_fallback(provider_key)
 
 
-@router.post("/{provider_key}/test", response_model=AIProviderTestOut)
+@router.post("/{provider_key}/test", response_model=AIProviderTestOut, dependencies=[Depends(require_admin)])
 def test_ai_provider(
     provider_key: str,
     db: Session = Depends(get_db),

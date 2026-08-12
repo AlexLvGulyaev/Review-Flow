@@ -18,6 +18,8 @@
 
 Перед эксплуатацией разверните стенд по [🚀 `DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md).
 
+> 🔐 **Аутентификация ops-эндпоинтов.** В продакшене (`OPS_ADMIN_TOKEN` задан) все ops-запросы требуют `Authorization: Bearer <ops_token>`; роль выводится из токена (`administrator` / `operator` / `demo`, demo — read-only). В примерах ниже curl-команды используют заголовок `X-Role: administrator` — это **legacy fallback**, работающий только когда ops-токены не настроены (локальная разработка/тесты). В продакшене заменяйте `-H "X-Role: administrator"` на `-H "Authorization: Bearer $OPS_ADMIN_TOKEN"`. Проверить токен: `GET /api/auth/whoami`.
+
 ---
 
 ## 📊 2. Мониторинг и health

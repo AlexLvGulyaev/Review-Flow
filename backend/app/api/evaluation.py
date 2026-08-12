@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.roles import require_admin
+from app.core.roles import require_admin, require_admin_read
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
@@ -20,7 +20,7 @@ from app.services.review_helpers import latest_response
 router = APIRouter(
     prefix="/api/evaluation",
     tags=["evaluation"],
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_admin_read)],
 )
 
 
@@ -45,7 +45,7 @@ def _to_out(case: EvaluationCase) -> EvaluationCaseOut:
     )
 
 
-@router.post("/cases", response_model=EvaluationCaseOut, status_code=201)
+@router.post("/cases", response_model=EvaluationCaseOut, status_code=201, dependencies=[Depends(require_admin)])
 def create_evaluation_case(
     payload: EvaluationCaseCreate,
     db: Session = Depends(get_db),
@@ -102,7 +102,7 @@ def list_evaluation_cases(db: Session = Depends(get_db)) -> list[EvaluationCaseO
     return [_to_out(c) for c in cases]
 
 
-@router.patch("/cases/{case_id}", response_model=EvaluationCaseOut)
+@router.patch("/cases/{case_id}", response_model=EvaluationCaseOut, dependencies=[Depends(require_admin)])
 def score_evaluation_case(
     case_id: UUID,
     payload: EvaluationScoreUpdate,

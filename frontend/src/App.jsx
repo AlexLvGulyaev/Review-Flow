@@ -45,7 +45,7 @@ export default function App() {
           <Route
             path="/operator/reviews"
             element={
-              <ProtectedRoute allowed={[ROLES.OPERATOR, ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.OPERATOR, ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <OperatorReviewsPage />
               </ProtectedRoute>
             }
@@ -53,7 +53,7 @@ export default function App() {
           <Route
             path="/prompts"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <PromptsPage />
               </ProtectedRoute>
             }
@@ -61,7 +61,7 @@ export default function App() {
           <Route
             path="/evaluation"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <EvaluationPage />
               </ProtectedRoute>
             }
@@ -69,7 +69,7 @@ export default function App() {
           <Route
             path="/analytics"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <AnalyticsPage />
               </ProtectedRoute>
             }
@@ -77,7 +77,7 @@ export default function App() {
           <Route
             path="/reports"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <ReportsPage />
               </ProtectedRoute>
             }
@@ -85,7 +85,7 @@ export default function App() {
           <Route
             path="/logs"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <LogsPage />
               </ProtectedRoute>
             }
@@ -93,7 +93,7 @@ export default function App() {
           <Route
             path="/settings/ai-providers"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <AiProvidersPage />
               </ProtectedRoute>
             }
@@ -101,7 +101,7 @@ export default function App() {
           <Route
             path="/settings/system"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <SystemSettingsPage />
               </ProtectedRoute>
             }
@@ -109,7 +109,7 @@ export default function App() {
           <Route
             path="/admin/phrases"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <AdminPhrasesPage />
               </ProtectedRoute>
             }
@@ -117,7 +117,7 @@ export default function App() {
           <Route
             path="/admin/templates"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <AdminTemplatesPage />
               </ProtectedRoute>
             }
@@ -125,7 +125,7 @@ export default function App() {
           <Route
             path="/admin/scenarios"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <AdminScenariosPage />
               </ProtectedRoute>
             }
@@ -133,7 +133,7 @@ export default function App() {
           <Route
             path="/admin/sentiments"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <AdminSentimentsPage />
               </ProtectedRoute>
             }
@@ -141,7 +141,7 @@ export default function App() {
           <Route
             path="/admin/response-cases"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <AdminResponseCasesPage />
               </ProtectedRoute>
             }
@@ -149,7 +149,7 @@ export default function App() {
           <Route
             path="/admin/ch-quality"
             element={
-              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR]}>
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
                 <AdminChQualityPage />
               </ProtectedRoute>
             }

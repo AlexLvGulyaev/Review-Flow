@@ -10,6 +10,8 @@ AI-система обработки клиентских обращений с 
 
 **Портфельный актив — в продакшн-размещении.** Структура приведена к стандартам AI Automation Portfolio Lab, документация адаптирована. Локальный запуск через `docker compose up --build` подтверждён (Deployment Verification), публичные HTTPS-эндпоинты развёрнуты через центральный Traefik (Deployment Validation).
 
+Применены APL-стандарты публичных демо-ресурсов: **tokenized demo sessions** (защита `POST /api/reviews` демо-сессиями с квотой, rate-limit и IP-лимитом) и **read-only demo RBAC** для ops-консоли (Bearer-токены `administrator`/`operator`/`demo`; роль `demo` — только чтение, мутации enforced на backend). Изменение конфигурации развёртывания требует повторной Deployment Validation в чистом окружении.
+
 **Публичные адреса:**
 - Web UI (клиент + оператор): https://review-flow.alex-n8n.site
 - Admin Console: https://review-flow-admin.alex-n8n.site
@@ -62,9 +64,11 @@ AI-система обработки клиентских обращений с 
 
 1. ✅ **Demo-production**: публичные эндпоинты для веб UI и админки (VPS, reverse proxy, HTTPS, статическая сборка frontend).
 2. ✅ **Публикация обновлённого кейса в GitHub**: `https://github.com/AlexLvGulyaev/Review-Flow` обновлён актуальной версией.
-3. Создание модуля интеграции с Kommo CRM.
-4. Создание модуля интеграции с Bitrix24.
-5. Адаптация pipeline для работы с n8n (в рамках n8n-lead-qualification).
+3. ✅ **APL-стандарты публичных демо-ресурсов**: tokenized demo sessions + read-only demo RBAC реализованы в коде и документации.
+4. ⏳ **Deployment Validation (чистое окружение)**: повторное прохождение развёртывания с нуля с новыми ops-токенами и demo-лимитером + отчёт `deployment-validation-report-*.md` (см. `DEPLOYMENT_GUIDE.md` §6a/§11a/§11b).
+5. Создание модуля интеграции с Kommo CRM.
+6. Создание модуля интеграции с Bitrix24.
+7. Адаптация pipeline для работы с n8n (в рамках n8n-lead-qualification).
 
 ## Status History
 
@@ -75,3 +79,4 @@ AI-система обработки клиентских обращений с 
 | 2026-08-09 | Документация приведена к стандарту APL | Созданы API_CONTRACT.md, SPEC.md, ролевые гиды, FAQ.md; обновлены внутренние ссылки; внутренние артефакты исключены из публичного репозитория |
 | 2026-08-09 | В продакшн-размещении | Публичные HTTPS-эндпоинты развёрнуты: `review-flow.alex-n8n.site`, `review-flow-admin.alex-n8n.site`, `review-flow-api.alex-n8n.site` |
 | 2026-08-09 | Опубликован на GitHub | Репозиторий `https://github.com/AlexLvGulyaev/Review-Flow` синхронизирован, `.env` и внутренние APL-материалы исключены из публичной поставки |
+| 2026-08-12 | Применены стандарты публичных демо-ресурсов | Реализованы tokenized demo sessions (квота/rate-limit/IP-лимит на `POST /api/reviews`) и read-only demo RBAC ops-консоли (Bearer-токены, demo — только чтение, backend-enforced); обновлены API_CONTRACT, ARCHITECTURE, DEPLOYMENT_GUIDE, ролевые гиды, USER_GUIDE |

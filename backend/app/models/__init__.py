@@ -1,4 +1,5 @@
 from app.models import ch_entities  # noqa: F401 — register CH ORM tables
+from app.models.demo_session import DemoSession
 from app.models.entities import (
     Customer,
     EvaluationCase,
@@ -26,6 +27,7 @@ from app.models.ch_entities import (
 
 __all__ = [
     "Customer",
+    "DemoSession",
     "ServiceCase",
     "Review",
     "ReviewPhrasePattern",

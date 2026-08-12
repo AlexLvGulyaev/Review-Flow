@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from app.db.session import get_db
+from app.api.demo import require_demo_token
 from app.models.entities import Review, ReviewClassification
 from app.schemas.review import (
     ReviewCreateRequest,
@@ -27,9 +28,12 @@ router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 def create_review(
     payload: ReviewCreateRequest,
     db: Session = Depends(get_db),
+    demo_session=Depends(require_demo_token),
 ) -> ReviewCreateResponse:
     pipeline = ReviewPipeline(db)
-    review_id, status = pipeline.ingest_and_process(payload)
+    review_id, status = pipeline.ingest_and_process(
+        payload, demo_mode=bool(demo_session)
+    )
     review = db.query(Review).filter(Review.id == review_id).first()
     if not review:
         raise HTTPException(status_code=500, detail="Review not created")

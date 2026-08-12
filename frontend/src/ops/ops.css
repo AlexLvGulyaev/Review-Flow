@@ -1634,6 +1634,17 @@
   cursor: not-allowed;
 }
 
+.company-login-form__submit--outline {
+  width: 100%;
+  margin-top: 0.6rem;
+  background: #fff;
+  color: #2563eb;
+  border: 1px solid #2563eb;
+}
+.company-login-form__submit--outline:hover:not(:disabled) {
+  background: #eff4ff;
+}
+
 .company-login-card__footer {
   margin-top: 1.1rem;
   font-size: 0.74rem;
@@ -1696,6 +1707,19 @@
 .company-staff-footer__role {
   font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.55);
+}
+
+.company-staff-footer__demo {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(255, 180, 60, 0.18);
+  color: #ffd58a;
+  border: 1px solid rgba(255, 180, 60, 0.4);
 }
 
 .company-staff-footer__logout.op-btn {

@@ -6,6 +6,8 @@
 
 **Deployment Validation:** инструкция прошла практическую проверку — см. [✅ `deployment-validation-report.md`](deployment-validation-report.md) (локальный Docker Compose) и [✅ `deployment-validation-report-prod.md`](deployment-validation-report-prod.md) (публичное размещение на VPS).
 
+> ⚠️ **Требуется повторная Deployment Validation.** Добавление ops Bearer-токенов, demo-лимитера и build-arg `VITE_OPS_DEMO_TOKEN` меняет процесс развёртывания и конфигурацию (§6, §6a, §11, §11a, §11b). По операционной дисциплине APL (DEPLOYMENT_GUIDE — Source of Truth воспроизводимости) эти изменения требуют практического прохождения развёртывания с нуля в **чистом окружении** и отдельного отчёта `deployment-validation-report-*.md`. До его завершения настоящий документ считается обновлённым, но не валидированным для новой конфигурации. Проверки §11a/§11b — состав этого отчёта.
+
 ---
 
 ## 1. Для кого эта инструкция
@@ -106,9 +108,29 @@ cp .env.example .env
 | `BACKEND_HOST`, `BACKEND_PORT` | `0.0.0.0`, `8700` | Порт API |
 | `VITE_API_URL` | `http://localhost:8700` | Адрес API с точки зрения **браузера на хосте** |
 | `CH_PIPELINE_ENABLED` | `true` | Controlled Hybrid (основной контур) |
+| `OPS_ADMIN_TOKEN`, `OPS_OPERATOR_TOKEN`, `OPS_DEMO_TOKEN` | `dev-*-token` | Bearer-токены ops-консоли (см. §6a). Пустые/`YOUR_*` → X-Role fallback |
+| `VITE_OPS_DEMO_TOKEN` | `dev-demo-token` | Build-time demo-токен для кнопки read-only demo-входа; должен совпадать с `OPS_DEMO_TOKEN` |
+| `DEMO_LIMITER_ENABLED` | `false` | Защита `POST /api/reviews` демо-сессиями (true в prod) |
+| `DEMO_MAX_REQUESTS_PER_SESSION`, `DEMO_SESSION_TTL_MINUTES`, `DEMO_RATE_LIMIT_PER_MINUTE`, `DEMO_MAX_SESSIONS_PER_IP_PER_HOUR` | `20` / `30` / `12` / `5` | Параметры демо-лимитера |
 | `OPENAI_*`, `PROXYAPI_*`, `GIGACHAT_*` | пусто | Опционально: реальный LLM вместо mock |
 
 **Важно:** `VITE_API_URL` должен указывать на адрес backend **с хоста** (`http://localhost:8700`), а не на имя сервиса `backend` — иначе браузер не достучится до API.
+
+### 6a. Генерация ops-токенов (продакшен)
+
+Для **продакшена** сгенерируйте три сильных случайных токена и впишите их в `.env`:
+
+```bash
+openssl rand -hex 32  # → OPS_ADMIN_TOKEN
+openssl rand -hex 32  # → OPS_OPERATOR_TOKEN
+openssl rand -hex 32  # → OPS_DEMO_TOKEN
+```
+
+`VITE_OPS_DEMO_TOKEN` должен совпадать с `OPS_DEMO_TOKEN` — он вшивается в сборку ops-консоли (build-arg `VITE_OPS_DEMO_TOKEN` в [`frontend/Dockerfile.prod`](../frontend/Dockerfile.prod) и [`docker-compose.prod.yml`](../docker-compose.prod.yml)) и активирует кнопку «Войти в демо-режим (только просмотр)».
+
+Пока `OPS_ADMIN_TOKEN` не пуст и не начинается с `YOUR`, ops-эндпоинты требуют Bearer-токен; роль `demo` получает read-only доступ. Для **локальной разработки** значения по умолчанию `dev-*-token` из `.env.example` уже включают ops-аутентификацию; если оставить токены пустыми — работает legacy `X-Role` fallback.
+
+Включение лимитера публичного контура: `DEMO_LIMITER_ENABLED=true` (продакшен). Локально — `false` (эндпоинт `POST /api/reviews` открыт).
 
 После изменения `.env` перезапустите контейнеры (§7).
 
@@ -210,23 +232,67 @@ docker compose ps
 
 ## 11. Как войти в контур компании
 
+Вход в ops-консоль — по **Bearer-токену** (значения берутся из `.env`).
+
 1. Откройте http://localhost:5180/company
-2. Войдите демо-учётной записью (пароли указаны на экране входа):
+2. Вставьте ops-токен в поле «Bearer токен» и нажмите **Войти**:
 
-| Роль | Email | Пароль |
-|------|-------|--------|
-| Оператор | `operator@northline.local` | `demo` |
-| Администратор | `admin@northline.local` | `demo` |
+| Роль | Токен (значение по умолчанию для локального демо) |
+|------|------|
+| Оператор | `dev-operator-token` (`OPS_OPERATOR_TOKEN`) |
+| Администратор | `dev-admin-token` (`OPS_ADMIN_TOKEN`) |
 
-Аутентификация **только в браузере** (localStorage); отдельного сервиса SSO в Compose нет.
+Либо нажмите **«Войти в демо-режим (только просмотр)»** — вход токеном `dev-demo-token` (`VITE_OPS_DEMO_TOKEN`), read-only.
 
-**Проверка:** после входа оператор попадает на `/operator/reviews`, администратор — на `/reports`.
+Токен валидируется через `GET /api/auth/whoami`; сессия `{token, role}` хранится в localStorage. Роль `demo` открывает все страницы ops-консоли в режиме **только просмотр**: мутационные кнопки отключены, а прямая попытка мутации даёт понятное сообщение «Демо-режим: только просмотр. Изменения запрещены.» (backend отклоняет с `403`).
+
+**Проверка:** после входа оператор попадает на `/operator/reviews`, администратор — на `/reports`, demo — на `/reports` (read-only). При demo-входе в подвале шапки виден бейдж «Демо-режим: только просмотр».
+
+### 11a. Проверка read-only demo RBAC
+
+1. Войдите через **демо-режим** (§11).
+2. Откройте http://localhost:5180/prompts — страница загружается (GET разрешён).
+3. Попробуйте активировать промпт или создать версию — кнопки отключены.
+4. (Опционально, bypass UI) Прямой запрос с demo-токеном на мутацию возвращает `403`:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X PATCH \
+  -H "Authorization: Bearer dev-demo-token" \
+  -H "Content-Type: application/json" \
+  -d '{"retrieval_top_n":5}' \
+  http://localhost:8700/api/settings/ch-runtime
+# → 403
+```
+
+```bash
+curl -s http://localhost:8700/api/auth/whoami -H "Authorization: Bearer dev-demo-token"
+# → {"role":"demo"}
+```
+
+### 11b. Проверка demo-лимитера публичного контура
+
+При `DEMO_LIMITER_ENABLED=false` (локально) `POST /api/reviews` открыт. Чтобы проверить лимитер локально, временно установите `DEMO_LIMITER_ENABLED=true` в `.env` и перезапустите backend (`docker compose restart review-flow-apl-backend`):
+
+```bash
+# выпуск демо-токена
+curl -s -X POST http://localhost:8700/api/demo/start -H "Content-Type: application/json" -d '{}'
+# → {"token":"<32hex>","requests_limit":20,"requests_remaining":20,...}
+
+# статус квоты
+curl -s http://localhost:8700/api/demo/status -H "X-Demo-Token: <token>"
+
+# отзыв без токена → 403
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:8700/api/reviews \
+  -H "Content-Type: application/json" \
+  -d '{"customer_name":"Тест","order_number":"R-1","product_area":"general","review_text":"тестовое обращение для проверки"}'
+# → 403
+```
 
 ---
 
 ## 12. Как проверить операторский сценарий
 
-1. Войдите как **оператор** (§11).
+1. Войдите как **оператор** (токен `dev-operator-token`, §11).
 2. Откройте http://localhost:5180/operator/reviews
 3. В очереди найдите обращение из §10 (по номеру или времени).
 4. Откройте карточку обращения.
@@ -248,7 +314,7 @@ docker compose ps
 ## 13. Как проверить административный сценарий
 
 1. Выйдите из учётки оператора (меню компании → выход) или откройте приватное окно браузера.
-2. Войдите как **администратор** (`admin@northline.local` / `demo`).
+2. Войдите как **администратор** (токен `dev-admin-token`, §11).
 3. Откройте **типовые ситуации**: http://localhost:5180/admin/response-cases
 
 **Проверка:** список типовых ситуаций загружается (демо-набор из миграций, порядка 20 записей).
@@ -484,12 +550,23 @@ REVIEW_FLOW_API_HOST=review-flow-api.alex-n8n.site
 # PostgreSQL доступен только внутри Compose-сети Review Flow
 POSTGRES_HOST=review-flow-apl-postgres
 DATABASE_URL=postgresql+psycopg2://reviewflow:reviewflow@review-flow-apl-postgres:5432/reviewflow
+
+# Ops Bearer-токены (сгенерируйте: openssl rand -hex 32)
+OPS_ADMIN_TOKEN=<сгенерированный_админ_токен>
+OPS_OPERATOR_TOKEN=<сгенерированный_оператор_токен>
+OPS_DEMO_TOKEN=<сгенерированный_demo_токен>
+# Build-time demo-токен для ops-консоли (== OPS_DEMO_TOKEN)
+VITE_OPS_DEMO_TOKEN=<сгенерированный_demo_токен>
+
+# Защита публичного AI-эндпоинта демо-сессиями
+DEMO_LIMITER_ENABLED=true
 ```
 
 **Секреты:**
 
 - Задайте **надёжный** `POSTGRES_PASSWORD` (и обновите `DATABASE_URL` с тем же паролем).
 - Ключи `OPENAI_API_KEY`, `PROXYAPI_KEY`, `GIGACHAT_*` — только в `.env` на сервере.
+- `OPS_*_TOKEN` — только в `.env` на сервере; `VITE_OPS_DEMO_TOKEN` вшивается в сборку ops-консоли (build-arg в `docker-compose.prod.yml`), поэтому тоже хранится в `.env` и не коммитится.
 - **Не коммитьте** `.env` в git (файл должен оставаться только на сервере).
 
 Значения по умолчанию из [`.env.example`](../.env.example): `POSTGRES_USER=reviewflow`, `POSTGRES_DB=reviewflow`.
