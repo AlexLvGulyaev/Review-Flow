@@ -16,7 +16,10 @@ export function getCompanyNavGroups(role) {
     ];
   }
 
-  if (role === ROLES.ADMINISTRATOR) {
+  // Demo lands on /reports but is allowed on every staff route (read-only),
+  // so it gets the same sidebar as the administrator — every section is
+  // reachable and rendered read-only (mutations disabled in the workspaces).
+  if (role === ROLES.ADMINISTRATOR || role === ROLES.DEMO) {
     return [
       {
         title: "Операции",
