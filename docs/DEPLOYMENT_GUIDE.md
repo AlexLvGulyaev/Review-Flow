@@ -703,12 +703,12 @@ docker compose -f docker-compose.prod.yml up -d --build
 ### Проверка операторского сценария
 
 1. https://review-flow.alex-n8n.site/company
-2. Вход: `operator@northline.local` / `demo`
+2. Вход по Bearer-токену: вставьте `OPS_OPERATOR_TOKEN` в поле «Bearer токен» → **«Войти»**
 3. Очередь: `/operator/reviews` → открыть обращение → **«Одобрить и отправить»**
 
 ### Проверка административного сценария
 
-1. Войдите как администратор: `admin@northline.local` / `demo`
+1. Войдите как администратор по Bearer-токену: вставьте `OPS_ADMIN_TOKEN` в поле «Bearer токен» → **«Войти»**
 2. `/admin/response-cases` — список типовых ситуаций
 3. `/reports` — отчёты загружаются
 
@@ -881,8 +881,8 @@ ssh -L 5180:localhost:5180 -L 8700:localhost:8700 user@<IP-сервера>
 - [ ] Frontend открыт: http://localhost:5180
 - [ ] Backend health отвечает: `curl http://localhost:8700/health` → `{"status":"ok","database":"connected"}`
 - [ ] Клиент может создать обращение и получить номер `NL-...`
-- [ ] Оператор (`operator@northline.local`) видит обращение в `/operator/reviews`
-- [ ] Админ (`admin@northline.local`) видит типовые ситуации на `/admin/response-cases`
+- [ ] Оператор (вход по `OPS_OPERATOR_TOKEN`) видит обращение в `/operator/reviews`
+- [ ] Админ (вход по `OPS_ADMIN_TOKEN`) видит типовые ситуации на `/admin/response-cases`
 - [ ] Отчёты открываются на `/reports` без ошибки загрузки
 
 ---

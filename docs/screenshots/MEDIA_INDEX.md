@@ -30,7 +30,7 @@
 | IMG-003 | `cli-new-rev-send.png` | cli | Подтверждение отправки и выдача номера обращения `NL-…` | README, SYSTEM_DEMO, USER_GUIDE, E2E_SCENARIOS, SCREENSHOTS |
 | IMG-004 | `cli-new-rev-status.png` | cli | Проверка статуса обращения по номеру и email | README, SYSTEM_DEMO, USER_GUIDE, E2E_SCENARIOS, SCREENSHOTS |
 | IMG-005 | `cli-new-rev-completed.png` | cli | Завершённое обращение с опубликованным ответом компании | README, SYSTEM_DEMO, USER_GUIDE, E2E_SCENARIOS, SCREENSHOTS |
-| IMG-010 | `oper-logun.png` | oper | Вход в контур компании и выбор роли (оператор / администратор) | SYSTEM_DEMO, OPERATOR_GUIDE, SCREENSHOTS |
+| IMG-010 | `oper-logun.png` | oper | Вход в контур компании по Bearer-токену; кнопка demo-входа (только просмотр) | SYSTEM_DEMO, OPERATOR_GUIDE, SCREENSHOTS |
 | IMG-011 | `oper-rev-after-accept.png` | oper | Карточка обращения после подтверждения типовой ситуации: редактирование финального ответа | README, SYSTEM_DEMO, OPERATOR_GUIDE, E2E_SCENARIOS, SCREENSHOTS |
 | IMG-012 | `oper-rev-low.png` | oper | Низкая уверенность retrieval и список альтернативных типовых ситуаций | README, SYSTEM_DEMO, OPERATOR_GUIDE, E2E_SCENARIOS, CONTROLLED_HYBRID, SCREENSHOTS |
 | IMG-013 | `oper-rev-for-newTS.png` | oper | Оператор инициирует эскалацию «Ни одна типовая ситуация не подходит» | README, SYSTEM_DEMO, OPERATOR_GUIDE, E2E_SCENARIOS, CONTROLLED_HYBRID, SCREENSHOTS |
@@ -60,11 +60,12 @@
 |---|---|
 | Проект | Review Flow |
 | Демо-компания | `Northline` |
-| Demo-вход оператора | `operator@northline.local` / `demo` |
-| Demo-вход администратора | `admin@northline.local` / `demo` |
+| Вход оператора | `OPS_OPERATOR_TOKEN` (Bearer) |
+| Вход администратора | `OPS_ADMIN_TOKEN` (Bearer) |
+| Demo-вход (только просмотр) | кнопка «Войти в демо-режим» (`VITE_OPS_DEMO_TOKEN`) |
 | Номер заказа в примерах | `NL-00999999` |
 | Формат номера обращения | `NL-00001234` |
-| Активный AI-провайдер в demo | `mock` (заглушка) |
+| Активный AI-провайдер в demo | `openai` (gpt-4o-mini), fallback `gigachat`; `mock` — опциональная заглушка |
 | LLM-провайдер для адаптации | OpenAI-compatible / GigaChat / ProxyAPI |
 | Диапазон аналитики в отчётах | `2026-08-01 – 2026-08-09` |
 

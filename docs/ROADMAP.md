@@ -113,8 +113,8 @@ MVP **пригоден для демо и обучения**; переход к 
 
 | Направление | Зачем | Ожидаемый эффект |
 |-------------|-------|------------------|
-| **Полноценная авторизация** | Сейчас демо-учётки в localStorage ([📖 USER_GUIDE](USER_GUIDE.md)) | Безопасный доступ сотрудников |
-| **Развитие RBAC** | Роли operator/administrator заданы в UI; нет серверной политики на все endpoint | Разделение обязанностей на уровне API |
+| **Полноценная авторизация** | Сейчас staff-вход по Bearer-токену + read-only demo RBAC; не корпоративный SSO ([📖 DEPLOYMENT_GUIDE](DEPLOYMENT_GUIDE.md)) | Безопасный доступ сотрудников |
+| **Развитие RBAC** | Базовый server-side RBAC (ops Bearer-токены, read-only demo) реализован; нет fine-grained политик на каждый endpoint | Разделение обязанностей на уровне API |
 | **Аудит действий пользователей** | Operational logs фиксируют события pipeline; не полный audit trail UI-действий | Расследование инцидентов, compliance |
 | **Резервное копирование** | Postgres volume в Compose без стратегии backup ([🚀 DEPLOYMENT_GUIDE](DEPLOYMENT_GUIDE.md)) | Восстановление KB и обращений |
 | **Эксплуатационная готовность** | Vite dev frontend в контейнере, нет HTTPS/reverse proxy | Стабильный стенд: prod-сборка, health, мониторинг, секреты |

@@ -67,7 +67,7 @@ Review Flow не публикует ответы без оператора, не
 - **Управляемая база знаний** — CRUD Response Cases, retrieval-примеры, архивирование/активация.
 - **Отчётность** — обращения клиентов, бизнес-сводка, качество Controlled Hybrid, экспорт CSV/XLSX/PDF.
 - **Настройки AI-провайдеров и промптов** — версионирование, fallback, runtime-параметры.
-- **Честные границы** — demo-аутентификация через localStorage, без корпоративного SSO; MVP перед production.
+- **Честные границы** — staff-вход по Bearer-токену, публичный demo-вход только на чтение (read-only RBAC), без корпоративного SSO; MVP перед production.
 
 ---
 
@@ -139,7 +139,7 @@ flowchart TB
 | Администратор | Admin Console | [review-flow-admin.alex-n8n.site](https://review-flow-admin.alex-n8n.site) | Типовые ситуации, кандидаты, настройки |
 | Интегратор | Backend API | [review-flow-api.alex-n8n.site](https://review-flow-api.alex-n8n.site) | REST API Review Flow |
 
-> 🔓 **Demo-входы сотрудников:** `operator@northline.local` / `demo` и `admin@northline.local` / `demo`. Аутентификация через localStorage, не корпоративный SSO.
+> 🔓 **Вход сотрудников:** по Bearer-токену (`OPS_ADMIN_TOKEN` / `OPS_OPERATOR_TOKEN`). Публичный demo-вход — кнопка «Войти в демо-режим (только просмотр)» (`VITE_OPS_DEMO_TOKEN`), read-only RBAC. Не корпоративный SSO.
 
 ---
 
@@ -200,7 +200,7 @@ flowchart TB
 - **Backend** — FastAPI, Python 3.12, SQLAlchemy.
 - **Frontend** — React, Vite, React Router, Tailwind CSS.
 - **Database** — PostgreSQL 16.
-- **AI** — OpenAI-compatible API (в демо — `mock`).
+- **AI** — OpenAI-compatible API (OpenAI / GigaChat / ProxyAPI / mock).
 - **Deploy** — Docker Compose, nginx, Traefik.
 
 ---
@@ -235,8 +235,9 @@ docker compose up --build
 
 ## ⚠️ Ограничения демо
 
-- **Демонстрационный MVP**: упрощённые сценарии; возможен `mock`-провайдер LLM (заглушка текста, не полноценная адаптация) — см. [`🔌 API контракт`](docs/API_CONTRACT.md) раздел AI Provider Settings.
-- Роли переключаются в одном приложении через demo-входы.
+- **Демонстрационный MVP**: упрощённые сценарии; поддерживается `mock`-провайдер LLM (заглушка текста, не полноценная адаптация) — см. [`🔌 API контракт`](docs/API_CONTRACT.md) раздел AI Provider Settings.
+- **Публичная форма отзыва** защищена tokenized demo-сессией: квота запросов на сессию, rate-limit и IP-лимит (`X-Demo-Token`). Дешёвые GET status/detail остаются открытыми.
+- Вход в контур компании — по Bearer-токену (`OPS_*_TOKEN`); публичный demo-вход — только просмотр, мутации заблокированы на backend (`403`).
 - База типовых ситуаций — учебный seed для демонстрации retrieval и learning loop.
 - Перед production требуется добавить корпоративную аутентификацию, бэкапы, мониторинг, CI/CD и интеграции с CRM/тикет-системами.
 
