@@ -17,19 +17,17 @@
 ```mermaid
 flowchart TB
     subgraph Browser["Browser (React UI)"]
-        C["Клиентский контур<br/>/, /review, /review/status"]
-        subgraph Company["Контур компании"]
-            OP["Оператор<br/>/operator/reviews"]
-            ADM["Администратор<br/>/reports · /logs · /audit · /legend<br/>/prompts · /evaluation · /settings/* · /admin/*"]
-        end
+        C["Клиентский контур\n/, /review, /review/status"]
+        OP["Оператор (контур компании)\n/operator/reviews"]
+        ADM["Администратор (контур компании)\n/reports · /logs · /audit · /legend\n/prompts · /evaluation · /settings/* · /admin/*"]
     end
 
     subgraph Backend["Backend API (FastAPI, Python)"]
         ING["Ingestion: приём обращения клиента"]
-        CH["Controlled Hybrid pipeline (опционально, по флагу)<br/>retrieval → confidence → decision → draft generation<br/>(bounded LLM / mock)"]
-        OPER["Operator workflow<br/>подтверждение/override, публикация"]
-        ADMIN["Admin workflow<br/>KB (Response Cases), кандидаты, отчёты, настройки"]
-        OBS["Наблюдаемость<br/>операционный лог + журнал аудита"]
+        CH["Controlled Hybrid pipeline (опционально, по флагу)\nretrieval → confidence → decision → draft generation\n(bounded LLM / mock)"]
+        OPER["Operator workflow\nподтверждение/override, публикация"]
+        ADMIN["Admin workflow\nKB (Response Cases), кандидаты, отчёты, настройки"]
+        OBS["Наблюдаемость\nоперационный лог + журнал аудита"]
     end
 
     subgraph PG["PostgreSQL"]
@@ -187,7 +185,7 @@ Backend при старте выполняет `run_pending_migrations()` и п�
 flowchart LR
     A["Создано клиентом"] --> B["Backend: retrieval + draft"]
     B --> C["На проверке у оператора"]
-    C --> D["Опубликовано<br/>(клиент видит final_response)"]
+    C --> D["Опубликовано\n(клиент видит final_response)"]
 ```
 
 Детальная семантика статусов для клиентского UX описана в [📖 `docs/USER_GUIDE.md`](USER_GUIDE.md) и [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md).
@@ -200,13 +198,13 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["Оператор:<br/>«нет подходящей типовой ситуации»"] --> B["candidate"]
-    B --> C{"Администратор:<br/>обработать candidate"}
+    A["Оператор:\n«нет подходящей типовой ситуации»"] --> B["candidate"]
+    B --> C{"Администратор:\nобработать candidate"}
     C -- "создать новую ТС" --> D["Новая типовая ситуация"]
     C -- "присоединить к существующей" --> E["Новый retrieval‑пример"]
     D --> F["База знаний расширена"]
     E --> F
-    F --> G["Похожие обращения<br/>находят ТС с большей уверенностью"]
+    F --> G["Похожие обращения\nнаходят ТС с большей уверенностью"]
 ```
 
 ---
