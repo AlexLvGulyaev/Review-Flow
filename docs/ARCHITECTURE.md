@@ -14,24 +14,42 @@
 
 ## 1. Общая схема системы (as‑is)
 
-```text
-Browser (React UI)
-  ├─ Клиентский контур: /, /review, /review/status
-  └─ Контур компании:
-       ├─ Оператор: /operator/reviews
-       └─ Администратор: /reports, /logs, /prompts, /evaluation, /settings/*, /admin/*
-            ↓
-Backend API (FastAPI, Python)
-  ├─ Ingestion: приём обращения клиента
-  ├─ Controlled Hybrid pipeline (опционально, по флагу):
-  │     retrieval → confidence → decision → draft generation (bounded LLM / mock)
-  ├─ Operator workflow: подтверждение/override, публикация
-  └─ Admin workflow: KB (Response Cases), кандидаты, отчёты, настройки
-            ↓
-PostgreSQL
-  ├─ обращения/ответы/статусы
-  ├─ Response Cases + retrieval‑примеры + кандидаты (Controlled Hybrid)
-  └─ операционные логи и отчётность
+```mermaid
+flowchart TB
+    subgraph Browser["Browser (React UI)"]
+        C["Клиентский контур<br/>/, /review, /review/status"]
+        subgraph Company["Контур компании"]
+            OP["Оператор<br/>/operator/reviews"]
+            ADM["Администратор<br/>/reports · /logs · /audit · /legend<br/>/prompts · /evaluation · /settings/* · /admin/*"]
+        end
+    end
+
+    subgraph Backend["Backend API (FastAPI, Python)"]
+        ING["Ingestion: приём обращения клиента"]
+        CH["Controlled Hybrid pipeline (опционально, по флагу)<br/>retrieval → confidence → decision → draft generation<br/>(bounded LLM / mock)"]
+        OPER["Operator workflow<br/>подтверждение/override, публикация"]
+        ADMIN["Admin workflow<br/>KB (Response Cases), кандидаты, отчёты, настройки"]
+        OBS["Наблюдаемость<br/>операционный лог + журнал аудита"]
+    end
+
+    subgraph PG["PostgreSQL"]
+        T1["обращения / ответы / статусы"]
+        T2["Response Cases + retrieval‑примеры + кандидаты"]
+        T3["операционные логи, аудит, отчётность"]
+    end
+
+    C --> ING
+    OP --> OPER
+    ADM --> ADMIN
+    ADM --> OBS
+    ING --> CH
+    ING --> T1
+    CH --> T1
+    CH --> T2
+    OPER --> T1
+    ADMIN --> T2
+    ADMIN --> T3
+    OBS --> T3
 ```
 
 Запуск: [`docker-compose.yml`](../docker-compose.yml) поднимает `postgres`, `backend`, `frontend`.
@@ -165,11 +183,11 @@ Backend при старте выполняет `run_pending_migrations()` и п�
 
 Упрощённый цикл жизни обращения:
 
-```text
-Создано клиентом
-→ обработка в backend (retrieval + draft)
-→ на проверке у оператора
-→ опубликовано (клиент видит final_response)
+```mermaid
+flowchart LR
+    A["Создано клиентом"] --> B["Backend: retrieval + draft"]
+    B --> C["На проверке у оператора"]
+    C --> D["Опубликовано<br/>(клиент видит final_response)"]
 ```
 
 Детальная семантика статусов для клиентского UX описана в [📖 `docs/USER_GUIDE.md`](USER_GUIDE.md) и [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md).
@@ -180,13 +198,15 @@ Backend при старте выполняет `run_pending_migrations()` и п�
 
 Реализованный демонстрационный цикл (в терминах UI):
 
-```text
-Оператор: “нет подходящей типовой ситуации” → создать candidate
-→ Администратор: обработать candidate
-   ├─ создать новую типовую ситуацию
-   └─ или присоединить candidate к существующей
-→ candidate становится retrieval‑примером
-→ последующие похожие обращения находят ситуацию через retrieval с большей уверенностью
+```mermaid
+flowchart TD
+    A["Оператор:<br/>«нет подходящей типовой ситуации»"] --> B["candidate"]
+    B --> C{"Администратор:<br/>обработать candidate"}
+    C -- "создать новую ТС" --> D["Новая типовая ситуация"]
+    C -- "присоединить к существующей" --> E["Новый retrieval‑пример"]
+    D --> F["База знаний расширена"]
+    E --> F
+    F --> G["Похожие обращения<br/>находят ТС с большей уверенностью"]
 ```
 
 ---
