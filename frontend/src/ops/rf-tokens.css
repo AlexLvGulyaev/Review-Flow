@@ -1,11 +1,28 @@
 /**
  * Review Flow — shared surface tokens (company / operator / admin workspaces).
  * Import before ops.css and operator-console.css.
+ * All values resolve against the lab --ai-* token map (index.css); the theme
+ * switch sets data-theme on <html>.
  */
 
 :root {
-  /* Panel/card outline — was #cbd5e1 (slate-300); slightly stronger for light RF surfaces */
-  --rf-border: #adb9c9;
-  /* Inner dividers (list rows, section separators) — lighter than panel border */
-  --rf-border-subtle: #c2cad6;
+  /* Panel/card outline; inner dividers (list rows, section separators) */
+  --rf-border: var(--ai-border);
+  --rf-border-subtle: var(--ai-border-subtle);
+
+  /* Operator console + reports shared semantic tokens */
+  --rf-oc-text: var(--ai-text);
+  --rf-oc-text-secondary: var(--ai-text-secondary);
+  --rf-oc-text-label: var(--ai-text-muted);
+  --rf-oc-border: var(--ai-border);
+  --rf-oc-border-focus: rgba(37, 99, 235, 0.55);
+  --rf-oc-surface-elevated: var(--ai-surface-elevated);
+  --rf-oc-surface-panel: var(--ai-surface);
+  --rf-oc-selected-bg: rgba(37, 99, 235, 0.12);
+  --rf-oc-accent: var(--ai-success);
+
+  /* System settings workspace */
+  --rf-sys-border: var(--rf-border);
+  --rf-sys-surface: var(--ai-input);
+  --rf-sys-text-muted: var(--ai-text-muted);
 }

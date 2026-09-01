@@ -8,6 +8,15 @@ ORDER_PATTERN = re.compile(r"^NL-(\d{8})$", re.IGNORECASE)
 CUSTOMER_REQUEST_PATTERN = re.compile(r"^NL-(\d{8})-(\d{3})$", re.IGNORECASE)
 LEGACY_REQUEST_PATTERN = re.compile(r"^(.+?)_(\d+)$")
 
+# Клиентский маркер «Номер запроса: NL-XXXXXXXX-NNN» в начале текста
+# обращения — номер указывает клиент, система обязана его использовать,
+# а не присваивать свой (owner).
+CLIENT_REQUEST_REF_PATTERN = re.compile(
+    r"^\s*(?:номер\s+запроса|номер\s+обращения)\s*[:\-–—]?\s*"
+    r"(NL-\d{8}(?:-\d{3})?)\s*[.,;:!?\-–—]*\s*",
+    re.IGNORECASE,
+)
+
 
 def normalize_order_number(raw: str) -> str:
     """Normalize user input to NL-XXXXXXXX."""
@@ -71,6 +80,23 @@ def customer_display_request_number(
         if CUSTOMER_REQUEST_PATTERN.match(cleaned):
             return cleaned
     return (stored_request_number or "").strip()
+
+
+def extract_client_request_ref(review_text: str | None) -> tuple[str | None, int | None, str]:
+    """Клиент указал номер в тексте («Номер запроса: NL-XXXXXXXX-NNN»):
+    вернуть (order_number, sequence | None, текст без маркера). Маркер без
+    суффикса -NNN задаёт только заказ; последовательность назначает система."""
+    if not review_text:
+        return None, None, review_text or ""
+    m = CLIENT_REQUEST_REF_PATTERN.match(review_text.strip())
+    if not m:
+        return None, None, review_text
+    ref = m.group(1).upper()
+    cleaned = review_text.strip()[m.end():].strip()
+    parts = ref.split("-")
+    if len(parts) == 3:
+        return f"NL-{parts[1]}", int(parts[2]), cleaned
+    return f"NL-{parts[1]}", None, cleaned
 
 
 def resolve_review_by_request_ref(db, ref: str):

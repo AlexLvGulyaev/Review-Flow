@@ -1,39 +1,45 @@
-import { Link } from "react-router-dom";
-
 import { useCompanyAuth } from "../context/CompanyAuthContext.jsx";
 import { ROLE_LABELS } from "../lib/role.js";
 import { OpButton } from "../ops/components/OpToolbar.jsx";
+import useTheme from "../hooks/useTheme.js";
 
 /** Compact staff footer at bottom of company sidebar. */
 export default function CompanyStaffPanel() {
   const { session, isDemo, logout } = useCompanyAuth();
+  const { theme, toggle } = useTheme();
   if (!session) return null;
+
+  // Demo identity lives in the sidebar-top demo badge; no demo lines here.
+  const roleLabel = ROLE_LABELS[session.role] || session.role;
+  const label = session.label || roleLabel;
+  const showMeta = label !== roleLabel;
 
   return (
     <footer className="company-staff-footer">
-      <div className="company-staff-footer__meta">
-        <span className="company-staff-footer__email" title={session.label || session.role}>
-          {session.label || ROLE_LABELS[session.role] || session.role}
-        </span>
-        <span className="company-staff-footer__role muted">
-          {ROLE_LABELS[session.role] || session.role}
-        </span>
-      </div>
-      {isDemo ? (
-        <span className="company-staff-footer__demo" title="Изменения запрещены на уровне backend">
-          Демо-режим: только просмотр
-        </span>
+      {showMeta ? (
+        <div className="company-staff-footer__meta">
+          <span className="company-staff-footer__email" title={label}>
+            {label}
+          </span>
+          <span className="company-staff-footer__role muted">{roleLabel}</span>
+        </div>
       ) : null}
+      <OpButton
+        type="button"
+        className="company-staff-footer__theme"
+        onClick={toggle}
+      >
+        <span aria-hidden="true">{theme === "dark" ? "☀️" : "🌙"}</span>
+        <span>{theme === "dark" ? "Светлая тема" : "Тёмная тема"}</span>
+      </OpButton>
       <OpButton
         type="button"
         className="company-staff-footer__logout"
         onClick={logout}
       >
-        Выйти
+        <span aria-hidden="true">🚪</span>
+        <span>Выйти</span>
       </OpButton>
-      <Link to="/" className="company-staff-footer__client-link">
-        Сайт клиентов
-      </Link>
     </footer>
   );
 }

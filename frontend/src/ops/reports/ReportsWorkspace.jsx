@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminApiDownload, adminApiFetch, readApiError } from "../../lib/api.js";
-import { AdminConsoleHeader } from "../ch/AdminConsoleHeader.jsx";
 import { OpPage } from "../components/OpPage.jsx";
 import { ReportPeriodFilter } from "./ReportPeriodFilter.jsx";
 import {
@@ -111,7 +110,6 @@ export default function ReportsWorkspace() {
 
   return (
     <OpPage wide className="op-page--reports">
-      <AdminConsoleHeader />
       <div className="rf-oc-workspace-header">
         <h2 className="rf-oc-workspace-header__title">Отчёты</h2>
         <p className="rf-oc-workspace-header__subtitle">

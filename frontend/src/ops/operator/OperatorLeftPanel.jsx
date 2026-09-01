@@ -1,11 +1,17 @@
 import {
   MODERATION_LABELS,
   PRIORITY_LABELS,
-  labelModeration,
-  labelPriority,
   labelScenario,
   labelSentiment,
 } from "../../lib/displayLabels.js";
+import {
+  MODERATION,
+  PRIORITY,
+  SCENARIO,
+  SENTIMENT,
+  chipEntry,
+  chipText,
+} from "../../lib/chipContract.js";
 import { OpButton, OpInput, OpSelect } from "../components/OpToolbar.jsx";
 import { OperatorQueueItem } from "./OperatorQueueItem.jsx";
 
@@ -56,7 +62,7 @@ export function OperatorLeftPanel({
             <option value="">все статусы</option>
             {MODERATION_FILTER_KEYS.filter(Boolean).map((key) => (
               <option key={key} value={key}>
-                {labelModeration(key)}
+                {chipText(chipEntry(MODERATION, key))}
               </option>
             ))}
           </OpSelect>
@@ -69,7 +75,7 @@ export function OperatorLeftPanel({
             <option value="">приоритет</option>
             {PRIORITY_FILTER_KEYS.filter(Boolean).map((key) => (
               <option key={key} value={key}>
-                {labelPriority(key)}
+                {chipText(chipEntry(PRIORITY, key))}
               </option>
             ))}
           </OpSelect>
@@ -80,11 +86,15 @@ export function OperatorLeftPanel({
             aria-label="Сценарий"
           >
             <option value="">сценарий</option>
-            {scenarios.map((s) => (
-              <option key={s} value={s}>
-                {labelScenario(s)}
-              </option>
-            ))}
+            {scenarios.map((s) => {
+              // Значок из чип-контракта по коду НСИ (как у айтемов очереди).
+              const emoji = chipEntry(SCENARIO, s)?.emoji;
+              return (
+                <option key={s} value={s}>
+                  {emoji ? `${emoji} ${labelScenario(s)}` : labelScenario(s)}
+                </option>
+              );
+            })}
           </OpSelect>
           <OpSelect
             className="rf-oc-select"
@@ -93,11 +103,14 @@ export function OperatorLeftPanel({
             aria-label="Тональность"
           >
             <option value="">тональность</option>
-            {sentiments.map((s) => (
-              <option key={s} value={s}>
-                {labelSentiment(s)}
-              </option>
-            ))}
+            {sentiments.map((s) => {
+              const emoji = chipEntry(SENTIMENT, s)?.emoji;
+              return (
+                <option key={s} value={s}>
+                  {emoji ? `${emoji} ${labelSentiment(s)}` : labelSentiment(s)}
+                </option>
+              );
+            })}
           </OpSelect>
         </div>
 
@@ -108,30 +121,42 @@ export function OperatorLeftPanel({
           placeholder="Поиск: клиент, заказ, текст…"
         />
 
-        <div className="rf-oc-filter-meta muted">
-          <span>
-            Стр. {pageHuman} из {totalPages || 0} · всего: {filteredCount} · на проверке: {counters.pending}
-          </span>
-          <OpButton type="button" className="rf-oc-refresh-btn" onClick={onRefresh} disabled={loading}>
-            {loading ? "…" : "Обновить"}
-          </OpButton>
-        </div>
-
+        {/* Форма Типовых ситуаций / AIC (Диалоги): пагинация над чертой,
+            мета-строка «Всего N» + действия справа. */}
         <div className="rf-oc-page-controls">
           <button type="button" className="rf-oc-page-btn" onClick={onPrevPage} disabled={pageIndex <= 0 || !filteredCount}>
-            ← Предыдущая
+            ← Назад
           </button>
+          <span className="rf-oc-page-info">
+            Страница {pageHuman} из {totalPages || 0}
+          </span>
           <button
             type="button"
             className="rf-oc-page-btn"
             onClick={onNextPage}
             disabled={pageIndex >= totalPages - 1 || !filteredCount}
           >
-            Следующая →
+            Вперёд →
           </button>
-          <button type="button" className="rf-oc-page-btn rf-oc-page-btn--muted" onClick={onResetPage} disabled={pageIndex === 0}>
-            Сброс
-          </button>
+        </div>
+
+        <div className="rf-oc-filter-meta rf-oc-meta-row">
+          <span>
+            Всего {filteredCount} · на проверке: {counters.pending}
+          </span>
+          <span className="rf-oc-filter-meta__actions">
+            <OpButton type="button" className="rf-oc-refresh-btn" onClick={onRefresh} disabled={loading}>
+              {loading ? "…" : "Обновить"}
+            </OpButton>
+            <button
+              type="button"
+              className="rf-oc-page-btn rf-oc-page-btn--muted"
+              onClick={onResetPage}
+              disabled={pageIndex === 0}
+            >
+              Сброс
+            </button>
+          </span>
         </div>
 
         {listError ? <div className="error rf-oc-inline-error">{listError}</div> : null}

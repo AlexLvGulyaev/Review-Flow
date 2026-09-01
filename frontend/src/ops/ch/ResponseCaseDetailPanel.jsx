@@ -1,11 +1,12 @@
 import { CollapsibleTextPanel } from "../operator/CollapsibleTextPanel.jsx";
 import { OpInput, OpSelect, OpTextarea } from "../components/OpToolbar.jsx";
 import {
-  labelEntityActive,
   labelPriority,
   labelScenario,
   labelSentiment,
 } from "../../lib/displayLabels.js";
+import { OpChipFor } from "../components/OpChip.jsx";
+import { ENTITY_ACTIVE, ENTITY_ACTIVE_VARIANT } from "../../lib/chipContract.js";
 import { refOptions } from "../../lib/classificationReference.js";
 import { ResponseCaseExampleChunk } from "./ResponseCaseExampleChunk.jsx";
 
@@ -193,16 +194,24 @@ export function ResponseCaseDetailPanel({
 
   const d = caseDetail;
   const q = quality || {};
-  const statusLabel = labelEntityActive(d.is_active !== false).toUpperCase();
+
 
   return (
-    <div className="rf-oc-detail rf-rc-detail-scroll">
-      <div className="rf-oc-detail-identity">
-        <h2 className="rf-oc-detail-identity__title">{d.title}</h2>
-        <span className="rf-oc-detail-identity__status">{statusLabel}</span>
-      </div>
+    /* Правая панель без общего скролла: head — фиксирован до «Утверждённого
+       ответа» включительно; «Примеры retrieval» и ниже — в скроллящейся зоне. */
+    <div className="rf-oc-detail rf-rc-detail">
+      <div className="rf-rc-fixed">
+        <div className="rf-oc-detail-identity">
+          <h2 className="rf-oc-detail-identity__title">{d.title}</h2>
+          <OpChipFor
+            map={ENTITY_ACTIVE}
+            variantMap={ENTITY_ACTIVE_VARIANT}
+            code={d.is_active !== false ? "active" : "inactive"}
+            className="rf-oc-detail-identity__status"
+          />
+        </div>
 
-      <div className="rf-oc-summary-grid rf-rc-summary-top">
+        <div className="rf-oc-summary-grid rf-rc-summary-top">
           <div className="rf-rc-summary-stack">
             <div className="rf-oc-summary-col">
               <h3 className="rf-oc-summary-col__label">Паспорт</h3>
@@ -213,7 +222,6 @@ export function ResponseCaseDetailPanel({
                 <KvRow label="Сценарий" value={labelScenario(d.scenario)} />
                 <KvRow label="Тональность" value={labelSentiment(d.sentiment)} />
                 <KvRow label="Приоритет" value={labelPriority(d.priority)} />
-                <KvRow label="Статус" value={labelEntityActive(d.is_active)} />
               </dl>
             </div>
             <div className="rf-oc-summary-col">
@@ -251,72 +259,79 @@ export function ResponseCaseDetailPanel({
           </div>
         </div>
 
-      <div className="rf-oc-io-grid">
-            <CollapsibleTextPanel title="Описание" text={d.description} previewLines={5} />
-            <CollapsibleTextPanel title="Политика ответа" text={d.response_policy} previewLines={5} />
+        <div className="rf-oc-io-grid">
+          {/* Без нижней строки-кнопки «Показать полный текст» и той же высоты,
+              что «Утверждённый ответ» — 4 строки (owner). */}
+          <CollapsibleTextPanel title="Описание" text={d.description} previewLines={4} expandable={false} />
+          <CollapsibleTextPanel title="Политика ответа" text={d.response_policy} previewLines={4} expandable={false} />
+        </div>
+
+        <div className="rf-rc-approved-block">
+          {/* 4 строки — чтобы фиксированная голова не вытесняла нижнюю зону
+              и у правой панели не появлялся общий вертикальный скролл. */}
+          <CollapsibleTextPanel title="УТВЕРЖДЁННЫЙ ОТВЕТ" text={d.approved_response_text} previewLines={4} />
+        </div>
+      </div>
+
+      <div className="rf-rc-lower">
+        <section className="rf-rc-chunks-section" aria-label="Примеры retrieval">
+          <h3 className="rf-oc-detail-block__title">Примеры retrieval</h3>
+          <div className="rf-rc-chunks">
+            {(d.examples ?? []).map((ex) => (
+              <ResponseCaseExampleChunk
+                key={ex.id}
+                example={ex}
+                saving={saving}
+                onEdit={onEditExample}
+                onDeactivate={onDeactivateExample}
+              />
+            ))}
           </div>
+        </section>
 
-          <div className="rf-rc-approved-block">
-            <CollapsibleTextPanel title="УТВЕРЖДЁННЫЙ ОТВЕТ" text={d.approved_response_text} previewLines={5} />
+        <details className="rf-oc-tech">
+          <summary>Кандидаты</summary>
+          <div className="rf-oc-tech-body">
+            {relatedCandidates?.length ? (
+              <ul className="rf-rc-candidate-mini">
+                {relatedCandidates.map((c) => (
+                  <li key={c.id}>
+                    <strong>{c.proposed_title || "—"}</strong> · {c.status} · {formatDateTime(c.created_at)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted">Нет связанных кандидатов в очереди</p>
+            )}
           </div>
+        </details>
 
-          <section className="rf-rc-chunks-section" aria-label="Примеры retrieval">
-            <h3 className="rf-oc-detail-block__title">Примеры retrieval</h3>
-            <div className="rf-rc-chunks">
-              {(d.examples ?? []).map((ex) => (
-                <ResponseCaseExampleChunk
-                  key={ex.id}
-                  example={ex}
-                  saving={saving}
-                  onEdit={onEditExample}
-                  onDeactivate={onDeactivateExample}
-                />
-              ))}
-            </div>
-          </section>
+        <details className="rf-oc-tech">
+          <summary>История</summary>
+          <div className="rf-oc-tech-body">
+            <dl className="rf-oc-kv-list">
+              <KvRow label="Создано" value={formatDateTime(d.created_at)} />
+              <KvRow label="Автор" value={d.created_by} />
+              <KvRow label="Обновлено" value={formatDateTime(d.updated_at)} />
+            </dl>
+          </div>
+        </details>
 
-          <details className="rf-oc-tech">
-            <summary>Кандидаты</summary>
-            <div className="rf-oc-tech-body">
-              {relatedCandidates?.length ? (
-                <ul className="rf-rc-candidate-mini">
-                  {relatedCandidates.map((c) => (
-                    <li key={c.id}>
-                      <strong>{c.proposed_title || "—"}</strong> · {c.status} · {formatDateTime(c.created_at)}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted">Нет связанных кандидатов в очереди</p>
-              )}
-            </div>
-          </details>
+        <details className="rf-oc-tech">
+          <summary>Pipeline</summary>
+          <div className="rf-oc-tech-body">
+            <p className="rf-oc-pipeline__flow">
+              Review → retrieval (examples) → confidence band → response_case_decision → policy draft →
+              operator confirm / override → publication
+            </p>
+          </div>
+        </details>
 
-          <details className="rf-oc-tech">
-            <summary>История</summary>
-            <div className="rf-oc-tech-body">
-              <dl className="rf-oc-kv-list">
-                <KvRow label="Создано" value={formatDateTime(d.created_at)} />
-                <KvRow label="Автор" value={d.created_by} />
-                <KvRow label="Обновлено" value={formatDateTime(d.updated_at)} />
-              </dl>
-            </div>
-          </details>
-
-          <details className="rf-oc-tech">
-            <summary>Pipeline</summary>
-            <div className="rf-oc-tech-body">
-              <p className="rf-oc-pipeline__flow">
-                Review → retrieval (examples) → confidence band → response_case_decision → policy draft →
-                operator confirm / override → publication
-              </p>
-            </div>
-          </details>
-
-          <details className="rf-oc-tech">
-            <summary>Technical View</summary>
-            <pre className="rf-oc-details__json">{JSON.stringify(d, null, 2)}</pre>
-          </details>
+        <details className="rf-oc-tech">
+          <summary>Technical View</summary>
+          <pre className="rf-oc-details__json">{JSON.stringify(d, null, 2)}</pre>
+        </details>
+      </div>
     </div>
   );
 }

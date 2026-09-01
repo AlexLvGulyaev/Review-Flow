@@ -6,6 +6,8 @@ import { OpToolbar, OpButton, OpInput, OpSelect, OpTextarea } from "../component
 import { OpSplitView } from "../components/OpSplitView.jsx";
 import { OpCardButton } from "../components/OpCard.jsx";
 import { OpPill, OpPillRow } from "../components/OpPill.jsx";
+import { OpChipFor } from "../components/OpChip.jsx";
+import { ENTITY_ACTIVE, ENTITY_ACTIVE_VARIANT } from "../../lib/chipContract.js";
 import { OpMetadataGrid, OpMetadataList } from "../components/OpMetadata.jsx";
 import { OpEditorSection } from "./components/OpEditorSection.jsx";
 import { OpRelationshipBlock } from "./components/OpRelationshipBlock.jsx";
@@ -434,9 +436,11 @@ export default function KnowledgeBaseWorkspace({ initialEntityKey = "phrases" })
                 {selected ? (
                   <>
                     <OpPillRow>
-                      <OpPill color={selected.is_active ? "green" : "gray"}>
-                        {labelEntityActive(selected.is_active !== false)}
-                      </OpPill>
+                      <OpChipFor
+                        map={ENTITY_ACTIVE}
+                        variantMap={ENTITY_ACTIVE_VARIANT}
+                        code={selected.is_active !== false ? "active" : "inactive"}
+                      />
                       {relationships.summary.map((s) => (
                         <OpPill key={s.key} color={s.color || "gray"}>
                           {s.label}

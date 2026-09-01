@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 
 import { adminApiFetch, readApiError } from "../../lib/api.js";
 import {
-  labelConfidenceBand,
   labelOperationalEventType,
 } from "../../lib/displayLabels.js";
 import { OpPage, OpPageHeader } from "../components/OpPage.jsx";
 import { OpButton, OpSelect } from "../components/OpToolbar.jsx";
 import { OpMetricCard } from "../observability/OpMetricCard.jsx";
+import { OpChipFor } from "../components/OpChip.jsx";
+import { CONFIDENCE_BAND, CONFIDENCE_BAND_VARIANT } from "../../lib/chipContract.js";
 
 const API = "/api/admin/ch-analytics";
 
@@ -252,7 +253,17 @@ export default function ChQualityWorkspace() {
                   <td>{row.miss_type}</td>
                   <td>{row.request_number || row.review_id?.slice(0, 8)}</td>
                   <td>{row.detail || "—"}</td>
-                  <td>{row.confidence_band ? labelConfidenceBand(row.confidence_band) : "—"}</td>
+                  <td>
+                    {row.confidence_band ? (
+                      <OpChipFor
+                        map={CONFIDENCE_BAND}
+                        variantMap={CONFIDENCE_BAND_VARIANT}
+                        code={row.confidence_band}
+                      />
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td>
                     {[row.product_area, row.topic].filter(Boolean).join(" · ") || "—"}
                   </td>

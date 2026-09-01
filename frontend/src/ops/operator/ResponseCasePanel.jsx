@@ -1,8 +1,12 @@
 import { useMemo } from "react";
 
 import { OpButton } from "../components/OpToolbar.jsx";
+import { OpChipFor } from "../components/OpChip.jsx";
 import {
-  labelConfidenceBand,
+  CONFIDENCE_BAND,
+  CONFIDENCE_BAND_VARIANT,
+} from "../../lib/chipContract.js";
+import {
   labelDecisionSource,
   labelPriority,
   labelScenario,
@@ -70,10 +74,12 @@ export function SelectedResponseCaseSummary({ selected, detail }) {
         <h3 className="rf-oc-summary-col__label">Выбранная типовая ситуация</h3>
         {band ? (
           <span className={`rf-oc-ch-band ${confidenceBandClass(band)}`}>
-            Уверенность: {labelConfidenceBand(band)}
+            Уверенность: <OpChipFor map={CONFIDENCE_BAND} variantMap={CONFIDENCE_BAND_VARIANT} code={band} />
           </span>
         ) : (
-          <span className="rf-oc-ch-band rf-oc-ch-band--low">Уверенность: {labelConfidenceBand("low")}</span>
+          <span className="rf-oc-ch-band rf-oc-ch-band--low">
+            Уверенность: <OpChipFor map={CONFIDENCE_BAND} code="low" />
+          </span>
         )}
       </div>
 

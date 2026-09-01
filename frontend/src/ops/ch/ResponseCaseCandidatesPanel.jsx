@@ -1,6 +1,7 @@
 import { CollapsibleTextPanel } from "../operator/CollapsibleTextPanel.jsx";
+import { OpChipFor } from "../components/OpChip.jsx";
+import { CONFIDENCE_BAND, CONFIDENCE_BAND_VARIANT } from "../../lib/chipContract.js";
 import {
-  labelConfidenceBand,
   labelDecisionSource,
   labelPriority,
   labelScenario,
@@ -51,6 +52,7 @@ function CandidateQueueItem({ item, active, onSelect }) {
   return (
     <button
       type="button"
+      data-candidate-id={item.id}
       className={active ? "rf-oc-item rf-oc-item--selected" : "rf-oc-item"}
       onClick={onSelect}
     >
@@ -116,7 +118,16 @@ function CandidateAnalysisSummary({ detail }) {
             label="Score / порог / gap"
             value={`${formatScore(analysis.match_score)} / ${formatScore(analysis.retrieval_threshold)} / ${formatScore(analysis.gap)}`}
           />
-          <KvRow label="Confidence band" value={labelConfidenceBand(analysis.confidence_band)} />
+          <KvRow
+            label="Confidence band"
+            value={
+              <OpChipFor
+                map={CONFIDENCE_BAND}
+                variantMap={CONFIDENCE_BAND_VARIANT}
+                code={analysis.confidence_band || "unknown"}
+              />
+            }
+          />
           <KvRow label="Источник выбора" value={labelDecisionSource(analysis.decision_source)} />
           <KvRow label="Retrieval summary" value={analysis.retrieval_summary} />
         </dl>
@@ -137,7 +148,16 @@ function CandidateAnalysisSummary({ detail }) {
           <KvRow label="Причина эскалации" value={escalationLabel(analysis.escalation_reason)} />
         )}
         <KvRow label="Retrieval summary" value={analysis.retrieval_summary} />
-        <KvRow label="Confidence band" value={labelConfidenceBand(analysis.confidence_band)} />
+        <KvRow
+            label="Confidence band"
+            value={
+              <OpChipFor
+                map={CONFIDENCE_BAND}
+                variantMap={CONFIDENCE_BAND_VARIANT}
+                code={analysis.confidence_band || "unknown"}
+              />
+            }
+          />
         <KvRow label="Источник выбора" value={labelDecisionSource(analysis.decision_source)} />
         {analysis.system_selected_case_title ? (
           <KvRow label="Системное предложение" value={analysis.system_selected_case_title} />

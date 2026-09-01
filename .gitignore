@@ -25,6 +25,7 @@ dist/
 # Environment
 .env
 .env.local
+.env.bak.*
 .env.*.local
 
 # Docker

@@ -1,13 +1,7 @@
-import { OpPill, moderationPillColor, publicationPillColor } from "../components/OpPill.jsx";
+import { OpChipFor } from "../components/OpChip.jsx";
 import { OpPipelineStageDot } from "./OpPipelineStageDot.jsx";
+import { TRACE_STATUS, TRACE_STATUS_VARIANT } from "../../lib/chipContract.js";
 import { pipelineStageVariant } from "./operatorConsoleUi.js";
-
-function statusPillColor(status) {
-  if (status === "failed") return moderationPillColor("rejected");
-  if (status === "done") return publicationPillColor("published");
-  if (status === "current") return "blue";
-  return "gray";
-}
 
 export function OperatorLifecycleTimeline({ events }) {
   if (!events?.length) return null;
@@ -35,7 +29,11 @@ export function OperatorLifecycleTimeline({ events }) {
                 <OpPipelineStageDot variant={variant} />
                 {e.title}
               </span>
-              <OpPill color={statusPillColor(e.status)}>{e.statusLabel}</OpPill>
+              <OpChipFor
+                map={TRACE_STATUS}
+                variantMap={TRACE_STATUS_VARIANT}
+                code={e.status}
+              />
             </div>
             {e.details || e.subtitle ? (
               <details className="rf-oc-stage__details">

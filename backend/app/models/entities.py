@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, SmallInteger, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, FetchedValue, ForeignKey, Integer, Numeric, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -338,6 +338,32 @@ class OperationalLog(Base):
     status: Mapped[str | None] = mapped_column(String(32))
     error_message: Mapped[str | None] = mapped_column(Text)
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class AuditLog(Base):
+    """Audit journal: who (role from the ops Bearer token) did what.
+
+    Kept separate from operational_logs: this table records human actions on
+    mutation endpoints (actor role, resource, IP), while operational_logs
+    records the technical course of work. Named users are a future extension —
+    user_id/user_name stay nullable (role-token auth only, demo project).
+    """
+
+    __tablename__ = "audit_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Display number (#N) for the UI/CSV — readable parity with the AIC
+    # reference; the DB default (sequence) fills it on insert (migration 019).
+    seq_number: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True, server_default=FetchedValue())
+    user_id: Mapped[str | None] = mapped_column(String(255))
+    user_name: Mapped[str | None] = mapped_column(String(255))
+    user_role: Mapped[str] = mapped_column(String(50), nullable=False)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    resource_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    resource_id: Mapped[str | None] = mapped_column(String(255))
+    ip_address: Mapped[str | None] = mapped_column(String(45))
+    details: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
 

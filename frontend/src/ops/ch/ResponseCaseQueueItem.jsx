@@ -1,4 +1,6 @@
-import { labelEntityActive, labelPriority, labelScenario } from "../../lib/displayLabels.js";
+import { labelPriority, labelScenario, refCode } from "../../lib/displayLabels.js";
+import { OpChip, OpChipFor } from "../components/OpChip.jsx";
+import { SCENARIO_VARIANT, ENTITY_ACTIVE, ENTITY_ACTIVE_VARIANT, chipEntry, chipVariant, SCENARIO } from "../../lib/chipContract.js";
 
 function formatListDateTime(iso) {
   if (!iso) return "—";
@@ -15,10 +17,6 @@ function formatListDateTime(iso) {
   }
 }
 
-function statusUpper(isActive) {
-  return isActive !== false ? "АКТИВНА" : "В АРХИВЕ";
-}
-
 function classificationLine(item) {
   const parts = [
     item.product_area?.name,
@@ -32,9 +30,13 @@ function classificationLine(item) {
 /** Трёхстрочный элемент списка — паттерн OperatorQueueItem. */
 export function ResponseCaseQueueItem({ item, active, onSelect }) {
   const examples = item.examples_count ?? 0;
+  // НСИ-сценарий обращения: значок по коду справочника, перед названием ТС.
+  const scenarioCode = refCode(item.scenario);
+  const scenarioChip = chipEntry(SCENARIO, scenarioCode);
   return (
     <button
       type="button"
+      data-case-id={item.id}
       className={active ? "rf-oc-item rf-oc-item--selected" : "rf-oc-item"}
       onClick={onSelect}
     >
@@ -43,9 +45,20 @@ export function ResponseCaseQueueItem({ item, active, onSelect }) {
         <span className="rf-rc-ts-badge" title="Типовая ситуация">
           ТС
         </span>
-        <span className="rf-oc-item__status">{statusUpper(item.is_active)}</span>
+        <OpChipFor
+          className="rf-oc-item__status"
+          map={ENTITY_ACTIVE}
+          variantMap={ENTITY_ACTIVE_VARIANT}
+          code={item.is_active !== false ? "active" : "inactive"}
+          emojiOnly
+        />
       </div>
-      <div className="rf-oc-item__preview">{item.title || "—"}</div>
+      <div className="rf-oc-item__preview rf-rc-item__preview">
+        {scenarioChip ? (
+          <OpChip chip={scenarioChip} variant={chipVariant(SCENARIO_VARIANT, scenarioCode)} title={`Сценарий: ${labelScenario(item.scenario)}`} emojiOnly />
+        ) : null}
+        {item.title || "—"}
+      </div>
       <div className="rf-oc-item__telemetry muted">
         {classificationLine(item)}
         {examples > 0 ? ` · примеров: ${examples}` : ""}

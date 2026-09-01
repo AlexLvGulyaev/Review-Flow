@@ -1,7 +1,9 @@
 .op-page--reports {
   max-width: none;
-  height: 100vh;
-  max-height: 100vh;
+  /* 100% контейнера (.op-content-body), а не 100vh: страница лежит под шапкой
+     и 100vh вылезает ровно на её высоту, порождая скролл (owner). */
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -23,9 +25,8 @@
   min-height: 0;
   border: 1px solid var(--rf-oc-border, #c5cdd8);
   border-radius: 8px;
-  background: var(--rf-oc-surface-panel, #fff);
-  padding: 0.35rem;
-}
+  background: var(--rf-oc-surface-panel, var(--ai-surface));
+  padding: 0.35rem;}
 
 .rf-rep-list__title {
   margin: 0 0 0.35rem;
@@ -34,8 +35,7 @@
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--rf-oc-text-label, #64748b);
-}
+  color: var(--rf-oc-text-label, var(--ai-text-muted));}
 
 .rf-rep-list__items {
   display: flex;
@@ -56,9 +56,8 @@
   font: inherit;
   font-size: 0.8rem;
   line-height: 1.3;
-  color: var(--rf-oc-text, #0f172a);
-  cursor: pointer;
-}
+  color: var(--rf-oc-text, var(--ai-text));
+  cursor: pointer;}
 
 .rf-rep-list__item:hover {
   background: rgba(37, 99, 235, 0.06);
@@ -77,14 +76,12 @@
   min-width: 0;
   border: 1px solid var(--rf-oc-border, #c5cdd8);
   border-radius: 8px;
-  background: var(--rf-oc-surface-panel, #fff);
-}
+  background: var(--rf-oc-surface-panel, var(--ai-surface));}
 
 .rf-rep-main__head {
   flex-shrink: 0;
   padding: 0.45rem 0.55rem;
-  border-bottom: 1px solid var(--rf-oc-border, #c5cdd8);
-}
+  border-bottom: 1px solid var(--rf-oc-border, #c5cdd8);}
 
 .rf-rep-main__title {
   margin: 0;
@@ -99,16 +96,14 @@
   gap: 0.4rem 0.65rem;
   padding: 0.45rem 0.55rem;
   border-bottom: 1px solid var(--rf-oc-border, #c5cdd8);
-  flex-shrink: 0;
-}
+  flex-shrink: 0;}
 
 .rf-rep-period__field {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   font-size: 0.72rem;
-  color: var(--rf-oc-text-label, #64748b);
-}
+  color: var(--rf-oc-text-label, var(--ai-text-muted));}
 
 .rf-rep-period__field .op-select,
 .rf-rep-period__field .op-input {
@@ -201,9 +196,8 @@
   font: inherit;
   font-size: 0.66rem;
   text-align: left;
-  color: var(--rf-oc-text, #0f172a);
-  cursor: pointer;
-}
+  color: var(--rf-oc-text, var(--ai-text));
+  cursor: pointer;}
 
 .rf-rep-donut__legend-item:hover,
 .rf-rep-donut__legend-item.active {
@@ -226,9 +220,8 @@
 
 .rf-rep-donut__legend-meta {
   font-variant-numeric: tabular-nums;
-  color: var(--rf-oc-text-secondary, #475569);
-  white-space: nowrap;
-}
+  color: var(--rf-oc-text-secondary, var(--ai-text-secondary));
+  white-space: nowrap;}
 
 .rf-rep-donut__detail {
   margin: 0.25rem 0 0;
@@ -270,8 +263,7 @@
   padding-left: 1rem;
   font-size: 0.78rem;
   line-height: 1.45;
-  color: var(--rf-oc-text, #0f172a);
-}
+  color: var(--rf-oc-text, var(--ai-text));}
 
 .rf-rep-summary__list li + li {
   margin-top: 0.2rem;
@@ -398,8 +390,7 @@
   border: 1px solid var(--rf-oc-border, #c5cdd8);
   border-radius: 6px;
   padding: 0.45rem 0.55rem;
-  background: #f8fafc;
-}
+  background: var(--ai-input);}
 
 .rf-rep-audit__title {
   margin: 0 0 0.35rem;
@@ -407,8 +398,7 @@
   font-weight: 650;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--rf-oc-text-label, #64748b);
-}
+  color: var(--rf-oc-text-label, var(--ai-text-muted));}
 
 .rf-rep-audit__recon {
   display: flex;
@@ -423,13 +413,11 @@
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   background: rgba(234, 179, 8, 0.15);
-  color: #854d0e;
-}
+  color: var(--ai-warning);}
 
 .rf-rep-audit__badge--ok {
   background: rgba(22, 163, 74, 0.12);
-  color: #166534;
-}
+  color: var(--ai-success);}
 
 .rf-rep-audit__stats {
   display: flex;
@@ -447,8 +435,7 @@
 
 .rf-rep-audit__stats dt {
   margin: 0;
-  color: var(--rf-oc-text-label, #64748b);
-}
+  color: var(--rf-oc-text-label, var(--ai-text-muted));}
 
 .rf-rep-audit__stats dd {
   margin: 0;
@@ -468,9 +455,8 @@
 .rf-rep-audit__finding {
   font-size: 0.78rem;
   line-height: 1.4;
-  border-top: 1px solid #e2e8f0;
-  padding-top: 0.3rem;
-}
+  border-top: 1px solid var(--ai-border-subtle);
+  padding-top: 0.3rem;}
 
 .rf-rep-audit__finding:first-child {
   border-top: none;
@@ -486,14 +472,12 @@
 
 .rf-rep-audit__count {
   font-variant-numeric: tabular-nums;
-  color: var(--rf-oc-text-secondary, #475569);
-  flex-shrink: 0;
-}
+  color: var(--rf-oc-text-secondary, var(--ai-text-secondary));
+  flex-shrink: 0;}
 
 .rf-rep-audit__desc {
   margin: 0.15rem 0 0;
-  color: var(--rf-oc-text-secondary, #475569);
-}
+  color: var(--rf-oc-text-secondary, var(--ai-text-secondary));}
 
 .rf-rep-audit__samples {
   margin-top: 0.4rem;
@@ -505,16 +489,14 @@
   margin-top: 0.25rem;
   word-break: break-all;
   font-size: 0.7rem;
-  color: var(--rf-oc-text-secondary, #475569);
-}
+  color: var(--rf-oc-text-secondary, var(--ai-text-secondary));}
 
 .rf-rep-chart {
   border: 1px solid var(--rf-oc-border, #c5cdd8);
   border-radius: 6px;
   padding: 0.4rem 0.45rem;
-  background: #fafbfc;
-  min-width: 0;
-}
+  background: var(--ai-input);
+  min-width: 0;}
 
 .rf-rep-chart__title {
   margin: 0 0 0.35rem;
@@ -522,8 +504,7 @@
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--rf-oc-text-label, #64748b);
-}
+  color: var(--rf-oc-text-label, var(--ai-text-muted));}
 
 .rf-rep-chart__empty {
   margin: 0;
@@ -555,10 +536,9 @@
 
 .rf-rep-chart__track {
   height: 0.45rem;
-  background: #e8ecf1;
+  background: var(--ai-border-subtle);
   border-radius: 3px;
-  overflow: hidden;
-}
+  overflow: hidden;}
 
 .rf-rep-chart__fill {
   height: 100%;
@@ -569,8 +549,7 @@
 .rf-rep-chart__value {
   text-align: right;
   font-variant-numeric: tabular-nums;
-  color: var(--rf-oc-text-secondary, #475569);
-}
+  color: var(--rf-oc-text-secondary, var(--ai-text-secondary));}
 
 .rf-rep-table-wrap__title {
   margin: 0 0 0.3rem;
@@ -578,8 +557,7 @@
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--rf-oc-text-label, #64748b);
-}
+  color: var(--rf-oc-text-label, var(--ai-text-muted));}
 
 .rf-rep-table {
   font-size: 0.78rem;
@@ -598,8 +576,7 @@
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--rf-oc-text-label, #64748b);
-}
+  color: var(--rf-oc-text-label, var(--ai-text-muted));}
 
 .rf-rep-summary__text {
   margin: 0;

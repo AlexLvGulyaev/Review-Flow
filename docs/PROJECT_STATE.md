@@ -17,6 +17,8 @@ AI-система обработки клиентских обращений с 
 - Контур компании (оператор + администратор): https://review-flow-admin.alex-n8n.site/company
 - Backend API: https://review-flow-api.alex-n8n.site/docs
 
+**Наблюдаемость (2026-08-31):** раздельные экраны «Логи» (телеметрия обработки) и «Журнал аудита» (пользовательская активность персонала, клиентов и демо-режима — с IP-адресами), CSV-экспорт обоих журналов (UTF-8 BOM); консоль приведена к референсу AIC admin-console (канон ai-card 420px + детализация).
+
 ## Market Validation
 
 **Подтверждающие заказы:**
@@ -80,3 +82,4 @@ AI-система обработки клиентских обращений с 
 | 2026-08-09 | В продакшн-размещении | Публичные HTTPS-эндпоинты развёрнуты: `review-flow.alex-n8n.site`, `review-flow-admin.alex-n8n.site`, `review-flow-api.alex-n8n.site` |
 | 2026-08-09 | Опубликован на GitHub | Репозиторий `https://github.com/AlexLvGulyaev/Review-Flow` синхронизирован, `.env` и внутренние APL-материалы исключены из публичной поставки |
 | 2026-08-12 | Применены стандарты публичных демо-ресурсов | Реализованы tokenized demo sessions (квота/rate-limit/IP-лимит на `POST /api/reviews`) и read-only demo RBAC ops-консоли (Bearer-токены, demo — только чтение, backend-enforced); обновлены API_CONTRACT, ARCHITECTURE, DEPLOYMENT_GUIDE, ролевые гиды, USER_GUIDE |
+| 2026-08-31 | Наблюдаемость: логи + журнал аудита | Миграция `018_audit_logs.sql`, аудит всех мутаций персонала + клиентский контур (`review_submitted`, `review_status_checked`, `demo_session_started`) с IP; раздельные экраны «Логи» и «Журнал аудита» (канон AIC), CSV-экспорт обоих журналов; обновлены API_CONTRACT, ADMIN_GUIDE, OPERATIONS, DEPLOYMENT_GUIDE |

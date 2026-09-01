@@ -1,8 +1,9 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload
 
+from app.api.audit_helpers import audit_client
 from app.db.session import get_db
 from app.api.demo import require_demo_token
 from app.models.entities import Review, ReviewClassification
@@ -27,6 +28,7 @@ router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 @router.post("", response_model=ReviewCreateResponse, status_code=201)
 def create_review(
     payload: ReviewCreateRequest,
+    request: Request,
     db: Session = Depends(get_db),
     demo_session=Depends(require_demo_token),
 ) -> ReviewCreateResponse:
@@ -42,11 +44,26 @@ def create_review(
         review.order_number,
         review.request_sequence,
     )
+    # Аудит пользовательской активности: отправлен запрос пользователя —
+    # главная пресейловая точка интереса к системе.
+    audit_client(
+        request,
+        "review_submitted",
+        resource_type="review",
+        resource_id=review_id,
+        db=db,
+        details={
+            "request_number": request_number,
+            "demo_mode": bool(demo_session),
+        },
+    )
+    db.commit()
     return ReviewCreateResponse(review_id=review_id, request_number=request_number, status=status)
 
 
 @router.get("/requests/{request_number}/status", response_model=ReviewStatusResponse)
 def get_request_status(
+    request: Request,
     request_number: str,
     email: str = Query(...),
     db: Session = Depends(get_db),
@@ -93,6 +110,17 @@ def get_request_status(
         review.order_number,
         review.request_sequence,
     )
+    # Аудит пользовательской активности: клиент проверяет статус своего
+    # обращения (единичные проверки, без поллинга — поллинг замусорил бы журнал).
+    audit_client(
+        request,
+        "review_status_checked",
+        resource_type="review",
+        resource_id=review.id,
+        db=db,
+        details={"request_number": display_id, "client_status": client_status},
+    )
+    db.commit()
     return ReviewStatusResponse(
         review_id=review.id,
         request_number=display_id or request_number,

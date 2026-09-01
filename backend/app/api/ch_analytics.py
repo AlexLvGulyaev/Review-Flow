@@ -7,7 +7,6 @@ from app.core.roles import require_admin_read
 from app.db.session import get_db
 from app.schemas.ch_analytics import ChAnalyticsDashboard, ChAuditTrail
 from app.services.ch_analytics import ChAnalyticsService
-from app.services.operational_log import log_event
 
 router = APIRouter(
     prefix="/api/admin/ch-analytics",
@@ -25,8 +24,6 @@ def ch_analytics_dashboard(
     misses_limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
 ) -> ChAnalyticsDashboard:
-    log_event(db, event_type="ch_analytics_dashboard_requested", status="ok")
-    db.commit()
     return ChAnalyticsService(db).get_dashboard(
         days=days,
         product_area_id=product_area_id,

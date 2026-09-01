@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 
+from app.api.audit_helpers import audit
+from app.core.roles import Role, require_admin, require_admin_read
 from app.core.roles import require_admin, require_admin_read
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -48,6 +50,8 @@ def _to_out(case: EvaluationCase) -> EvaluationCaseOut:
 @router.post("/cases", response_model=EvaluationCaseOut, status_code=201, dependencies=[Depends(require_admin)])
 def create_evaluation_case(
     payload: EvaluationCaseCreate,
+    request: Request,
+    role: Role = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> EvaluationCaseOut:
     review = db.get(Review, payload.review_id)
@@ -55,6 +59,7 @@ def create_evaluation_case(
         raise HTTPException(status_code=404, detail="Review not found")
 
     now = datetime.now(timezone.utc)
+    audit(request, role, "evaluation_case_created", resource_type="evaluation_case", db=db)
     case = EvaluationCase(
         review_id=payload.review_id,
         expected_quality_notes=payload.expected_quality_notes,
@@ -106,6 +111,8 @@ def list_evaluation_cases(db: Session = Depends(get_db)) -> list[EvaluationCaseO
 def score_evaluation_case(
     case_id: UUID,
     payload: EvaluationScoreUpdate,
+    request: Request,
+    role: Role = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> EvaluationCaseOut:
     case = (
@@ -121,6 +128,7 @@ def score_evaluation_case(
     if not case:
         raise HTTPException(status_code=404, detail="Evaluation case not found")
 
+    audit(request, role, "evaluation_scored", resource_type="evaluation_case", resource_id=case_id, db=db, details={"operator_score": payload.operator_score})
     case.operator_score = payload.operator_score
     case.operator_comment = payload.operator_comment
     case.updated_at = datetime.now(timezone.utc)

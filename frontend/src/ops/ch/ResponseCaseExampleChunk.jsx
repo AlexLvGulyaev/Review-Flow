@@ -26,7 +26,7 @@ export function ResponseCaseExampleChunk({ example, saving, onEdit, onDeactivate
           <div className="rf-rc-chunk__actions">
             <OpButton
               type="button"
-              className="rf-rc-toolbar__action"
+              className="rf-rc-chunk__btn"
               disabled={saving}
               onClick={() => onEdit(example)}
             >
@@ -34,7 +34,7 @@ export function ResponseCaseExampleChunk({ example, saving, onEdit, onDeactivate
             </OpButton>
             <OpButton
               type="button"
-              className="rf-rc-toolbar__action"
+              className="rf-rc-chunk__btn"
               disabled={saving}
               onClick={() => onDeactivate(example.id)}
             >

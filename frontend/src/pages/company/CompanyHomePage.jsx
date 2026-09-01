@@ -1,11 +1,17 @@
-import { FormEvent, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useCompanyAuth } from "../../context/CompanyAuthContext.jsx";
 import { getStaffHomePath } from "../../lib/companyAuth.js";
 
 const DEMO_TOKEN = import.meta.env.VITE_OPS_DEMO_TOKEN || "";
 
+/**
+ * Экран входа — перенос референса AIC (admin-console/src/components/Login.jsx)
+ * 1:1: центрированная ai-card, значок-эмодзи, заголовок display-шрифтом,
+ * поле Bearer token, ошибка в рамке, кнопки «Войти» и демо-вход.
+ * Логика входа — RF (whoami-валидация токена, сессия, роли).
+ */
 export default function CompanyHomePage() {
   const { isStaffSignedIn, session, login, loginDemo } = useCompanyAuth();
   const navigate = useNavigate();
@@ -22,9 +28,14 @@ export default function CompanyHomePage() {
   async function onTokenSubmit(e) {
     e.preventDefault();
     setError(null);
+    const trimmed = token.trim();
+    if (!trimmed) {
+      setError("Введите токен.");
+      return;
+    }
     setSubmitting(true);
     try {
-      const user = await login(token);
+      const user = await login(trimmed);
       navigate(getStaffHomePath(user.role), { replace: true });
     } catch (err) {
       setError(err.message || "Ошибка входа");
@@ -46,71 +57,56 @@ export default function CompanyHomePage() {
     }
   }
 
-  const needsSignIn = Boolean(location.state?.staffSignInRequired);
-
   return (
-    <div className="company-login-page">
-      <div className="company-login-card">
-        <header className="company-login-card__header">
-          <h1 className="company-login-card__title">Рабочее пространство компании</h1>
-          <p className="company-login-card__subtitle muted">
-            Вход для сотрудников Northline Market
+    <div className="rf-login">
+      <div className="rf-login-card">
+        <div className="rf-login-head">
+          <div className="rf-login-badge">⚙️</div>
+          <h1 className="rf-login-title">Review Flow Admin Console</h1>
+          <p className="rf-login-sub">
+            Введите Bearer token для доступа к панели управления.
           </p>
-        </header>
+        </div>
 
-        {needsSignIn ? (
-          <p className="company-login-card__notice" role="status">
-            Войдите в рабочее пространство, чтобы продолжить.
-          </p>
-        ) : null}
-
-        <form className="company-login-form" onSubmit={onTokenSubmit}>
-          <label className="company-login-form__field">
-            <span className="company-login-form__label">Bearer токен</span>
+        <form className="rf-login-form" onSubmit={onTokenSubmit}>
+          <div>
+            <label className="rf-login-label" htmlFor="rf-login-token">
+              Bearer token
+            </label>
             <input
+              id="rf-login-token"
               type="password"
               name="token"
               autoComplete="off"
-              placeholder="Вставьте токен доступа…"
-              className="company-login-form__input"
+              placeholder="Вставьте токен..."
+              className="rf-login-input"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              required
               disabled={submitting}
             />
-          </label>
+          </div>
 
           {error ? (
-            <p className="company-login-form__error" role="alert">
+            <div className="rf-login-error" role="alert">
               {error}
-            </p>
+            </div>
           ) : null}
 
-          <button type="submit" className="company-login-form__submit" disabled={submitting}>
+          <button type="submit" className="rf-login-btn" disabled={submitting}>
             {submitting ? "Вход…" : "Войти"}
           </button>
+
+          {DEMO_TOKEN ? (
+            <button
+              type="button"
+              className="rf-login-btn rf-login-btn--outline"
+              onClick={onDemoLogin}
+              disabled={demoSubmitting}
+            >
+              {demoSubmitting ? "Вход…" : "Войти в демо-режим (только просмотр)"}
+            </button>
+          ) : null}
         </form>
-
-        {DEMO_TOKEN ? (
-          <button
-            type="button"
-            className="company-login-form__submit company-login-form__submit--outline"
-            onClick={onDemoLogin}
-            disabled={demoSubmitting}
-          >
-            {demoSubmitting ? "Вход…" : "Войти в демо-режим (только просмотр)"}
-          </button>
-        ) : null}
-
-        <footer className="company-login-card__footer muted">
-          <p className="company-login-card__hint">
-            Токен выдаётся администратором при развёртывании. Демо-вход открывает
-            консоль в режиме только для чтения.
-          </p>
-          <p>
-            <Link to="/">← На сайт для клиентов</Link>
-          </p>
-        </footer>
       </div>
     </div>
   );

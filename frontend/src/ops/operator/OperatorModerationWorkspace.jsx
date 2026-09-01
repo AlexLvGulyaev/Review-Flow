@@ -7,11 +7,12 @@ import {
   WORKFLOW_COMPLETED_TOOLTIP,
   isControlledHybridDetail,
   isOperatorWorkflowCompleted,
-  labelModeration,
   labelPriority,
   labelScenario,
   labelSentiment,
 } from "../../lib/displayLabels.js";
+import { OpChipFor } from "../components/OpChip.jsx";
+import { MODERATION, MODERATION_VARIANT } from "../../lib/chipContract.js";
 import { SelectedResponseCaseSummary, ResponseCaseAlternatives } from "./ResponseCasePanel.jsx";
 import {
   formatAge,
@@ -52,7 +53,6 @@ export function OperatorModerationWorkspace({
   const actionsDisabled = actionLoading || workflowCompleted || readOnly;
   const showActions = !workflowCompleted;
   const completedTooltip = workflowCompleted ? WORKFLOW_COMPLETED_TOOLTIP : undefined;
-  const modUpper = labelModeration(detail.moderation_status).toUpperCase();
   const templateLabel = templateDisplayLabel(detail.template);
   const completedAt =
     detail.moderation_status === "approved" && detail.updated_at
@@ -84,7 +84,12 @@ export function OperatorModerationWorkspace({
       <div className="rf-oc-detail rf-oc-detail--ch">
         <div className="rf-oc-detail-identity">
           <h2 className="rf-oc-detail-identity__title">{formatRequestHeader(detail)}</h2>
-          <span className="rf-oc-detail-identity__status">{modUpper}</span>
+          <OpChipFor
+            map={MODERATION}
+            variantMap={MODERATION_VARIANT}
+            code={detail.moderation_status}
+            className="rf-oc-detail-identity__status"
+          />
         </div>
 
         <div className="rf-oc-ch-top-grid">
@@ -240,7 +245,12 @@ export function OperatorModerationWorkspace({
     <div className="rf-oc-detail">
       <div className="rf-oc-detail-identity">
         <h2 className="rf-oc-detail-identity__title">{formatRequestHeader(detail)}</h2>
-        <span className="rf-oc-detail-identity__status">{modUpper}</span>
+        <OpChipFor
+            map={MODERATION}
+            variantMap={MODERATION_VARIANT}
+            code={detail.moderation_status}
+            className="rf-oc-detail-identity__status"
+          />
       </div>
 
       <div className="rf-oc-summary-grid">

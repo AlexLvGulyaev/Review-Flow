@@ -1,28 +1,145 @@
+/**
+ * Lab dual-theme standard (shared/patterns/admin-console-dual-theme-mirror-inversion.md).
+ * Dark theme is the default (`:root`); light theme is the mirror-inversion
+ * override on `:root[data-theme='light']` (useTheme hook, localStorage `ai-theme`).
+ * Client contour keeps its light brand identity in both themes (public surface).
+ */
+:root {
+  /* Background */
+  --ai-bg: #0b0f19;              /* фон-земля, почти чёрный */
+  --ai-surface: #151b2b;         /* панели, графит */
+  --ai-surface-hover: #1e2538;   /* hover светлее панели */
+  --ai-surface-elevated: #1e293b;
+  --ai-input: #0b0f19;
+
+  /* Text */
+  --ai-text: #f1f5f9;
+  --ai-text-secondary: #cbd5e1;
+  --ai-text-muted: #8b95a7;
+
+  /* Primary accent — blue */
+  --ai-primary: #2f7bff;
+  --ai-primary-hover: #1d62d9;
+  --ai-primary-light: rgba(47, 123, 255, 0.12);
+
+  /* Secondary accent — teal */
+  --ai-teal: #14b8a6;
+
+  /* Signals */
+  --ai-success: #22c55e;
+  --ai-error: #ef4444;
+  --ai-warning: #f59e0b;
+  --ai-info: #3b82f6;
+
+  /* RF signal tints (soft bg + border, semi-transparent — mirror-inversion safe) */
+  --ai-success-soft-bg: rgba(34, 197, 94, 0.14);
+  --ai-success-soft-border: rgba(34, 197, 94, 0.38);
+  --ai-error-soft-bg: rgba(239, 68, 68, 0.14);
+  --ai-error-soft-border: rgba(239, 68, 68, 0.38);
+  --ai-warning-soft-bg: rgba(245, 158, 11, 0.14);
+  --ai-warning-soft-border: rgba(245, 158, 11, 0.4);
+  --ai-info-soft-bg: rgba(59, 130, 246, 0.16);
+  --ai-info-soft-border: rgba(59, 130, 246, 0.4);
+  --ai-purple: #a78bfa;
+  --ai-purple-soft-bg: rgba(124, 58, 237, 0.18);
+  --ai-purple-soft-border: rgba(124, 58, 237, 0.42);
+  --ai-orange: #fb923c;
+  --ai-orange-soft-bg: rgba(234, 88, 12, 0.16);
+  --ai-orange-soft-border: rgba(234, 88, 12, 0.42);
+  --ai-star: #f59e0b;             /* звезда рейтинга — янтарная в обеих темах */
+
+  /* Borders & shadows */
+  --ai-border: #273043;
+  --ai-border-subtle: #1e2538;
+  --ai-radius: 10px;
+  --ai-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --ai-shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.4);
+
+  /* Font stacks — AIC parity (index.css): with Inter installed the console
+     reads visibly larger at the same px sizes; fallbacks keep parity when
+     Inter is absent. */
+  --ai-font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ai-font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Subtle row fills (tokenized for the light theme) */
+  --ai-row-hover: rgba(255, 255, 255, 0.03);
+  --ai-row-hover-strong: rgba(255, 255, 255, 0.05);
+
+  color-scheme: dark;
+}
+
+/* Light theme — mirror inversion (owner formula: инверсия светимости слоёв,
+   не сдвиг шкалы). bg→white, panels→grey-blue, hover darker, inputs lighter. */
+:root[data-theme='light'] {
+  --ai-bg: #ffffff;
+  --ai-surface: #e7ebf3;
+  --ai-surface-hover: #dfe5ef;
+  --ai-surface-elevated: #eef1f8;
+  --ai-input: #f4f6fa;
+
+  --ai-text: #16202f;
+  --ai-text-secondary: #33415a;
+  --ai-text-muted: #5a6880;
+
+  --ai-primary: #2563eb;
+  --ai-primary-hover: #1d4ed8;
+  --ai-primary-light: rgba(37, 99, 235, 0.12);
+  --ai-teal: #0d9488;
+
+  --ai-success: #15803d;
+  --ai-error: #dc2626;
+  --ai-warning: #b45309;
+  --ai-info: #2563eb;
+
+  --ai-success-soft-bg: #ecfdf5;
+  --ai-success-soft-border: #a7f3d0;
+  --ai-error-soft-bg: #fef2f2;
+  --ai-error-soft-border: #fca5a5;
+  --ai-warning-soft-bg: #fffbeb;
+  --ai-warning-soft-border: #fde68a;
+  --ai-info-soft-bg: #eff6ff;
+  --ai-info-soft-border: #bfdbfe;
+  --ai-purple: #7c3aed;
+  --ai-purple-soft-bg: #f5f3ff;
+  --ai-purple-soft-border: #e9d5ff;
+  --ai-orange: #ea580c;
+  --ai-orange-soft-bg: #fff7ed;
+  --ai-orange-soft-border: #fed7aa;
+
+  --ai-border: #97a5bd;
+  --ai-border-subtle: #c3ccdc;
+  --ai-radius: 10px;
+  --ai-shadow: 0 4px 12px rgba(22, 32, 47, 0.1);
+  --ai-shadow-lg: 0 10px 24px rgba(22, 32, 47, 0.14);
+
+  --ai-row-hover: rgba(22, 32, 47, 0.03);
+  --ai-row-hover-strong: rgba(22, 32, 47, 0.06);
+
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #f5f5f5;
-  color: #1a1a1a;
-}
+  font-family: var(--ai-font-body);
+  background: var(--ai-bg);
+  color: var(--ai-text);}
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
-}
+  background: var(--ai-surface);
+  border-bottom: 1px solid var(--ai-border);}
 
 .header a {
-  color: #1a1a1a;
+  color: var(--ai-text);
   text-decoration: none;
-  font-weight: 600;
-}
+  font-weight: 600;}
 
 .header nav {
   display: flex;
@@ -43,11 +160,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background: #fff;
+  background: var(--ai-surface);
   padding: 1.5rem;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
+  border: 1px solid var(--ai-border);}
 
 .review-form label {
   display: flex;
@@ -60,20 +176,22 @@ body {
 .review-form select,
 .review-form textarea {
   padding: 0.5rem 0.65rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--ai-border);
   border-radius: 4px;
   font: inherit;
-}
+  /* color-scheme dark: без явных цветов браузер подставляет светлый текст
+     на светлом фоне — вводимый текст становится невидимым. */
+  color: var(--ai-text);
+  background: var(--ai-input);}
 
 .review-form button {
   padding: 0.65rem 1rem;
-  background: #2563eb;
+  background: var(--ai-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
   font: inherit;
-  cursor: pointer;
-}
+  cursor: pointer;}
 
 .review-form button:disabled {
   opacity: 0.6;
@@ -81,17 +199,15 @@ body {
 }
 
 .error {
-  color: #b91c1c;
-  margin: 0;
-}
+  color: var(--ai-error);
+  margin: 0;}
 
 .success {
   margin-top: 1.5rem;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
+  background: var(--ai-success-soft-bg);
+  border: 1px solid var(--ai-success-soft-border);
   padding: 1.25rem;
-  border-radius: 8px;
-}
+  border-radius: 8px;}
 
 .detail-block {
   margin-top: 1rem;
@@ -107,21 +223,18 @@ body {
 }
 
 .muted {
-  color: #666;
-  font-size: 0.9rem;
-}
+  color: var(--ai-text-muted);
+  font-size: 0.9rem;}
 
 .success-inline {
-  color: #047857;
-  margin: 0 0 1rem;
-}
+  color: var(--ai-success);
+  margin: 0 0 1rem;}
 
 .notice {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  background: var(--ai-warning-soft-bg);
+  border: 1px solid var(--ai-warning-soft-border);
   padding: 1rem;
-  border-radius: 6px;
-}
+  border-radius: 6px;}
 
 .status-card {
   background: #fff;
@@ -163,12 +276,11 @@ body {
 
 .operator-list,
 .operator-detail {
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
   border-radius: 8px;
   padding: 1rem;
-  min-height: 400px;
-}
+  min-height: 400px;}
 
 .operator-list ul {
   list-style: none;
@@ -179,32 +291,28 @@ body {
 .list-item {
   width: 100%;
   text-align: left;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--ai-border);
   border-radius: 6px;
   padding: 0.65rem;
   margin-bottom: 0.5rem;
-  background: #fafafa;
+  background: var(--ai-input);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  font: inherit;
-}
+  font: inherit;}
 
 .list-item.active {
-  border-color: #2563eb;
-  background: #eff6ff;
-}
+  border-color: var(--ai-primary);
+  background: var(--ai-info-soft-bg);}
 
 .list-item .preview {
   font-size: 0.85rem;
-  color: #555;
-}
+  color: var(--ai-text-muted);}
 
 .badge {
   font-size: 0.75rem;
-  color: #1d4ed8;
-}
+  color: var(--ai-primary);}
 
 .detail-grid {
   display: grid;
@@ -227,28 +335,25 @@ body {
 .action-row.secondary input {
   flex: 1;
   padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
+  border: 1px solid var(--ai-border);
+  border-radius: 4px;}
 
 .btn-approve {
-  background: #059669;
+  background: var(--ai-teal);
   color: #fff;
   border: none;
   padding: 0.65rem 1rem;
   border-radius: 4px;
   cursor: pointer;
-  font: inherit;
-}
+  font: inherit;}
 
 .action-row button {
   padding: 0.5rem 0.85rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--ai-border);
   border-radius: 4px;
-  background: #fff;
+  background: var(--ai-surface);
   cursor: pointer;
-  font: inherit;
-}
+  font: inherit;}
 
 .log-list {
   font-size: 0.8rem;
@@ -256,15 +361,14 @@ body {
 }
 
 .prompt-box {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--ai-input);
+  border: 1px solid var(--ai-border-subtle);
   border-radius: 6px;
   padding: 0.75rem;
   white-space: pre-wrap;
   font-size: 0.85rem;
   max-height: 240px;
-  overflow: auto;
-}
+  overflow: auto;}
 
 .inline-form {
   margin-bottom: 1rem;
@@ -289,8 +393,7 @@ body {
 
 .metric-label {
   font-size: 0.8rem;
-  color: #666;
-}
+  color: var(--ai-text-muted);}
 
 .metric-value {
   font-size: 1.5rem;
@@ -305,14 +408,12 @@ body {
 
 .data-table th,
 .data-table td {
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--ai-border);
   padding: 0.5rem 0.75rem;
-  text-align: left;
-}
+  text-align: left;}
 
 .data-table th {
-  background: #f8fafc;
-}
+  background: var(--ai-input);}
 
 .timeline {
   list-style: none;
@@ -321,13 +422,12 @@ body {
 }
 
 .timeline-item {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-left: 4px solid #2563eb;
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-left: 4px solid var(--ai-primary);
   border-radius: 6px;
   padding: 1rem;
-  margin-bottom: 0.75rem;
-}
+  margin-bottom: 0.75rem;}
 
 .timeline-header {
   display: flex;
@@ -338,13 +438,12 @@ body {
 }
 
 .metadata-preview {
-  background: #f8fafc;
+  background: var(--ai-input);
   font-size: 0.75rem;
   padding: 0.5rem;
   border-radius: 4px;
   overflow: auto;
-  max-height: 120px;
-}
+  max-height: 120px;}
 
 .role-selector select {
   padding: 0.35rem 0.5rem;
@@ -352,16 +451,14 @@ body {
 }
 
 .access-denied-page h1 {
-  color: #b45309;
-}
+  color: var(--ai-warning);}
 
 .access-denied-card {
-  background: #fff;
-  border: 1px solid #fcd34d;
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-warning-soft-border);
   border-radius: 8px;
   padding: 1.25rem 1.5rem;
-  margin-bottom: 1.25rem;
-}
+  margin-bottom: 1.25rem;}
 
 .access-denied-card p {
   margin: 0.5rem 0;
@@ -415,28 +512,25 @@ body {
   text-align: left;
   padding: 0.5rem;
   margin-bottom: 0.35rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--ai-border);
   border-radius: 4px;
-  background: #fff;
+  background: var(--ai-surface);
   cursor: pointer;
-  font: inherit;
-}
+  font: inherit;}
 
 .admin-kb-list button.active {
-  border-color: #2563eb;
-  background: #eff6ff;
-}
+  border-color: var(--ai-primary);
+  background: var(--ai-info-soft-bg);}
 
 .admin-kb-edit form,
 .admin-kb-create form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: #fff;
+  background: var(--ai-surface);
   padding: 1rem;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
+  border: 1px solid var(--ai-border);}
 
 .admin-kb-edit label,
 .admin-kb-create label {
@@ -447,8 +541,7 @@ body {
 }
 
 .success {
-  color: #15803d;
-}
+  color: var(--ai-success);}
 
 @media (max-width: 900px) {
   .operator-layout {
@@ -467,7 +560,7 @@ body {
     position: static;
     height: auto;
     border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--ai-border-subtle);
   }
 }
 
@@ -478,14 +571,32 @@ body {
   --client-green-dark: #1e7e34;
   --client-navy: #1a1f2c;
   --client-blue: #2563eb;
-  --client-max: 1600px;
-}
+  --client-max: 1600px;}
 
 .client-shell {
   background: #f0f2f5;
+  /* Клиентский сайт — светлая поверхность с собственным дизайном: фиксируем
+     тёмный текст по умолчанию, чтобы color-scheme dark консоли не протекал
+     сюда светлым текстом («белое на белом» в полях, плашках и тексте). */
+  color: var(--client-navy);
+  /* Прежний системный шрифт: Inter (--ai-font-body) — шрифт консоли (AIC
+     parity). У Inter крупнее x-height, и клиентский текст при тех же
+     пикселях стал читаться непропорционально крупно (owner: «лошадиные
+     размеры шрифтов»). */
+  font-family: system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Модалы клиентских поверхностей — сиблинги .client-shell (ClientModalProvider
+   рендерит их после children), font-shell на них не действует — задаём здесь. */
+.client-modal-root,
+.client-modal-root input,
+.client-modal-root select,
+.client-modal-root textarea,
+.client-modal-root button {
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 .client-header-light {
@@ -975,28 +1086,24 @@ body {
 }
 
 .icon--delivery {
-  background: #ecfdf5;
-  border: 1px solid #bbf7d0;
-  color: #16a34a;
-}
+  background: var(--ai-success-soft-bg);
+  border: 1px solid var(--ai-success-soft-border);
+  color: var(--ai-success);}
 
 .icon--quality {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #2563eb;
-}
+  background: var(--ai-info-soft-bg);
+  border: 1px solid var(--ai-info-soft-border);
+  color: var(--ai-primary);}
 
 .icon--support {
-  background: #f5f3ff;
-  border: 1px solid #e9d5ff;
-  color: #7c3aed;
-}
+  background: var(--ai-purple-soft-bg);
+  border: 1px solid var(--ai-purple-soft-border);
+  color: var(--ai-purple);}
 
 .icon--payment {
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  color: #ea580c;
-}
+  background: var(--ai-orange-soft-bg);
+  border: 1px solid var(--ai-orange-soft-border);
+  color: var(--ai-orange);}
 
 .client-feature-icon.icon--delivery,
 .client-feature-icon.icon--quality,
@@ -1187,6 +1294,10 @@ body {
   border: 1px solid #cbd5e1;
   border-radius: 10px;
   font: inherit;
+  /* Клиентская страница — светлая по дизайну: фиксируем цвета независимо
+     от color-scheme консоли (иначе текст ввода светлый на белом). */
+  color: #0f172a;
+  background: #fff;
 }
 
 .client-form button {
@@ -1244,6 +1355,7 @@ body {
   font-family: ui-monospace, monospace;
   font-size: 1.05em;
   background: #f1f5f9;
+  color: #0f172a;
   padding: 0.15rem 0.45rem;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
@@ -1741,15 +1853,14 @@ body {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 280px 1fr;
-  background: #0b1020;
-}
+  background: var(--ai-surface);}
 
 .company-sidebar {
   position: sticky;
   top: 0;
   height: 100vh;
   padding: 1rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--ai-border-subtle);
 }
 
 .company-sidebar-header {
@@ -1760,7 +1871,7 @@ body {
 }
 
 .company-brand {
-  color: #fff;
+  color: var(--ai-text);
   font-weight: 800;
   letter-spacing: 0.2px;
 }
@@ -1770,7 +1881,7 @@ body {
 }
 
 .company-nav-title {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ai-text-muted);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1781,33 +1892,32 @@ body {
   display: block;
   padding: 0.55rem 0.65rem;
   border-radius: 10px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ai-text-secondary);
   text-decoration: none;
   margin-bottom: 0.35rem;
 }
 
 .company-nav-link:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ai-row-hover-strong);
 }
 
 .company-nav-link.active {
-  background: rgba(37, 99, 235, 0.28);
-  color: #fff;
+  background: var(--ai-primary-light);
+  color: var(--ai-text);
 }
 
 .company-sidebar .role-selector {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ai-text-secondary);
 }
 
 .company-sidebar .role-selector select {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: var(--ai-row-hover-strong);
+  border: 1px solid var(--ai-border);
+  color: var(--ai-text);
 }
 
 .company-content {
-  background: #f5f5f5;
-}
+  background: var(--ai-bg);}
 
 .company-content .page,
 .company-content .page-wide {
@@ -1847,6 +1957,10 @@ body {
 .client-modal-card {
   position: relative;
   background: #fff;
+  /* Модалки рендерятся вне .client-shell (соседями) и наследуют от body
+     цвет консоли: в тёмной теме это светлый текст на белой карточке.
+     Фиксируем тёмный текст светлого клиентского дизайна. */
+  color: var(--client-navy);
   border-radius: 16px;
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.28);
   padding: 1.5rem 1.5rem 1.25rem;
@@ -1938,6 +2052,23 @@ body {
   border-radius: 10px;
   font: inherit;
   background: #fff;
+  /* Белая карточка — текст фиксированно тёмный (color-scheme dark консоли
+     иначе подставляет светлый текст = невидимый ввод). */
+  color: #0f172a;
+}
+
+/* Автозаполнение браузера (выбор из сохранённых): Chrome красит autofill-
+   инпут по color-scheme корня, перебивая color выше → получалось белое
+   на белом. Фиксируем белый фон и тёмный текст принудительно. */
+.client-modal-field input:-webkit-autofill,
+.client-modal-field input:-webkit-autofill:hover,
+.client-modal-field input:-webkit-autofill:focus,
+.client-form input:-webkit-autofill,
+.client-form input:-webkit-autofill:hover,
+.client-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 .client-modal-field textarea {
@@ -2499,4 +2630,238 @@ body {
     padding-top: 1rem;
   }
 
+}
+
+/* ============================================================
+   Lab chip contract («Обозначения», ref. AIC): chips are QUIET —
+   sentence case, no tint, a 6px dot on the left, one line = one
+   font size. Color/tint only for signals; dot hidden for muted
+   ("no signal"); .ai-status--emoji replaces the dot with the
+   contract emoji. Single source of emojis: lib/chipContract.js.
+   ============================================================ */
+.ai-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: 0;
+  color: var(--ai-text-secondary);
+  background-color: transparent;
+}
+
+.ai-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
+}
+
+.ai-status.ai-status--muted {
+  color: var(--ai-text-muted);
+}
+
+/* Muted = "no signal": dot hidden. */
+.ai-status--muted::before {
+  display: none;
+}
+
+/* Emoji chip: the icon replaces the dot marker. */
+.ai-status--emoji::before {
+  display: none;
+}
+
+/* Glyph-based check marks (✔︎ U+2714 + FE0E) must render in success color. */
+.ai-status.ai-status--check {
+  color: var(--ai-success);
+}
+
+/* Legend page («Справка → Обозначения»): the glyph is the row marker. */
+.ai-status--icon {
+  line-height: 1;
+}
+
+.ai-status--icon-lg {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+/* Signal level: only things that need a reaction. */
+.ai-status.ai-status--error {
+  background-color: var(--ai-error-soft-bg);
+  color: var(--ai-error);
+}
+
+.ai-status.ai-status--signal--success {
+  background-color: var(--ai-success-soft-bg);
+  color: var(--ai-success);
+}
+
+.ai-status.ai-status--signal--warning {
+  background-color: var(--ai-warning-soft-bg);
+  color: var(--ai-warning);
+}
+
+.ai-status.ai-status--signal--info {
+  background-color: var(--ai-info-soft-bg);
+  color: var(--ai-info);
+}
+
+.ai-status.ai-status--signal--primary {
+  background-color: var(--ai-primary-light);
+  color: var(--ai-primary);
+}
+
+.ai-status.ai-status--signal--muted {
+  background-color: var(--ai-row-hover-strong);
+  color: var(--ai-text-muted);
+}
+
+/* ============================================================
+   Legend page «Справка → Обозначения» (plain-CSS port of the AIC
+   grid 3+3: equal-width panels, equal height sized for the largest
+   panel; short panels keep the empty space).
+   ============================================================ */
+/* Legend heading/intro in the console workspace-header form/size
+   (rf-oc-workspace-header: title 1.28rem/650, subtitle 0.82rem). */
+h2.rf-legend__title {
+  font-size: 1.28rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.18rem;
+}
+
+/* Intro spans the full width (no 65ch cap). */
+.rf-legend__intro {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ai-text-secondary);
+  margin: 0 0 0.42rem;
+}
+
+.rf-legend__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+/* AIC parity: Legend uses Tailwind xl (1280px viewport) for 3 columns,
+   sm (640px) for 2 — same visual break points, content-area widths differ. */
+@media (max-width: 1279px) {
+  .rf-legend__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .rf-legend__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Равная высота панелей, минимум чуть ужат (как у AIC, 318→290); в поповере
+   только длинные «где используется», построчные описания значков остаются. */
+.rf-legend__panel {
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border-subtle);
+  border-radius: var(--ai-radius);
+  padding: 1rem;
+  min-height: 290px;
+}
+
+/* AIC parity: ai-section__title (14px/600, uppercase, 0.04em). */
+.rf-legend__panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ai-text);
+  margin: 0 0 0.35rem;
+}
+
+.rf-legend__row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.rf-legend__row .ai-status {
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.rf-legend__row-label {
+  width: 7rem;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ai-text);
+}
+
+.rf-legend__row-note {
+  min-width: 0;
+  flex: 1;
+  font-size: 0.75rem;
+  color: var(--ai-text-secondary);
+}
+
+/* Маркер всплывающего хэлпа: маленький «?», поповер — под ним,
+   выровнен по левому краю маркера (лейблы стоят слева панели —
+   поповер не выходит за край). Показ по hover/focus. */
+.rf-legend__help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 1px solid var(--ai-border-subtle);
+  border-radius: 50%;
+  color: var(--ai-text-secondary);
+  font-size: 0.625rem;
+  line-height: 1;
+  cursor: help;
+  user-select: none;
+  align-self: center;
+}
+
+.rf-legend__help-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  max-width: 260px;
+  padding: 6px 8px;
+  background: var(--ai-bg);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  color: var(--ai-text);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.rf-legend__help:hover .rf-legend__help-pop,
+.rf-legend__help:focus-visible .rf-legend__help-pop {
+  opacity: 1;
+  visibility: visible;
 }

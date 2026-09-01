@@ -279,7 +279,10 @@ docker compose up --build
 
 ## 🗄️ 8. Операционные логи через API
 
-### 8.1. Просмотр логов
+### 8.1. Трейсы обработки обращений
+
+Журнал «Логи» — проекция по обращениям: одна строка = одно обращение
+(вход: текст обращения, выход: статус/ответ).
 
 ```bash
 curl "http://localhost:8700/api/logs?limit=100" \
@@ -288,8 +291,38 @@ curl "http://localhost:8700/api/logs?limit=100" \
 
 Фильтры:
 
-- `event_type` — тип события;
-- `review_id` — UUID обращения.
+- `review_id` — UUID обращения;
+- `status` — `ok` / `error` / `pending`;
+- `request_number` — номер или ID обращения;
+- `date_from` / `date_to` — окно времени.
+
+Ответ: `ReviewTraceListResponse {items, total, limit, offset}`. Развёрнутый
+трейс (вход → этапы → выход) — `GET /api/logs/{review_id}`. Чтения журнала не
+логируются. Полное описание — [`API_CONTRACT.md`](API_CONTRACT.md), раздел 14.
+
+### 8.1a. Журнал аудита (пользовательская активность)
+
+```bash
+curl "http://localhost:8700/api/audit?limit=100" \
+  -H "X-Role: administrator"
+```
+
+Фильтры: `action`, `resource_type`, `user_role`, `date_from` / `date_to`.
+Детализация — `GET /api/audit/{entry_id}`. Полное описание —
+[`API_CONTRACT.md`](API_CONTRACT.md), раздел 14a.
+
+### 8.1b. Выгрузка CSV
+
+```bash
+curl "http://localhost:8700/api/audit/export" \
+  -H "X-Role: administrator" \
+  --output rf_audit_$(date +%Y-%m-%d).csv
+curl "http://localhost:8700/api/logs/export" \
+  -H "X-Role: administrator" \
+  --output rf_logs_$(date +%Y-%m-%d).csv
+```
+
+CSV открывается в Excel (UTF-8 BOM).
 
 ---
 

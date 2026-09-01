@@ -10,14 +10,7 @@
   padding: 8px 12px 12px;
   box-sizing: border-box;
   /* Sprint 020F — readable NL contrast tokens (operator scope only) */
-  --rf-oc-text: #1e293b;
-  --rf-oc-text-secondary: #475569;
-  --rf-oc-text-label: #64748b;
-  --rf-oc-border: var(--rf-border);
-  --rf-oc-border-focus: rgba(37, 99, 235, 0.55);
-  --rf-oc-surface-elevated: #ffffff;
-  --rf-oc-surface-panel: #f8fafc;
-  --rf-oc-selected-bg: rgba(37, 99, 235, 0.11);
+  /* Values live in rf-tokens.css (theme-aware, shared with reports). */
 }
 
 .op-page--operator-full .muted {
@@ -71,10 +64,9 @@
   position: sticky;
   top: 0;
   z-index: 3;
-  background: #fff;
+  background: var(--ai-surface);
   border-bottom: 1px solid var(--op-border);
-  padding: 0.58rem 0.72rem 0.52rem;
-}
+  padding: 0.58rem 0.72rem 0.52rem;}
 
 .rf-oc-filter-row {
   display: grid;
@@ -168,12 +160,11 @@
   margin: 0 0 10px;
   padding: 8px 12px;
   border-radius: 6px;
-  border: 1px solid color-mix(in srgb, var(--rf-oc-accent, #2e7d32) 35%, transparent);
-  background: color-mix(in srgb, var(--rf-oc-accent, #2e7d32) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rf-oc-accent, var(--ai-success)) 35%, transparent);
+  background: color-mix(in srgb, var(--rf-oc-accent, var(--ai-success)) 10%, transparent);
   color: var(--rf-oc-text);
   font-size: 0.86rem;
-  font-weight: 600;
-}
+  font-weight: 600;}
 
 .rf-oc-action-feedback {
   font-size: 0.8rem;
@@ -181,8 +172,7 @@
 }
 
 .rf-oc-action-feedback--error {
-  color: var(--error, #c62828);
-}
+  color: var(--error, var(--ai-error));}
 
 .rf-oc-list {
   flex: 1 1 auto;
@@ -275,25 +265,21 @@
 }
 
 .op-page--operator-full .rf-oc-item .op-pill--blue {
-  color: #1e40af;
+  color: var(--ai-info);
   background: rgba(37, 99, 235, 0.14);
-  border-color: rgba(37, 99, 235, 0.4);
-}
+  border-color: rgba(37, 99, 235, 0.4);}
 
 .op-page--operator-full .rf-oc-item .op-pill--green {
-  color: #166534;
-  background: rgba(22, 163, 74, 0.14);
-}
+  color: var(--ai-success);
+  background: rgba(22, 163, 74, 0.14);}
 
 .op-page--operator-full .rf-oc-item .op-pill--orange {
-  color: #c2410c;
-  background: rgba(234, 88, 12, 0.12);
-}
+  color: var(--ai-orange);
+  background: rgba(234, 88, 12, 0.12);}
 
 .op-page--operator-full .rf-oc-item .op-pill--red {
-  color: #b91c1c;
-  background: rgba(220, 38, 38, 0.12);
-}
+  color: var(--ai-error);
+  background: rgba(220, 38, 38, 0.12);}
 
 .rf-oc-empty {
   padding: 10px;
@@ -318,11 +304,10 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #fff;
+  background: var(--ai-surface);
   padding-bottom: 6px;
   margin-bottom: 4px;
-  border-bottom: 1px solid var(--op-border);
-}
+  border-bottom: 1px solid var(--op-border);}
 
 .rf-oc-detail__title {
   margin: 0;
@@ -463,7 +448,7 @@
   padding: 6px 8px;
   border: 1px solid var(--rf-oc-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--ai-surface);
   line-height: 1.38;
   max-height: 140px;
   overflow: auto;
@@ -471,8 +456,7 @@
   word-break: break-word;
   font-size: 0.8rem;
   font-family: inherit;
-  color: var(--rf-oc-text);
-}
+  color: var(--rf-oc-text);}
 
 .rf-oc-pre--muted {
   color: var(--rf-oc-text-secondary);
@@ -490,16 +474,14 @@
 }
 
 .rf-oc-detail-block--editor {
-  background: #fff;
+  background: var(--ai-surface);
   border: 1px solid rgba(37, 99, 235, 0.45);
   margin-bottom: 8px;
   padding: 10px 12px;
-  box-shadow: 0 2px 14px rgba(37, 99, 235, 0.08);
-}
+  box-shadow: 0 2px 14px rgba(37, 99, 235, 0.08);}
 
 .rf-oc-detail-block--editor .rf-oc-detail-block__title {
-  color: #1e40af;
-}
+  color: var(--ai-info);}
 
 .rf-oc-editor {
   width: 100%;
@@ -509,11 +491,10 @@
   font-size: 0.94rem;
   box-sizing: border-box;
   color: var(--rf-oc-text);
-  background: #fff;
+  background: var(--ai-surface);
   border: 1px solid var(--rf-oc-border);
   border-radius: 8px;
-  padding: 10px 12px;
-}
+  padding: 10px 12px;}
 
 .rf-oc-editor:focus {
   outline: none;
@@ -627,8 +608,7 @@
 }
 
 .rf-oc-stage--current .rf-oc-stage__label {
-  color: #1e40af;
-}
+  color: var(--ai-info);}
 
 .rf-oc-stage__delta {
   font-size: 0.66rem;
@@ -642,14 +622,12 @@
   cursor: pointer;
   font-size: 0.74rem;
   font-weight: 600;
-  color: #1d4ed8;
-  list-style: none;
-}
+  color: var(--ai-primary);
+  list-style: none;}
 
 .rf-oc-details__summary:hover {
-  color: #1e40af;
-  text-decoration: underline;
-}
+  color: var(--ai-info);
+  text-decoration: underline;}
 
 .op-page--operator-full .rf-oc-stage .op-pill {
   font-weight: 700;
@@ -665,13 +643,12 @@
   padding: 6px;
   border: 1px solid var(--rf-oc-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--ai-surface);
   font-size: 0.72rem;
   color: var(--rf-oc-text-secondary);
   max-height: 120px;
   overflow: auto;
-  white-space: pre-wrap;
-}
+  white-space: pre-wrap;}
 
 .rf-oc-stage-dot {
   display: inline-block;
@@ -687,16 +664,14 @@
 }
 
 .rf-oc-stage-dot--loading {
-  background: #38bdf8;
-}
+  background: #38bdf8;}
 
 .rf-oc-stage-dot--processing {
   background: var(--op-blue);
 }
 
 .rf-oc-stage-dot--reset {
-  background: #f59e0b;
-}
+  background: var(--ai-warning);}
 
 .rf-oc-stage-dot--warning {
   background: var(--op-orange);
@@ -756,8 +731,7 @@
   align-items: start;
   gap: 8px 16px;
   padding: 4px 2px 10px;
-  background: #fff;
-}
+  background: var(--ai-surface);}
 
 .rf-oc-global-header__title {
   margin: 0;
@@ -856,8 +830,8 @@
 
 .rf-oc-detail-identity__status {
   font-size: 0.78rem;
-  font-weight: 750;
-  letter-spacing: 0.06em;
+  font-weight: 500;
+  letter-spacing: 0;
   color: var(--rf-oc-text-secondary);
   white-space: nowrap;
 }
@@ -919,7 +893,7 @@
   padding: 6px 8px;
   border: 1px solid var(--rf-oc-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--ai-surface);
   font-family: inherit;
   font-size: 0.8rem;
   line-height: 1.4;
@@ -928,8 +902,7 @@
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  color: var(--rf-oc-text);
-}
+  color: var(--rf-oc-text);}
 
 .rf-oc-text-panel__body--expanded {
   max-height: min(42vh, 320px);
@@ -996,12 +969,11 @@
   width: min(520px, 100%);
   max-height: 90vh;
   overflow: auto;
-  background: #fff;
+  background: var(--ai-surface);
   border-radius: 10px;
   border: 1px solid var(--rf-oc-border);
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.2);
-  padding: 16px 18px;
-}
+  padding: 16px 18px;}
 
 .rf-oc-modal__title {
   margin: 0 0 12px;
@@ -1121,7 +1093,7 @@
 }
 
 .rf-oc-ch-kv--compact dt {
-  font-size: 0.72rem;
+  font-size: 0.6875rem; /* AIC ai-field-label (референс: «Сессия», «Роль», «Курс») */
 }
 
 .rf-oc-ch-case-desc {
@@ -1143,22 +1115,19 @@
 }
 
 .rf-oc-ch-band--high {
-  color: #166534;
-  background: #dcfce7;
-  border-color: #86efac;
-}
+  color: var(--ai-success);
+  background: var(--ai-success-soft-bg);
+  border-color: var(--ai-success-soft-border);}
 
 .rf-oc-ch-band--medium {
-  color: #92400e;
-  background: #fef3c7;
-  border-color: #fcd34d;
-}
+  color: var(--ai-warning);
+  background: var(--ai-warning-soft-bg);
+  border-color: var(--ai-warning-soft-border);}
 
 .rf-oc-ch-band--low {
-  color: #991b1b;
-  background: #fee2e2;
-  border-color: #fca5a5;
-}
+  color: var(--ai-error);
+  background: var(--ai-error-soft-bg);
+  border-color: var(--ai-error-soft-border);}
 
 .rf-oc-ch-trio-grid {
   display: grid;
@@ -1231,9 +1200,8 @@
   padding: 0.4rem 0.55rem;
   border: 1px solid var(--rf-oc-border);
   border-radius: 6px;
-  background: #fff;
-  min-width: 0;
-}
+  background: var(--ai-surface);
+  min-width: 0;}
 
 .rf-oc-ch-alt-row__score {
   font-size: 0.76rem;
@@ -1282,10 +1250,9 @@
 .rf-oc-ch-alt-card {
   border: 1px solid var(--rf-oc-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--ai-surface);
   padding: 0.45rem 0.55rem;
-  min-width: 0;
-}
+  min-width: 0;}
 
 .rf-oc-ch-alt-card__head {
   display: flex;
@@ -1386,80 +1353,15 @@
 }
 
 /* === UX-Foundation-02 — typography alignment to AF Text (operator only, structural match) === */
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-global-header__main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-global-header__title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-global-header__subtitle {
-  margin: 0;
-  font-size: 0.72rem;
-  line-height: 1.45;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-global-header__brand {
-  font-size: 1rem;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  padding-top: 0;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-workspace-header__title {
-  margin: 0 0 0.18rem;
-  font-size: 1.28rem;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-workspace-header__subtitle {
-  margin: 0 0 0.42rem;
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-filters .op-select.rf-oc-select,
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-filters .op-input.rf-oc-search {
-  font-family: inherit;
-  font-size: 0.78rem;
-  line-height: 1.2;
-  border-radius: 6px;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-filters .op-select.rf-oc-select {
-  padding: 0.34rem 0.38rem;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-filters .op-input.rf-oc-search {
-  padding: 0.38rem 0.45rem;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-select {
-  padding: 0.34rem 0.38rem;
-}
-
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-filter-meta {
-  margin-top: 0.3rem;
-}
-
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-page-controls {
-  margin-top: 0.3rem;
-}
-
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-page-btn {
-  font-size: 0.72rem;
-  padding: 0.22rem 0.4rem;
-  border-radius: 5px;
-}
 
 .op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-refresh-btn {
   padding: 0.2rem 0.45rem !important;
@@ -1468,9 +1370,6 @@
   border-radius: 4px;
 }
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-item__ts {
-  font-size: 0.68rem;
-}
 
 .op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-item__ref {
   font-size: 0.72rem;
@@ -1478,53 +1377,13 @@
   letter-spacing: 0.02em;
 }
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-item__status {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-item__telemetry {
-  font-size: 0.68rem;
-  line-height: 1.28;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-detail-identity__title {
-  font-size: 0.95rem;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  line-height: 1.25;
-  text-transform: uppercase;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-detail-identity__status {
-  font-size: 0.72rem;
-  font-weight: 750;
-  letter-spacing: 0.06em;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-summary-col__label {
-  font-size: 0.68rem;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-  text-transform: none;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-kv-list {
-  font-size: 0.74rem;
-  line-height: 1.32;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-kv-list dt {
-  font-size: 0.66rem;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: normal;
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-kv-list dd {
-  font-weight: 400;
-}
 
 .op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-ch-kv--compact {
   font-size: 0.74rem;
@@ -1532,7 +1391,7 @@
 }
 
 .op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-ch-kv--compact dt {
-  font-size: 0.66rem;
+  font-size: 0.6875rem; /* AIC ai-field-label (референс «Логи») */
   font-weight: 500;
 }
 
@@ -1542,12 +1401,6 @@
 }
 
 /* === Repair UX-Foundation-02 — typography follow-up === */
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-item__preview {
-  font-size: 0.8rem;
-  line-height: 1.32;
-  font-weight: 500;
-  color: var(--rf-oc-text);
-}
 
 .op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-item__ref {
   display: inline-block;
@@ -1566,20 +1419,7 @@
   white-space: nowrap;
 }
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-text-panel .rf-oc-text-panel__title {
-  font-size: 0.74rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--rf-oc-text-secondary);
-}
 
-.op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-text-panel .rf-oc-text-panel__body {
-  font-size: 0.72rem;
-  line-height: 1.32;
-  font-weight: 400;
-  color: var(--rf-oc-text-secondary);
-}
 
 .op-page--operator-full:not(.op-page--response-cases-full) .rf-oc-detail-block--ch-editor .rf-oc-editor--compact {
   font-size: 0.72rem;
@@ -1609,4 +1449,288 @@
   .rf-oc-filter-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* === AIC operational canon (Диалоги) — общий для Очереди обращений и Типовых ситуаций === */
+
+/* Левая макропанель — AIC ai-card w-[420px] p-3 pb-2. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-console {
+  grid-template-columns: 420px minmax(0, 1fr);
+  gap: 8px;
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-left {
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  box-shadow: var(--ai-shadow);
+  padding: 12px 12px 8px;
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filters {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: transparent;
+  border-bottom: none;
+  padding: 0;
+}
+
+/* 4 фильтра — 2×2 (owner). */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filter-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filters .op-select.rf-oc-select,
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filters .op-input.rf-oc-search {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ai-text);
+  background: var(--ai-input);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  box-sizing: border-box;
+  height: auto;
+  /* Base .op-select pad 10px 12px в 32px-высоте резал текст по вертикали —
+     полный reset: естественная высота, паддинг как у AIC-инпутов. */
+  padding: 4px 8px;
+  margin-top: 0;
+}
+
+/* AIC .ai-input / .ai-select :focus → border --ai-primary. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filters .op-select.rf-oc-select:focus,
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filters .op-input.rf-oc-search:focus {
+  border-color: var(--ai-primary);
+  outline: none;
+}
+
+/* Пагинация — AIC: «← Назад» · «Страница N из M» · «Вперёд →», черта снизу. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-page-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ai-border);
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-page-info {
+  font-size: 0.75rem;
+  color: var(--ai-text-secondary);
+  white-space: nowrap;
+}
+
+/* Кнопки пагинации — AIC .ai-btn-outline rounded-ai px-2 py-1 text-xs. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-page-btn {
+  background: transparent;
+  border: 1px solid var(--ai-border);
+  color: var(--ai-text);
+  border-radius: var(--ai-radius);
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  font-family: inherit;
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-page-btn:hover:not(:disabled) {
+  background: var(--ai-surface-hover);
+  border-color: var(--ai-text-muted);
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-page-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Мета-строка — AIC: «Всего N» + «Сброс» (text-xs, secondary). */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filter-meta.rf-oc-meta-row {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  color: var(--ai-text-secondary);
+}
+
+/* Список — AIC: pr-1, элементы gap-2 p-2 rounded-ai. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-list {
+  padding: 0 4px 4px 0;
+  gap: 8px;
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item {
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  padding: 8px;
+  gap: 4px;
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item:hover {
+  border-color: var(--ai-primary);
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item--selected {
+  border-color: var(--ai-primary);
+  background: var(--ai-primary-light);
+  box-shadow: none;
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-empty {
+  color: var(--ai-text-muted);
+  font-size: 0.8125rem;
+  padding: 12px;
+  text-align: center;
+}
+
+/* Правая макропанель — AIC: detail в ai-card на --ai-surface. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-right.card {
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  box-shadow: var(--ai-shadow);
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item__ts {
+  font-size: 0.75rem;
+  color: var(--rf-oc-text-label);
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item__status {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Главная строка элемента — AIC text-sm font-medium text-ai-text. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item__preview {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--rf-oc-text);
+}
+
+/* Значок НСИ-сценария перед названием ТС — небольшой отступ от текста. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item__preview .ai-status {
+  margin-right: 5px;
+  vertical-align: -2px;
+}
+
+/* Мета-строка — AIC text-xs text-ai-text-secondary. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item__telemetry {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--rf-oc-text-secondary);
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-workspace-header__title {
+  font-size: 1.28rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-workspace-header__subtitle {
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* Название ТС в шапке карточки — AIC text-sm font-semibold. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-detail-identity__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--rf-oc-text);
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-detail-identity__status {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--rf-oc-text-secondary);
+}
+
+/* Заголовки колонок — заглавными (owner), форма .ai-section__title. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-summary-col__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rf-oc-text-label);
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-kv-list {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--rf-oc-text);
+}
+
+/* dt — AIC ai-field-label: .6875rem, muted. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-kv-list dt {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--rf-oc-text-label);
+}
+
+/* Title — AIC .ai-section__title (.8125rem/600/uppercase/.04em, --ai-text). */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-text-panel .rf-oc-text-panel__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rf-oc-text);
+}
+
+/* Body — AIC text-sm: .875rem, secondary tone. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-text-panel .rf-oc-text-panel__body {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 400;
+  color: var(--rf-oc-text-secondary);
+}
+
+/* AIC-канон: возвращаем стек колонок на узких экранах (жёсткая 420px-колонка
+   выше перекрывает базовый @media из operator-console.css). */
+@media (max-width: 1100px) {
+  :is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-console {
+    grid-template-columns: 1fr;
+  }
+
+  :is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filters .op-select.rf-oc-select,
+  :is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-filters .op-input.rf-oc-search {
+    height: auto;
+    padding: 4px 8px;
+  }
+}
+
+/* Классификационные значки (Очередь, третья строка) — с зазорами; для
+   Типовых ситуаций (строка — чистый текст) рендер не меняет. */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item__telemetry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* Три классификационных значка айтема — в правом углу третьей строки,
+   ровным рядом (owner: втроём слева слишком броские). */
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item__badges {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-item__telemetry .ai-status {
+  vertical-align: -2px;
+}
+
+/* Мета-строка очереди: «Всего N» + кнопки справа. */
+.op-page--operator-full .rf-oc-filter-meta__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }

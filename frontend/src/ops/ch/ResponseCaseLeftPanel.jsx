@@ -1,5 +1,6 @@
 import { labelActiveFilter, labelScenario } from "../../lib/displayLabels.js";
-import { OpButton, OpInput, OpSelect } from "../components/OpToolbar.jsx";
+import { SCENARIO, chipEntry } from "../../lib/chipContract.js";
+import { OpInput, OpSelect } from "../components/OpToolbar.jsx";
 import { ResponseCaseQueueItem } from "./ResponseCaseQueueItem.jsx";
 
 export function ResponseCaseLeftPanel({
@@ -69,8 +70,9 @@ export function ResponseCaseLeftPanel({
             aria-label="Статус"
           >
             <option value="all">все статусы</option>
-            <option value="active">{labelActiveFilter("active")}</option>
-            <option value="archived">{labelActiveFilter("archived")}</option>
+            {/* Значки — из чип-контракта (ENTITY_ACTIVE), как у ТС в списке. */}
+            <option value="active">⚡ {labelActiveFilter("active")}</option>
+            <option value="archived">⏸️ {labelActiveFilter("archived")}</option>
           </OpSelect>
           <OpSelect
             className="rf-oc-select"
@@ -79,11 +81,15 @@ export function ResponseCaseLeftPanel({
             aria-label="Сценарий"
           >
             <option value="">сценарий</option>
-            {scenarios.map((s) => (
-              <option key={s.id} value={s.id}>
-                {labelScenario(s)}
-              </option>
-            ))}
+            {scenarios.map((s) => {
+              // Значок из чип-контракта по коду НСИ (тот же, что у ТС в списке).
+              const emoji = chipEntry(SCENARIO, s.code)?.emoji;
+              return (
+                <option key={s.id} value={s.id}>
+                  {emoji ? `${emoji} ${labelScenario(s)}` : labelScenario(s)}
+                </option>
+              );
+            })}
           </OpSelect>
         </div>
 
@@ -94,15 +100,8 @@ export function ResponseCaseLeftPanel({
           placeholder="Поиск: название, код, тема…"
         />
 
-        <div className="rf-oc-filter-meta muted">
-          <span>
-            Стр. {pageHuman} из {totalPages || 0} · всего: {filteredCount}
-          </span>
-          <OpButton type="button" className="rf-oc-refresh-btn" onClick={onRefresh} disabled={loading}>
-            {loading ? "…" : "Обновить"}
-          </OpButton>
-        </div>
-
+        {/* AIC operational canon (Диалоги): пагинация над чертой, мета-строка
+            «Всего N» + «Сброс»; «Обновить» живёт в тулбаре над панелями. */}
         <div className="rf-oc-page-controls">
           <button
             type="button"
@@ -110,16 +109,23 @@ export function ResponseCaseLeftPanel({
             onClick={onPrevPage}
             disabled={pageIndex <= 0 || !filteredCount}
           >
-            ← Предыдущая
+            ← Назад
           </button>
+          <span className="rf-oc-page-info">
+            Страница {pageHuman} из {totalPages || 0}
+          </span>
           <button
             type="button"
             className="rf-oc-page-btn"
             onClick={onNextPage}
             disabled={pageIndex >= totalPages - 1 || !filteredCount}
           >
-            Следующая →
+            Вперёд →
           </button>
+        </div>
+
+        <div className="rf-oc-filter-meta rf-oc-meta-row">
+          <span>Всего {filteredCount}</span>
           <button
             type="button"
             className="rf-oc-page-btn rf-oc-page-btn--muted"

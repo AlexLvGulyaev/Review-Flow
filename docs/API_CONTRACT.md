@@ -1248,33 +1248,143 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## 📋 14. Logs
+## 📋 14. Logs — трейсы обработки обращений
 
 Базовый префикс: `/api/logs`.  
-Роль: `administrator`.
+Роль: `administrator` или `demo`.
+
+Журнал построен как **проекция по обращениям** (канон AIC OperationalLogs):
+одна строка списка = одно обращение пользователя — на входе текст обращения,
+на выходе — итоговый статус и ответ. Логирует сам пайплайн обработки
+(`operational_logs`, `entity_type = "review"`); действия персонала в консоли —
+раздел 14a «Audit».
+
+**Чтения журнала не логируются.** Открытия экранов и запросы списков/отчётов
+не создают записей (принцип AIC: read-only views are intentionally not logged,
+чтобы журнал не генерировал шум о самом себе). Единственное экспортируемое
+действие — выгрузка CSV (`logs_exported`).
 
 ### `GET /api/logs`
 
-Просмотр операционных логов.
+Список обращений с итогами обработки, пагинация.
 
 - **Query-параметры:**
 
 | Параметр | Тип | Описание |
 |---|---|---|
-| `event_type` | `string` \| `null` | Фильтр по типу события |
 | `review_id` | `UUID` \| `null` | Фильтр по обращению |
+| `status` | `string` \| `null` | `ok` (обработано) / `error` / `pending` (в обработке) |
+| `request_number` | `string` \| `null` | Поиск по номеру обращения или ID (UUID) |
+| `date_from` / `date_to` | ISO datetime | Окно времени по `reviews.created_at` |
 | `limit` | `integer` (1–500) | default `100` |
+| `offset` | `integer` | default `0` |
 
-- **Ответ:** `200 OK`, список `LogEntry`.
+- **Ответ:** `200 OK`, `ReviewTraceListResponse {items, total, limit, offset}`.
+
+`ReviewTraceSummary` (одна строка = одно обращение):
 
 | Поле | Тип | Описание |
 |---|---|---|
+| `review_id` | `UUID` | Идентификатор обращения (ключ детализации) |
+| `request_number` | `string` \| `null` | Номер обращения (`NL-…`) |
+| `created_at` | `datetime` | Время поступления обращения |
+| `request_preview` | `string` \| `null` | Начало текста обращения (до 200 символов) |
+| `status` | `string` | `ok` — ответ сформирован; `error` — сбой этапа; `pending` — ответа ещё нет |
+| `latency_ms` | `integer` \| `null` | Latency всего pipeline, мс (из `draft_generated` → `pipeline_total_ms`) |
+| `model_name` | `string` \| `null` | AI-модель генерации ответа |
+| `response_preview` | `string` \| `null` | Начало ответа (до 200 символов) |
+| `demo_mode` | `boolean` | Демо-обращение |
+| `event_count` | `integer` | Количество событий трейса |
+
+### `GET /api/logs/{review_id}`
+
+Развёрнутый трейс одного обращения: вход → цепочка обработки → выход.
+Роль: `administrator` или `demo`. Ответ `200 OK`, `ReviewTraceDetail`; при
+неизвестном `review_id` — `404 Not Found`.
+
+Тексты не дублируются в `operational_logs` — подтягиваются на чтение из
+`reviews` (обращение) и `review_responses` (ответ: опубликованный
+`final_response`, а до модерации — `draft_response`).
+
+`ReviewTraceDetail` — над полями `ReviewTraceSummary` (без превью) +
+`request_text` / `response_text` (полные тексты входа и выхода),
+`moderation_status`, `publication_status`, `error` (сообщение последнего
+сбойного этапа), и:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `stages` | `list[ReviewStage]` | Таймлайн pipeline: события по обращению, по возрастанию времени |
+| `pipeline_summary` | `string` \| `null` | Строка вида `review_received → draft_generated → …` |
+
+`ReviewStage`: `event_type`, `status` (`ok`/`error`), `latency_ms`,
+`model_name`, `created_at`, `message` (сообщение сбоя), `metadata` (объект).
+
+### `GET /api/logs/export`
+
+Выгрузка построчная по обращениям (те же фильтры, что у списка, без
+`limit`/`offset`; лимит выгрузки — 10 000 строк). CSV, UTF-8 BOM — корректное
+открытие кириллицы в Excel. Ответ: `200 OK`, `Content-Disposition: attachment`.
+Выгрузка логируется (`logs_exported`).
+
+Колонки CSV: `номер обращения`, `дата (UTC)`, `статус`,
+`latency pipeline, мс`, `модель`, `обращение (вход)`, `ответ системы (выход)`,
+`модерация`, `этапы обработки` (`review_received(38мс) → …`),
+`id обращения`, `демо`.
+
+---
+
+## 🛡️ 14a. Audit — журнал пользовательской активности
+
+Базовый префикс: `/api/audit`.  
+Роль: `administrator` или `demo`.
+
+Журнал аудита фиксирует пользовательскую активность в трёх контурах:
+действия персонала (мутации НСИ, модерация, настройки), активность клиентов
+(`review_submitted` — отправка обращения, `review_status_checked` — проверка
+статуса) и демо-режим (`demo_session_started`). Роль берётся из токена
+доступа (клиентский контур — `client`, демо — `demo`); IP-адрес берётся из
+прокси-заголовков (`X-Forwarded-For` / `X-Real-IP`) или соединения.
+
+### `GET /api/audit`
+
+- **Query-параметры:**
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `action` | `string` \| `null` | Фильтр по действию |
+| `resource_type` | `string` \| `null` | Тип ресурса (`review`, `phrase`, …, `demo_session`) |
+| `user_role` | `string` \| `null` | Роль (`administrator`, `operator`, `client`, `demo`) |
+| `date_from` / `date_to` | ISO datetime | Окно времени |
+| `limit` | `integer` (1–500) | default `100` |
+| `offset` | `integer` | default `0` |
+
+- **Ответ:** `200 OK`, `AuditListResponse {items, total, limit, offset}`.
+
+`AuditEntry`:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | `UUID` | Идентификатор события |
 | `timestamp` | `datetime` | Время события |
-| `event_type` | `string` | Тип события |
-| `review_id` | `UUID` \| `null` | Связанное обращение |
-| `message` | `string` \| `null` | Сообщение |
-| `latency_ms` | `integer` \| `null` | Задержка |
-| `metadata` | `object` | Произвольные метаданные |
+| `user_id` | `string` \| `null` | Идентификатор пользователя (зарезервировано) |
+| `user_name` | `string` \| `null` | Имя пользователя (зарезервировано) |
+| `user_role` | `string` | Роль действия |
+| `action` | `string` | Код действия (общий словарь с event_type логов) |
+| `resource_type` | `string` | Тип ресурса |
+| `resource_id` | `string` \| `null` | Идентификатор ресурса |
+| `ip_address` | `string` \| `null` | IP источника |
+| `details` | `object` | Детали действия (например, причина отказа, код сценария) |
+
+### `GET /api/audit/{entry_id}`
+
+Детализация события. Ответ `200 OK`, `AuditEntry`; при неизвестном
+`entry_id` — `404 Not Found`.
+
+### `GET /api/audit/export`
+
+Выгрузка журнала аудита в CSV (UTF-8 BOM), колонки: id, дата (UTC), роль,
+пользователь, действие, тип ресурса, id ресурса, IP, детали. Ответ
+`200 OK`, `Content-Disposition: attachment; filename="rf_audit_YYYY-MM-DD.csv"`.
 
 ---
 
@@ -1431,7 +1541,9 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 | `retrieval_top_n` | `integer` (1–20) | Количество кандидатов ретривала |
 | `minimum_match_score` | `float` (0–1) | Минимальный score сопоставления |
 | `confidence_medium_delta` | `float` (0–1) | Дельта для средней уверенности |
-| `default_confidence_threshold` | `float` (0–1) | Порог уверенности по умолчанию |
+| `default_confidence_threshold` | `float` (0–1) | Порог уверенности по умолчанию (калибровка 31.08.2026: дефолт 0.60 — диапазон подтверждённых оператором выборов 0.48–0.71) |
+| `confidence_score_floor` | `float` (0–1) | Абсолютный низ score: ниже — band low («мусорное» совпадение) |
+| `confidence_gap_high` | `float` (0–1) | Минимальный отрыв top-1 от второго кандидата для band high |
 | `draft_on_medium` | `boolean` | Генерировать черновик при средней уверенности |
 | `auto_decision_on_high` | `boolean` | Автоматическое решение при высокой уверенности |
 | `retrieval_algorithm_label` | `string` | Описание алгоритма |
@@ -1449,6 +1561,8 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 | `minimum_match_score` | `float` (0–1) \| `null` | Минимальный score |
 | `confidence_medium_delta` | `float` (0–1) \| `null` | Дельта medium |
 | `default_confidence_threshold` | `float` (0–1) \| `null` | Порог по умолчанию |
+| `confidence_score_floor` | `float` (0–1) \| `null` | Абсолютный низ score для low |
+| `confidence_gap_high` | `float` (0–1) \| `null` | Минимальный отрыв top-1 для high |
 | `draft_on_medium` | `boolean` \| `null` | Генерация черновика |
 | `auto_decision_on_high` | `boolean` \| `null` | Авторешение |
 

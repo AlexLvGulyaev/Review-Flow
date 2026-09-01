@@ -4,7 +4,7 @@ import { apiFetch, readApiError } from "../lib/api.js";
 import { useCompanyAuth } from "../context/CompanyAuthContext.jsx";
 import { fetchClassificationReference } from "../lib/classificationReference.js";
 import { OpPage } from "../ops/components/OpPage.jsx";
-import { OperatorConsoleHeader, OperatorWorkspaceHeader } from "../ops/operator/OperatorConsoleHeader.jsx";
+import { OperatorWorkspaceHeader } from "../ops/operator/OperatorConsoleHeader.jsx";
 import { OperatorLeftPanel } from "../ops/operator/OperatorLeftPanel.jsx";
 import { OperatorModerationWorkspace } from "../ops/operator/OperatorModerationWorkspace.jsx";
 import { CaseCandidateModal } from "../ops/operator/CaseCandidateModal.jsx";
@@ -14,7 +14,8 @@ import { buildLifecycleTimeline } from "../ops/operator/operatorTimeline.js";
 import { isControlledHybridDetail, isOperatorWorkflowCompleted } from "../lib/displayLabels.js";
 import { formatDateTime, getOperationalIdentity, isEditorLocked, queueCounters, resolveOperatorFinalResponse } from "../ops/operator/operatorUtils.js";
 
-const PAGE_SIZE = 10;
+/* Пагинация как везде (Логи/Аудит/ТС): 7 айтемов на страницу. */
+const PAGE_SIZE = 7;
 
 function safeLower(s) {
   return String(s || "").toLowerCase();
@@ -179,6 +180,44 @@ export default function OperatorReviewsPage() {
     }
   }, [selectedId, loadDetail]);
 
+  // Перебор айтемов стрелками (канон Логов/Аудита): ↑/↓ двигают выделение
+  // по полному отфильтрованному списку, на границе страницы перелистывают.
+  // В открытой модалке навигация по списку выключена.
+  useEffect(() => {
+    if (rejectModalOpen || escalationModalOpen || candidateModalOpen) return;
+    if (!filteredReviews.length) return;
+    const onKeyDown = (e) => {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      const t = e.target;
+      if (t && (t.closest("input") || t.closest("textarea") || t.closest("select") || t.isContentEditable)) return;
+      const curIdx = selectedId ? filteredReviews.findIndex((r) => r.review_id === selectedId) : -1;
+      if (curIdx < 0) return;
+      const nextIdx = e.key === "ArrowDown" ? curIdx + 1 : curIdx - 1;
+      const next = filteredReviews[nextIdx];
+      if (!next) return;
+      e.preventDefault();
+      setSelectedId(next.review_id);
+      const np = Math.floor(nextIdx / PAGE_SIZE);
+      if (np !== pageIndex) setPage(np);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    rejectModalOpen,
+    escalationModalOpen,
+    candidateModalOpen,
+    filteredReviews,
+    selectedId,
+    pageIndex,
+  ]);
+
+  // Выбранная строка всегда видна в списке (как в Логах/Аудите).
+  useEffect(() => {
+    if (!selectedId) return;
+    const row = document.querySelector(`[data-review-id="${String(selectedId).replace(/"/g, '\\"')}"]`);
+    if (row) row.scrollIntoView({ block: "nearest" });
+  }, [selectedId, pageIndex]);
+
   const lastPageIndex = Math.max(0, totalPagesRaw - 1);
 
   function goPrevPage() {
@@ -339,7 +378,6 @@ export default function OperatorReviewsPage() {
 
   return (
     <OpPage wide className="op-page--operator-full">
-      <OperatorConsoleHeader />
       <OperatorWorkspaceHeader />
 
       <div className="rf-oc-console">

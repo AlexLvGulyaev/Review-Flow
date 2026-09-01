@@ -696,7 +696,17 @@ export default function SystemSettingsWorkspace() {
             </div>
 
             <div className="rf-sys-prompt-panel rf-sys-layout__prompt">
-              <h3 className="rf-sys-prompt-panel__title">Промпт адаптации ответа</h3>
+              <div className="rf-sys-prompt-panel__head">
+                <h3 className="rf-sys-prompt-panel__title">Промпт адаптации ответа</h3>
+                {promptDetail ? (
+                  <span
+                    className="rf-sys-prompt-panel__version"
+                    title={`Активная версия промпта: v${promptDetail.version}`}
+                  >
+                    v{promptDetail.version}
+                  </span>
+                ) : null}
+              </div>
               <OpTextarea
                 value={promptSystemText}
                 onChange={(e) => setPromptSystemText(e.target.value)}

@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin, require_admin_read
+from app.api.audit_helpers import audit
+from app.core.roles import Role, require_admin, require_admin_read
 from app.db.session import get_db
 from app.models.entities import (
     InteractionScenario,
@@ -117,7 +118,13 @@ def get_phrase(item_id: UUID, db: Session = Depends(get_db)) -> PhraseOut:
 
 
 @router.post("/phrases", response_model=PhraseOut, status_code=201, dependencies=[Depends(require_admin)])
-def create_phrase(body: PhraseCreate, db: Session = Depends(get_db)) -> PhraseOut:
+def create_phrase(
+    body: PhraseCreate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> PhraseOut:
+    audit(request, role, "admin_phrase_created", resource_type="phrase", db=db, details={"phrase_text": (body.phrase_text or "")[:256]})
     refs = ClassificationRefsService(db)
     scenario, sentiment, priority = _resolve_phrase_refs(refs, body)
     now = datetime.now(timezone.utc)
@@ -146,8 +153,13 @@ def create_phrase(body: PhraseCreate, db: Session = Depends(get_db)) -> PhraseOu
 
 @router.patch("/phrases/{item_id}", response_model=PhraseOut, dependencies=[Depends(require_admin)])
 def update_phrase(
-    item_id: UUID, body: PhraseUpdate, db: Session = Depends(get_db)
+    item_id: UUID,
+    body: PhraseUpdate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> PhraseOut:
+    audit(request, role, "admin_phrase_updated", resource_type="phrase", resource_id=item_id, db=db, details={"fields": list(body.model_dump(exclude_unset=True).keys())})
     refs = ClassificationRefsService(db)
     p = db.get(ReviewPhrasePattern, item_id)
     if not p:
@@ -205,7 +217,13 @@ def get_template(item_id: UUID, db: Session = Depends(get_db)) -> TemplateOut:
 
 
 @router.post("/templates", response_model=TemplateOut, status_code=201, dependencies=[Depends(require_admin)])
-def create_template(body: TemplateCreate, db: Session = Depends(get_db)) -> TemplateOut:
+def create_template(
+    body: TemplateCreate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> TemplateOut:
+    audit(request, role, "admin_template_created", resource_type="template", db=db, details={"title": (body.title or "")[:256]})
     refs = ClassificationRefsService(db)
     scenario, sentiment, priority = _resolve_template_refs(refs, body)
     t = ResponseTemplate(
@@ -233,8 +251,13 @@ def create_template(body: TemplateCreate, db: Session = Depends(get_db)) -> Temp
 
 @router.patch("/templates/{item_id}", response_model=TemplateOut, dependencies=[Depends(require_admin)])
 def update_template(
-    item_id: UUID, body: TemplateUpdate, db: Session = Depends(get_db)
+    item_id: UUID,
+    body: TemplateUpdate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> TemplateOut:
+    audit(request, role, "admin_template_updated", resource_type="template", resource_id=item_id, db=db, details={"fields": list(body.model_dump(exclude_unset=True).keys())})
     refs = ClassificationRefsService(db)
     t = db.get(ResponseTemplate, item_id)
     if not t:
@@ -290,7 +313,13 @@ def get_scenario(item_id: UUID, db: Session = Depends(get_db)) -> ScenarioOut:
 
 
 @router.post("/scenarios", response_model=ScenarioOut, status_code=201, dependencies=[Depends(require_admin)])
-def create_scenario(body: ScenarioCreate, db: Session = Depends(get_db)) -> ScenarioOut:
+def create_scenario(
+    body: ScenarioCreate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ScenarioOut:
+    audit(request, role, "admin_scenario_created", resource_type="scenario", db=db, details={"code": body.code})
     existing = db.scalars(
         select(InteractionScenario).where(InteractionScenario.scenario_code == body.code)
     ).first()
@@ -317,8 +346,13 @@ def create_scenario(body: ScenarioCreate, db: Session = Depends(get_db)) -> Scen
 
 @router.patch("/scenarios/{item_id}", response_model=ScenarioOut, dependencies=[Depends(require_admin)])
 def update_scenario(
-    item_id: UUID, body: ScenarioUpdate, db: Session = Depends(get_db)
+    item_id: UUID,
+    body: ScenarioUpdate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> ScenarioOut:
+    audit(request, role, "admin_scenario_updated", resource_type="scenario", resource_id=item_id, db=db, details={"fields": [f for f, v in body.model_dump(exclude_unset=True).items() if v is not None]})
     s = db.get(InteractionScenario, item_id)
     if not s:
         raise HTTPException(404, "Scenario not found")
@@ -359,7 +393,13 @@ def get_sentiment(item_id: UUID, db: Session = Depends(get_db)) -> SentimentOut:
 
 
 @router.post("/sentiments", response_model=SentimentOut, status_code=201, dependencies=[Depends(require_admin)])
-def create_sentiment(body: SentimentCreate, db: Session = Depends(get_db)) -> SentimentOut:
+def create_sentiment(
+    body: SentimentCreate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> SentimentOut:
+    audit(request, role, "admin_sentiment_created", resource_type="sentiment", db=db, details={"code": body.code})
     existing = db.scalars(
         select(SentimentProfile).where(SentimentProfile.sentiment_code == body.code)
     ).first()
@@ -386,8 +426,13 @@ def create_sentiment(body: SentimentCreate, db: Session = Depends(get_db)) -> Se
 
 @router.patch("/sentiments/{item_id}", response_model=SentimentOut, dependencies=[Depends(require_admin)])
 def update_sentiment(
-    item_id: UUID, body: SentimentUpdate, db: Session = Depends(get_db)
+    item_id: UUID,
+    body: SentimentUpdate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> SentimentOut:
+    audit(request, role, "admin_sentiment_updated", resource_type="sentiment", resource_id=item_id, db=db, details={"fields": [f for f, v in body.model_dump(exclude_unset=True).items() if v is not None]})
     s = db.get(SentimentProfile, item_id)
     if not s:
         raise HTTPException(404, "Sentiment not found")

@@ -7,11 +7,11 @@ const DEFAULT_PREVIEW_LINES = 5;
 const CHARS_PER_LINE = 72;
 
 /** ~5 lines operational content block with optional full-text expand. */
-export function CollapsibleTextPanel({ title, caption, text, footer, previewLines = DEFAULT_PREVIEW_LINES, className = "" }) {
+export function CollapsibleTextPanel({ title, caption, text, footer, previewLines = DEFAULT_PREVIEW_LINES, expandable = true, className = "" }) {
   const [expanded, setExpanded] = useState(false);
   const source = String(text || "").trim() || "—";
   const maxChars = previewLines * CHARS_PER_LINE;
-  const canExpand = source.length > maxChars && source !== "—";
+  const canExpand = expandable && source.length > maxChars && source !== "—";
 
   const visible = expanded || !canExpand ? source : truncateText(source, maxChars);
   const bodyClass = expanded ? "rf-oc-text-panel__body rf-oc-text-panel__body--expanded" : "rf-oc-text-panel__body";

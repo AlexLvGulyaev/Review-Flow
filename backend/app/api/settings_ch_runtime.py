@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin, require_admin_read
+from app.api.audit_helpers import audit
+from app.core.roles import Role, require_admin, require_admin_read
 from app.db.session import get_db
 from app.schemas.ch_runtime_settings import ChRuntimeSettingsOut, ChRuntimeSettingsPatch
 from app.services.ch_runtime_settings import ChRuntimeSettingsService
@@ -22,6 +23,8 @@ def _to_out(row) -> ChRuntimeSettingsOut:
         default_confidence_threshold=float(row.default_confidence_threshold),
         draft_on_medium=bool(row.draft_on_medium),
         auto_decision_on_high=bool(row.auto_decision_on_high),
+        confidence_score_floor=float(row.confidence_score_floor),
+        confidence_gap_high=float(row.confidence_gap_high),
         updated_at=row.updated_at,
     )
 
@@ -34,8 +37,11 @@ def get_ch_runtime_settings(db: Session = Depends(get_db)) -> ChRuntimeSettingsO
 @router.patch("", response_model=ChRuntimeSettingsOut, dependencies=[Depends(require_admin)])
 def patch_ch_runtime_settings(
     body: ChRuntimeSettingsPatch,
+    request: Request,
+    role: Role = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ChRuntimeSettingsOut:
+    audit(request, role, "ch_runtime_settings_updated", resource_type="ch_runtime_settings", db=db, details=body.model_dump(exclude_unset=True))
     svc = ChRuntimeSettingsService(db)
     row = svc.update(body.model_dump(exclude_unset=True))
     log_event(

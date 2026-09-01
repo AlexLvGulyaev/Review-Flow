@@ -1,10 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
-from app.core.roles import require_operator, require_ops_read
+from app.core.roles import Role, require_operator, require_ops_read
 from sqlalchemy.orm import Session, joinedload
 
+from app.api.audit_helpers import audit
 from app.db.session import get_db
 from app.models.entities import Review, ReviewClassification, ReviewResponse
 from app.schemas.operator import (
@@ -102,7 +103,7 @@ def get_operator_review(
     db: Session = Depends(get_db),
 ) -> OperatorReviewDetail:
     review = load_review_detail(db, review_id)
-    detail = build_operator_detail(db, review, log_opened=True)
+    detail = build_operator_detail(db, review)
     db.commit()
     return detail
 
@@ -111,8 +112,11 @@ def get_operator_review(
 def approve_operator_review(
     review_id: UUID,
     payload: ApproveRequest,
+    request: Request,
+    role: Role = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> OperatorReviewDetail:
+    audit(request, role, "moderation_approved", resource_type="review", resource_id=review_id, db=db)
     return approve_review(db, review_id, payload.final_response)
 
 
@@ -120,8 +124,14 @@ def approve_operator_review(
 def reject_operator_review(
     review_id: UUID,
     payload: ModerationActionRequest,
+    request: Request,
+    role: Role = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> ModerationActionResponse:
+    audit(
+        request, role, "moderation_rejected", resource_type="review", resource_id=review_id,
+        db=db, details={"reason": (payload.reason or "")[:512]} if payload.reason else None,
+    )
     resp = reject_review(db, review_id, payload.reason)
     return ModerationActionResponse(
         review_id=review_id,
@@ -135,16 +145,22 @@ def reject_operator_review(
 def reject_feedback_operator_review(
     review_id: UUID,
     payload: RejectionFeedbackRequest,
+    request: Request,
+    role: Role = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> OperatorReviewDetail:
+    audit(request, role, "ai_draft_rejection_feedback", resource_type="review", resource_id=review_id, db=db)
     return submit_ai_draft_rejection_feedback(db, review_id, payload)
 
 
 @router.post("/{review_id}/confirm-case", response_model=OperatorReviewDetail, dependencies=[Depends(require_operator)])
 def confirm_case_operator_review(
     review_id: UUID,
+    request: Request,
+    role: Role = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> OperatorReviewDetail:
+    audit(request, role, "operator_case_confirmed", resource_type="review", resource_id=review_id, db=db)
     return confirm_response_case(db, review_id)
 
 
@@ -152,8 +168,15 @@ def confirm_case_operator_review(
 def override_case_operator_review(
     review_id: UUID,
     payload: ResponseCaseOverrideRequest,
+    request: Request,
+    role: Role = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> OperatorReviewDetail:
+    audit(
+        request, role, "operator_case_override", resource_type="review", resource_id=review_id,
+        db=db,
+        details={"response_case_id": str(payload.response_case_id)},
+    )
     return override_response_case(db, review_id, payload)
 
 
@@ -161,8 +184,11 @@ def override_case_operator_review(
 def create_case_candidate_operator_review(
     review_id: UUID,
     payload: CaseCandidateCreateRequest,
+    request: Request,
+    role: Role = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> OperatorReviewDetail:
+    audit(request, role, "case_candidate_created", resource_type="review", resource_id=review_id, db=db)
     return create_case_candidate(db, review_id, payload)
 
 
@@ -170,8 +196,15 @@ def create_case_candidate_operator_review(
 def escalate_operator_review(
     review_id: UUID,
     payload: OperatorEscalationRequest,
+    request: Request,
+    role: Role = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> OperatorReviewDetail:
+    audit(
+        request, role, "operator_case_escalated", resource_type="review", resource_id=review_id,
+        db=db,
+        details={"escalation_reason": (payload.escalation_reason or "")[:512]},
+    )
     return escalate_response_case(db, review_id, payload)
 
 
@@ -179,8 +212,14 @@ def escalate_operator_review(
 def revision_operator_review(
     review_id: UUID,
     payload: ModerationActionRequest,
+    request: Request,
+    role: Role = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> ModerationActionResponse:
+    audit(
+        request, role, "moderation_revision_requested", resource_type="review", resource_id=review_id,
+        db=db, details={"reason": (payload.reason or "")[:512]} if payload.reason else None,
+    )
     resp = request_revision(db, review_id, payload.reason)
     return ModerationActionResponse(
         review_id=review_id,

@@ -113,10 +113,16 @@ class ControlledHybridPipeline:
             self.db.commit()
             return review.id, "pending_review"
 
+        runner_up_score = (
+            retrieval.candidates[1].match_score if len(retrieval.candidates) > 1 else None
+        )
         confidence = evaluate_confidence(
             top.match_score,
             top.response_case.confidence_threshold,
             medium_delta=runtime.confidence_medium_delta,
+            runner_up_score=runner_up_score,
+            score_floor=runtime.confidence_score_floor,
+            gap_high=runtime.confidence_gap_high,
         )
         band = confidence.band
 
@@ -131,6 +137,8 @@ class ControlledHybridPipeline:
                 "match_score": confidence.match_score,
                 "threshold": confidence.threshold,
                 "medium_floor": confidence.medium_floor,
+                "runner_up_score": runner_up_score,
+                "match_gap": confidence.match_gap,
                 "case_code": top.response_case.case_code,
             },
         )
@@ -204,6 +212,7 @@ class ControlledHybridPipeline:
             "pipeline": "controlled_hybrid",
             "confidence_band": band.value,
             "match_confidence": top.match_score,
+            "match_gap": confidence.match_gap,
             "response_case_id": str(top.response_case.id),
             "case_code": top.response_case.case_code,
             "operator_case_confirmed": operator_case_confirmed,
@@ -225,6 +234,7 @@ class ControlledHybridPipeline:
                     "pipeline": "controlled_hybrid",
                     "confidence_band": band.value,
                     "match_confidence": top.match_score,
+                    "match_gap": confidence.match_gap,
                     "response_case_id": str(top.response_case.id),
                     "case_code": top.response_case.case_code,
                     "operator_case_confirmed": operator_case_confirmed,

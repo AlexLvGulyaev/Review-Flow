@@ -11,7 +11,11 @@ export function getCompanyNavGroups(role) {
     return [
       {
         title: "Операции",
-        links: [{ to: "/operator/reviews", label: "Очередь обращений" }],
+        links: [{ to: "/operator/reviews", label: "Очередь обращений", icon: "📥" }],
+      },
+      {
+        title: "Справка",
+        links: [{ to: "/legend", label: "Обозначения", icon: "🗺️" }],
       },
     ];
   }
@@ -22,23 +26,28 @@ export function getCompanyNavGroups(role) {
   if (role === ROLES.ADMINISTRATOR || role === ROLES.DEMO) {
     return [
       {
-        title: "Операции",
-        links: [{ to: "/operator/reviews", label: "Очередь обращений" }],
+        title: "Система",
+        links: [{ to: "/settings/system", label: "Системные настройки", icon: "⚙️" }],
       },
       {
         title: "Controlled Hybrid",
-        links: [{ to: "/admin/response-cases", label: "Типовые ситуации" }],
+        links: [{ to: "/admin/response-cases", label: "Типовые ситуации", icon: "🧩" }],
       },
       {
-        title: "Настройки",
-        links: [{ to: "/settings/system", label: "Системные настройки" }],
+        title: "Операции",
+        links: [{ to: "/operator/reviews", label: "Очередь обращений", icon: "📥" }],
       },
       {
         title: "Наблюдаемость",
         links: [
-          { to: "/reports", label: "Отчёты" },
-          { to: "/logs", label: "Логи" },
+          { to: "/reports", label: "Отчёты", icon: "📈" },
+          { to: "/logs", label: "Логи", icon: "📜" },
+          { to: "/audit", label: "Журнал аудита", icon: "📋" },
         ],
+      },
+      {
+        title: "Справка",
+        links: [{ to: "/legend", label: "Обозначения", icon: "🗺️" }],
       },
     ];
   }

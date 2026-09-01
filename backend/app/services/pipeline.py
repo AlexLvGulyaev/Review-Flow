@@ -19,7 +19,11 @@ from app.services.ai_provider_runtime import AIProviderRuntime
 from app.services.operational_log import log_event
 from app.services.phrase_matching import PhraseMatchingService
 from app.services.response_generation import ResponseGenerationService
-from app.services.review_ids import format_request_number, normalize_order_number
+from app.services.review_ids import (
+    extract_client_request_ref,
+    format_request_number,
+    normalize_order_number,
+)
 from app.core.config import settings
 from app.services.controlled_hybrid.pipeline import ControlledHybridPipeline
 from app.services.template_selection import TemplateSelectionService
@@ -130,20 +134,28 @@ class ReviewPipeline:
         payload: ReviewCreateRequest,
         demo_mode: bool = False,
     ) -> Review:
-        order_number = (payload.order_number or "").strip()
+        # Клиент указал номер в тексте («Номер запроса: NL-XXXXXXXX-NNN») —
+        # используем его (owner: «так не должно быть», чтобы система
+        # присваивала свой номер вопреки указанному клиентом).
+        ref_order, ref_seq, review_text = extract_client_request_ref(payload.review_text)
+
+        order_number = (ref_order or payload.order_number or "").strip()
         if not order_number:
             order_number = (payload.service_case_title or "").strip()
         if not order_number:
             order_number = "NL-00000000"
         order_number = normalize_order_number(order_number)
 
-        seq = self._next_request_sequence(order_number)
+        if ref_seq is not None and not self._sequence_taken(order_number, ref_seq):
+            seq = ref_seq
+        else:
+            seq = self._next_request_sequence(order_number)
         request_number = format_request_number(order_number, seq)
 
         review = Review(
             customer_id=customer.id,
             service_case_id=service_case.id,
-            review_text=payload.review_text,
+            review_text=review_text,
             rating=payload.rating,
             product_area=payload.product_area,
             order_number=order_number,
@@ -156,6 +168,14 @@ class ReviewPipeline:
         self.db.add(review)
         self.db.flush()
         return review
+
+    def _sequence_taken(self, order_number: str, seq: int) -> bool:
+        return (
+            self.db.query(Review.id)
+            .filter(Review.order_number == order_number, Review.request_sequence == seq)
+            .first()
+            is not None
+        )
 
     def _next_request_sequence(self, order_number: str) -> int:
         current = self.db.scalar(

@@ -12,6 +12,7 @@ from app.api.reference import router as reference_router
 from app.api.analytics import router as analytics_router
 from app.api.evaluation import router as evaluation_router
 from app.api.health import router as health_router
+from app.api.audit import router as audit_router
 from app.api.logs import router as logs_router
 from app.api.operator import router as operator_router
 from app.api.prompts import router as prompts_router
@@ -49,6 +50,7 @@ app.include_router(prompts_router)
 app.include_router(evaluation_router)
 app.include_router(analytics_router)
 app.include_router(logs_router)
+app.include_router(audit_router)
 app.include_router(admin_router)
 app.include_router(response_cases_admin_router)
 app.include_router(ch_analytics_router)

@@ -1,17 +1,5 @@
-/** UX-01 — global admin console header (AF operator console pattern). */
-export function AdminConsoleHeader() {
-  return (
-    <header className="rf-oc-global-header">
-      <div className="rf-oc-global-header__main">
-        <h1 className="rf-oc-global-header__title">Консоль администратора</h1>
-        <p className="rf-oc-global-header__subtitle">Конфигурация платформы и управление знаниями</p>
-      </div>
-      <div className="rf-oc-global-header__brand">Zerocoder</div>
-      <div className="rf-oc-global-header__divider" aria-hidden="true" />
-    </header>
-  );
-}
-
+/** Workspace-level headers (the global console header now lives in
+ *  `CompanyLayout` — `op-header`, AIC parity). */
 export function ResponseCaseWorkspaceHeader() {
   return (
     <div className="rf-oc-workspace-header">

@@ -37,8 +37,6 @@ def report_customer_reviews(
     date_to: str | None = None,
     db: Session = Depends(get_db),
 ) -> CustomerReviewsReport:
-    log_event(db, event_type="report_customer_reviews_requested", status="ok", metadata={"period": period})
-    db.commit()
     return ReportsService(db).customer_reviews(period, _parse_dt(date_from), _parse_dt(date_to))
 
 
@@ -49,8 +47,6 @@ def report_business_problems(
     date_to: str | None = None,
     db: Session = Depends(get_db),
 ) -> BusinessProblemsReport:
-    log_event(db, event_type="report_business_problems_requested", status="ok", metadata={"period": period})
-    db.commit()
     return ReportsService(db).business_problems(period, _parse_dt(date_from), _parse_dt(date_to))
 
 
@@ -61,8 +57,6 @@ def report_ch_quality(
     date_to: str | None = None,
     db: Session = Depends(get_db),
 ) -> ChQualityReport:
-    log_event(db, event_type="report_ch_quality_requested", status="ok", metadata={"period": period})
-    db.commit()
     return ReportsService(db).ch_quality(period, _parse_dt(date_from), _parse_dt(date_to))
 
 

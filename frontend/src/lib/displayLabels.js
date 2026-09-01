@@ -95,6 +95,7 @@ export const ENTITY_ACTIVE_LABELS = {
 export const ACTIVE_FILTER_LABELS = {
   active: "Активные",
   inactive: "Неактивные",
+  archived: "В архиве",
   all: "Все",
 };
 
@@ -145,9 +146,23 @@ export const EVENT_TYPE_LABELS = {
   case_candidate_promoted: "Кандидат: создан case",
   case_candidate_merged: "Кандидат: объединён",
   case_candidate_rejected: "Кандидат: отклонён",
-  response_case_created: "Case создан (admin)",
-  response_case_updated: "Case обновлён (admin)",
+  response_case_created: "Ситуация создана (admin)",
+  response_case_updated: "Ситуация обновлена (admin)",
+  response_case_archived: "Ситуация: в архив",
+  response_case_activated: "Ситуация: активирована",
+  response_case_example_created: "Пример ситуации создан (admin)",
+  response_case_example_updated: "Пример ситуации обновлён (admin)",
+  case_candidate_completed: "Кандидат: завершён",
+  operator_case_escalated: "Ситуация эскалирована",
+  ai_draft_rejection_feedback: "Обратная связь по отклонению AI",
+  admin_scenario_created: "Сценарий создан",
+  admin_sentiment_created: "Тональность создана",
+  ch_runtime_settings_updated: "Настройки CH обновлены",
+  logs_exported: "Логи выгружены (CSV)",
   ch_analytics_dashboard_requested: "Запрос аналитики CH",
+  review_submitted: "Обращение отправлено (клиент)",
+  review_status_checked: "Проверка статуса (клиент)",
+  demo_session_started: "Демо-сессия начата",
 };
 
 /** @type {Record<string, string>} */
@@ -251,6 +266,45 @@ export function labelActiveFilter(code) {
 export function labelOperationalEventType(code) {
   return mapLabel(EVENT_TYPE_LABELS, code);
 }
+
+/** Audit journal: same event vocabulary; unknown codes → humanized code. */
+export function labelAuditAction(code) {
+  if (!code) return FALLBACK;
+  if (EVENT_TYPE_LABELS[code]) return EVENT_TYPE_LABELS[code];
+  return code.replace(/_/g, " ");
+}
+
+/** @type {Record<string, string>} */
+export const AUDIT_RESOURCE_TYPE_LABELS = {
+  review: "Обращение",
+  phrase: "Фраза",
+  template: "Шаблон",
+  scenario: "Сценарий",
+  sentiment: "Тональность",
+  response_case: "Типовая ситуация",
+  case_candidate: "Кандидат ситуации",
+  prompt_version: "Версия промпта",
+  ch_runtime_settings: "Настройки CH",
+  ai_provider: "AI-провайдер",
+  evaluation_case: "Evaluation case",
+  demo_session: "Демо-сессия",
+};
+
+export function labelAuditResourceType(code) {
+  return mapLabel(AUDIT_RESOURCE_TYPE_LABELS, code);
+}
+
+export function labelAuditRole(code) {
+  return mapLabel(AUDIT_ROLE_LABELS, code);
+}
+
+/** Audit journal roles (emoji contract: new chip ⇒ legend row). */
+export const AUDIT_ROLE_LABELS = {
+  administrator: "Администратор",
+  operator: "Оператор",
+  client: "Клиент",
+  demo: "Демо",
+};
 
 export function labelClassificationLine(scenario, sentiment, priority) {
   const s = labelScenario(scenario);

@@ -52,16 +52,18 @@ export function ResponseCaseUnifiedToolbar({
                 variant="primary"
                 className="rf-rc-toolbar__action"
                 onClick={onCandidateCreate}
-                disabled={!hasSelectedCandidate || loading || saving}
+                disabled={!hasSelectedCandidate || loading || saving || readOnly}
               >
                 Создать новую ТС
               </OpButton>
             ) : null}
+            {/* В демо-режиме мутации кандидатов тоже read-only (владелец:
+                кнопки не должны выглядеть доступными). */}
             <OpButton
               type="button"
               className="rf-rc-toolbar__action"
               onClick={onCandidateMerge}
-              disabled={!hasSelectedCandidate || loading || saving}
+              disabled={!hasSelectedCandidate || loading || saving || readOnly}
             >
               Объединить
             </OpButton>
@@ -69,7 +71,7 @@ export function ResponseCaseUnifiedToolbar({
               type="button"
               className="rf-rc-toolbar__action"
               onClick={onCandidateReject}
-              disabled={!hasSelectedCandidate || loading || saving}
+              disabled={!hasSelectedCandidate || loading || saving || readOnly}
             >
               Отклонить
             </OpButton>

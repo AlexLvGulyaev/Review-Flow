@@ -5,7 +5,7 @@ import ReportsPage from "./pages/ReportsPage.jsx";
 import EvaluationPage from "./pages/EvaluationPage.jsx";
 import AccessDeniedPage from "./pages/AccessDeniedPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
-import LogsPage from "./pages/LogsPage.jsx";
+import LegendPage from "./pages/LegendPage.jsx";
 import OperatorReviewsPage from "./pages/OperatorReviewsPage.jsx";
 import PromptsPage from "./pages/PromptsPage.jsx";
 import ReviewPage from "./pages/ReviewPage.jsx";
@@ -22,6 +22,8 @@ import AdminTemplatesPage from "./pages/admin/AdminTemplatesPage.jsx";
 import ClientLayout from "./layouts/ClientLayout.jsx";
 import CompanyLayout from "./layouts/CompanyLayout.jsx";
 import CompanyHomePage from "./pages/company/CompanyHomePage.jsx";
+import LogsWorkspace from "./ops/observability/LogsWorkspace.jsx";
+import AuditWorkspace from "./ops/observability/AuditWorkspace.jsx";
 import { ROLES } from "./lib/role.js";
 
 export default function App() {
@@ -86,7 +88,23 @@ export default function App() {
             path="/logs"
             element={
               <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
-                <LogsPage />
+                <LogsWorkspace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit"
+            element={
+              <ProtectedRoute allowed={[ROLES.ADMINISTRATOR, ROLES.DEMO]}>
+                <AuditWorkspace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/legend"
+            element={
+              <ProtectedRoute allowed={[ROLES.OPERATOR, ROLES.ADMINISTRATOR, ROLES.DEMO]}>
+                <LegendPage />
               </ProtectedRoute>
             }
           />

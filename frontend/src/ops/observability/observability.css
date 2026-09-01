@@ -1,0 +1,373 @@
+/* === Наблюдаемость: «Логи» (телеметрия) + «Журнал аудита» ===
+ * Канон AIC (ai-card 420px слева, детализация справа) переиспользуется через
+ * класс страницы .op-page--operator-full (см. operator-console.css: канон
+ * `:is(.op-page--response-cases-full, .op-page--operator-full) .rf-oc-*`).
+ * Переопределения канона — с префиксом .op-page--obs-full.op-page--operator-full
+ * (специфичность выше канона независимо от порядка сборки).
+ * Здесь — высотный каркас страницы и AIC-канон специфичных экрану элементов. */
+
+.op-page--obs-full {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px 10px;
+  box-sizing: border-box;
+}
+
+.op-page--obs-full .rf-oc-workspace-header {
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  /* AIC ai-page__header: слева заголовок+подзаголовок, справа кнопки. */
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+  /* AIC: черта под шапкой страницы. */
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ai-border);
+}
+
+/* Консоль: растягивается на страницу (не фиксированная 82vh база). */
+.op-page--obs-full .rf-oc-console.rf-obs-console {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+/* === Шапка страницы — AIC ai-page__title / ai-page__subtitle === */
+.op-page--obs-full.op-page--operator-full .rf-oc-workspace-header__title {
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+.op-page--obs-full.op-page--operator-full .rf-oc-workspace-header__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ai-text-muted);
+}
+
+/* Кнопки шапки — AIC ai-btn-outline rounded-ai px-3 py-1.5 text-sm
+   (пагинация остаётся на каноне text-xs px-2 py-1). */
+.op-page--obs-full .rf-obs-meta-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.op-page--obs-full .rf-obs-meta-actions .rf-oc-page-btn {
+  font-size: 0.875rem;
+  padding: 6px 12px;
+}
+
+/* === Фильтры: 2 селекта в строке, поиск — отдельной строкой (AIC) === */
+.rf-obs-filter-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+/* Селект/поиск — AIC .ai-select / .ai-input: 0.8125rem, 32px, --ai-input. */
+.op-page--obs-full .rf-oc-select,
+.op-page--obs-full .rf-oc-search {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ai-text);
+  background: var(--ai-input);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 6px 8px;
+  margin-top: 0;
+}
+
+.op-page--obs-full .rf-oc-select:focus,
+.op-page--obs-full .rf-oc-search:focus {
+  border-color: var(--ai-primary);
+  outline: none;
+}
+
+.op-page--obs-full .rf-oc-search {
+  margin-top: 0.35rem;
+  display: block;
+}
+
+/* «Сброс» — AIC: outline-кнопка с акцентным текстом (в тёмной теме — белый),
+   hover:underline. */
+.op-page--obs-full.op-page--operator-full .rf-obs-reset-btn {
+  background: transparent;
+  border: 1px solid var(--ai-border);
+  color: var(--ai-text);
+}
+
+.op-page--obs-full.op-page--operator-full .rf-obs-reset-btn:hover:not(:disabled) {
+  background: transparent;
+  border-color: var(--ai-border);
+  text-decoration: underline;
+}
+
+.rf-obs-error {
+  color: var(--ai-error);
+}
+
+/* Шапка айтема — AIC: время слева, значок статуса прижат вправо.
+   Значок — без сигнальной подложки (эмодзи сам несёт цвет, как в AIC). */
+.op-page--obs-full .rf-oc-item__row--head {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* === Правая макропанель: детализация = один ai-card (AIC p-2) === */
+.op-page--obs-full .rf-obs-detail {
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  box-shadow: var(--ai-shadow);
+  padding: 8px;
+}
+
+/* Детализация: две колонки kv-списков (AIC «Параметры запроса/исполнения»). */
+.rf-obs-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+/* Шапка детализации: «ДЕТАЛИЗАЦИЯ ЗАПРОСА» + значок статуса (AIC). */
+.rf-obs-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ai-border);
+}
+
+.rf-obs-detail-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rf-oc-text);
+}
+
+.rf-obs-detail-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* === Секционный бокс — AIC SectionBox (ai-card + uppercase-заголовок) === */
+.rf-obs-sectionbox {
+  min-width: 0;
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  box-shadow: var(--ai-shadow);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.rf-obs-sectionbox__title {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ai-text-muted);
+}
+
+/* KV-строки — AIC CompactRow: label 0.75rem muted (с двоеточием в JSX),
+   значение обычного начертания; узкая колонка 5.5rem, gap 8px. */
+.op-page--obs-full.op-page--operator-full .rf-oc-kv-list {
+  grid-template-columns: 5.5rem 1fr;
+  gap: 4px 8px;
+  font-size: 0.75rem;
+}
+
+.op-page--obs-full.op-page--operator-full .rf-oc-kv-list dt {
+  font-size: 0.75rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ai-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.op-page--obs-full.op-page--operator-full .rf-oc-kv-list dd {
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.rf-obs-monospace {
+  font-family: var(--ai-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+/* pre — AIC: mono text-xs, max-h-120px, bg-black/20. */
+.rf-obs-pre {
+  margin: 0;
+  max-height: 120px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px;
+  border-radius: var(--ai-radius);
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.75rem;
+  font-family: var(--ai-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  color: var(--rf-oc-text);
+}
+
+/* Запрос/Ответ — как «Ответ системы» AIC: sans 0.75rem/1.35 (не mono),
+   фиксированная высота 120px (панели всегда одной высоты). */
+.rf-obs-pre--answer {
+  height: 120px;
+  font-family: var(--rf-font, inherit);
+  line-height: 1.35;
+}
+
+.rf-obs-summary-line {
+  margin: 0;
+  color: var(--rf-oc-text-secondary);
+  font-size: 0.75rem;
+  word-break: break-word;
+}
+
+/* Ошибка — AIC: border-ai-error/20, bg red-500/10. */
+.rf-obs-sectionbox--error {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* === Таймлайн pipeline — AIC: последняя панель, карточки этапов === */
+.rf-obs-sectionbox--timeline {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0.5rem;
+}
+
+.rf-obs-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Карточка этапа: время → статус → этап → offset → +latency (+ JSON).
+   Подложка — AIC bg-black/10: темнее поверхности (не серая заливка). */
+.rf-obs-stage {
+  border: 1px solid var(--rf-oc-border);
+  border-radius: var(--ai-radius);
+  background: rgba(0, 0, 0, 0.1);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rf-obs-stage__row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.rf-obs-stage__label {
+  color: var(--rf-oc-text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rf-obs-stage__ts {
+  color: var(--rf-oc-text-label);
+  font-family: var(--ai-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rf-obs-stage__offset,
+.rf-obs-stage__lat {
+  font-family: var(--ai-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rf-obs-stage__offset {
+  color: var(--rf-oc-text);
+}
+
+.rf-obs-stage__lat {
+  color: var(--rf-oc-text-secondary);
+}
+
+/* details «JSON payload» — AIC text-[10px] + pre на --ai-bg
+   (в тёмной теме — белый текст ссылки, как у референса). */
+.rf-obs-json__summary {
+  cursor: pointer;
+  font-size: 0.625rem;
+  color: var(--ai-text);
+  user-select: none;
+}
+
+.rf-obs-json__pre {
+  margin: 4px 0 0;
+  max-height: 200px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--rf-oc-border);
+  border-radius: var(--ai-radius);
+  background: var(--ai-bg);
+  font-size: 0.625rem;
+  font-family: var(--ai-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--rf-oc-text);
+}
+
+/* Технический снимок события (JSON) — форма AIC SessionJsonSnapshot:
+   summary 0.8125rem/500, pre — mono 0.75rem/1.4 на --ai-surface. */
+.rf-obs-snapshot__summary {
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ai-text);
+  user-select: none;
+}
+
+.rf-obs-snapshot__pre {
+  margin: 8px 0 0;
+  padding: 8px;
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius);
+  background: var(--ai-surface);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-family: var(--ai-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--rf-oc-text);
+}
+
+@media (max-width: 900px) {
+  .rf-obs-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

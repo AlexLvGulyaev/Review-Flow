@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.api.audit_helpers import audit_client
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.demo_session import DemoSession
@@ -82,6 +83,17 @@ def start_demo_session(
     client_ip = _client_ip(request)
     service = DemoLimiterService(db)
     demo = service.create_session(client_ip=client_ip, session_id=payload.session_id)
+    # Аудит пользовательской активности: кто зашёл в read-only демку
+    # (пресейловый сигнал; токен демо-сессии в журнал не пишем).
+    audit_client(
+        request,
+        "demo_session_started",
+        role="demo",
+        resource_type="demo_session",
+        resource_id=str(demo.id),
+        db=db,
+        details={"session_id": payload.session_id},
+    )
     db.commit()
     return DemoStartResponse(
         token=demo.token,

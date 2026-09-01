@@ -16,6 +16,8 @@ class Settings(BaseSettings):
 
     ch_pipeline_enabled: bool = True
     ch_confidence_medium_delta: float = 0.10
+    ch_confidence_score_floor: float = 0.45
+    ch_confidence_gap_high: float = 0.10
     ch_retrieval_top_n: int = 5
 
     # Ops/admin console authentication (read-only demo RBAC).

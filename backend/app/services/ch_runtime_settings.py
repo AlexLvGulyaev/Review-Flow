@@ -17,6 +17,8 @@ class EffectiveChRuntimeSettings:
     default_confidence_threshold: float
     draft_on_medium: bool
     auto_decision_on_high: bool
+    confidence_score_floor: float
+    confidence_gap_high: float
 
 
 class ChRuntimeSettingsService:
@@ -31,9 +33,11 @@ class ChRuntimeSettingsService:
                 retrieval_top_n=settings.ch_retrieval_top_n,
                 minimum_match_score=0,
                 confidence_medium_delta=settings.ch_confidence_medium_delta,
-                default_confidence_threshold=0.75,
+                default_confidence_threshold=0.60,
                 draft_on_medium=True,
-                auto_decision_on_high=True,
+                auto_decision_on_high=False,
+                confidence_score_floor=settings.ch_confidence_score_floor,
+                confidence_gap_high=settings.ch_confidence_gap_high,
                 updated_at=datetime.now(timezone.utc),
             )
             self.db.add(row)
@@ -49,6 +53,8 @@ class ChRuntimeSettingsService:
             default_confidence_threshold=float(row.default_confidence_threshold),
             draft_on_medium=bool(row.draft_on_medium),
             auto_decision_on_high=bool(row.auto_decision_on_high),
+            confidence_score_floor=float(row.confidence_score_floor),
+            confidence_gap_high=float(row.confidence_gap_high),
         )
 
     def update(self, patch: dict) -> ChRuntimeSettings:

@@ -2,11 +2,12 @@ from uuid import UUID
 
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.roles import require_admin, require_admin_read
+from app.api.audit_helpers import audit
+from app.core.roles import Role, require_admin, require_admin_read
 from app.db.session import get_db
 from app.models.ch_entities import ResponseCaseCandidate
 from app.schemas.response_case import ResponseCaseExampleOut, ResponseCaseOut
@@ -113,7 +114,13 @@ def list_response_cases(
 
 
 @router.post("/response-cases", response_model=ResponseCaseOut, status_code=201, dependencies=[Depends(require_admin)])
-def create_response_case(body: ResponseCaseCreate, db: Session = Depends(get_db)) -> ResponseCaseOut:
+def create_response_case(
+    body: ResponseCaseCreate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ResponseCaseOut:
+    audit(request, role, "response_case_created", resource_type="response_case", db=db, details={"title": (getattr(body, "title", "") or "")[:256]})
     return ResponseCaseService(db).create_case(body)
 
 
@@ -128,18 +135,25 @@ def get_response_case(case_id: UUID, db: Session = Depends(get_db)) -> ResponseC
 
 @router.patch("/response-cases/{case_id}", response_model=ResponseCaseOut, dependencies=[Depends(require_admin)])
 def update_response_case(
-    case_id: UUID, body: ResponseCaseUpdate, db: Session = Depends(get_db)
+    case_id: UUID,
+    body: ResponseCaseUpdate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> ResponseCaseOut:
+    audit(request, role, "response_case_updated", resource_type="response_case", resource_id=case_id, db=db, details={"fields": list(body.model_dump(exclude_unset=True).keys())})
     return ResponseCaseService(db).update_case(case_id, body)
 
 
 @router.post("/response-cases/{case_id}/archive", response_model=ResponseCaseOut, dependencies=[Depends(require_admin)])
-def archive_response_case(case_id: UUID, db: Session = Depends(get_db)) -> ResponseCaseOut:
+def archive_response_case(case_id: UUID, request: Request, role: Role = Depends(require_admin), db: Session = Depends(get_db)) -> ResponseCaseOut:
+    audit(request, role, "response_case_archived", resource_type="response_case", resource_id=case_id, db=db)
     return ResponseCaseService(db).set_case_active(case_id, is_active=False)
 
 
 @router.post("/response-cases/{case_id}/activate", response_model=ResponseCaseOut, dependencies=[Depends(require_admin)])
-def activate_response_case(case_id: UUID, db: Session = Depends(get_db)) -> ResponseCaseOut:
+def activate_response_case(case_id: UUID, request: Request, role: Role = Depends(require_admin), db: Session = Depends(get_db)) -> ResponseCaseOut:
+    audit(request, role, "response_case_activated", resource_type="response_case", resource_id=case_id, db=db)
     return ResponseCaseService(db).set_case_active(case_id, is_active=True)
 
 
@@ -150,15 +164,25 @@ def activate_response_case(case_id: UUID, db: Session = Depends(get_db)) -> Resp
     dependencies=[Depends(require_admin)],
 )
 def create_response_case_example(
-    case_id: UUID, body: ResponseCaseExampleCreate, db: Session = Depends(get_db)
+    case_id: UUID,
+    body: ResponseCaseExampleCreate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> ResponseCaseExampleOut:
+    audit(request, role, "response_case_example_created", resource_type="response_case", resource_id=case_id, db=db)
     return ResponseCaseService(db).create_example(case_id, body)
 
 
 @router.patch("/response-case-examples/{example_id}", response_model=ResponseCaseExampleOut, dependencies=[Depends(require_admin)])
 def update_response_case_example(
-    example_id: UUID, body: ResponseCaseExampleUpdate, db: Session = Depends(get_db)
+    example_id: UUID,
+    body: ResponseCaseExampleUpdate,
+    request: Request,
+    role: Role = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> ResponseCaseExampleOut:
+    audit(request, role, "response_case_example_updated", resource_type="response_case", resource_id=example_id, db=db, details={"fields": list(body.model_dump(exclude_unset=True).keys())})
     return ResponseCaseService(db).update_example(example_id, body)
 
 
@@ -189,26 +213,35 @@ def get_response_case_candidate(
 def complete_response_case_candidate(
     candidate_id: UUID,
     body: CandidateCompleteBody,
+    request: Request,
+    role: Role = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> None:
+    audit(request, role, "case_candidate_completed", resource_type="case_candidate", resource_id=candidate_id, db=db, details={"response_case_id": str(body.response_case_id)})
     complete_candidate_with_case(db, candidate_id, response_case_id=body.response_case_id)
 
 
 @router.post("/response-case-candidates/{candidate_id}/approve", response_model=ResponseCaseOut, dependencies=[Depends(require_admin)])
 def approve_response_case_candidate(
     candidate_id: UUID,
+    request: Request,
     body: CandidatePromoteBody | None = None,
+    role: Role = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ResponseCaseOut:
     merge_id = body.merge_into_case_id if body else None
+    audit(request, role, "case_candidate_promoted", resource_type="case_candidate", resource_id=candidate_id, db=db, details={"merged_into_case_id": str(merge_id) if merge_id else None})
     return promote_candidate(db, candidate_id, merge_into_case_id=merge_id)
 
 
 @router.post("/response-case-candidates/{candidate_id}/reject", response_model=ResponseCaseCandidateOut, dependencies=[Depends(require_admin)])
 def reject_response_case_candidate(
     candidate_id: UUID,
+    request: Request,
     body: CandidateRejectBody | None = None,
+    role: Role = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ResponseCaseCandidateOut:
     comment = body.rejection_comment if body else None
+    audit(request, role, "case_candidate_rejected", resource_type="case_candidate", resource_id=candidate_id, db=db, details={"comment": (comment or "")[:512]} if comment else None)
     return reject_candidate(db, candidate_id, rejection_comment=comment)

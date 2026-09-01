@@ -360,6 +360,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:8700/api/revie
 | `013_ch_runtime_settings.sql` | Параметры CH в БД |
 | `014_candidate_type_and_example_learning.sql` | Candidate learning |
 | `015_processing_policies_reference.sql` | Политики обработки |
+| `018_audit_logs.sql` | Журнал аудита (`audit_logs`) + индексы |
 
 **Проверка после первого старта** (опционально):
 
@@ -654,6 +655,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 Первая сборка может занять несколько минут: собираются backend, production-frontend (статика через nginx) и admin-консоль.
+**Особенность кэширования статики:** `frontend/nginx.conf` отдаёт `index.html` (точку входа SPA) с `Cache-Control: no-cache` — браузер всегда перепроверяет его после деплоя; хэшированные ассеты (`/assets/*`) кэшируются на год (`immutable`). Без `no-cache` на index.html браузер мог бы оставить пользователя на предыдущем бандле после редеплоя.
 
 **Проверка:** `docker compose -f docker-compose.prod.yml ps` — сервисы `running`, у `review-flow-apl-postgres` и `review-flow-apl-backend` — `healthy`.
 

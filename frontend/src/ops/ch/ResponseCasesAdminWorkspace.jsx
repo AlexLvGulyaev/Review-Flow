@@ -4,7 +4,7 @@ import { adminApiFetch, readApiError } from "../../lib/api.js";
 import { useCompanyAuth } from "../../context/CompanyAuthContext.jsx";
 import { fetchClassificationReference } from "../../lib/classificationReference.js";
 import { OpPage } from "../components/OpPage.jsx";
-import { AdminConsoleHeader, ResponseCaseWorkspaceHeader } from "./AdminConsoleHeader.jsx";
+import { ResponseCaseWorkspaceHeader } from "./AdminConsoleHeader.jsx";
 import { ResponseCaseLeftPanel } from "./ResponseCaseLeftPanel.jsx";
 import { ResponseCaseDetailPanel } from "./ResponseCaseDetailPanel.jsx";
 import { ResponseCaseCandidatesPanel } from "./ResponseCaseCandidatesPanel.jsx";
@@ -19,7 +19,8 @@ import "../operator/operator-console.css";
 import "./response-case-workspace.css";
 
 const API = "/api/admin";
-const PAGE_SIZE = 10;
+/* AIC operational canon (Диалоги): 7 элементов на страницу. */
+const PAGE_SIZE = 7;
 
 const EMPTY_CASE = {
   case_code: "",
@@ -302,6 +303,64 @@ export default function ResponseCasesAdminWorkspace() {
     }
   }, [tab, loading, pageItems, selectedCaseId, createModalOpen, editModalOpen]);
 
+  // Перебор айтемов стрелками (канон Логов/Аудита): ↑/↓ двигают выделение
+  // по полному отфильтрованному списку, на границе страницы перелистывают.
+  // В открытой модалке навигация по списку выключена.
+  useEffect(() => {
+    const modalOpen =
+      createModalOpen ||
+      editModalOpen ||
+      exampleModalOpen ||
+      Boolean(exampleEdit) ||
+      candidateRejectModalOpen ||
+      candidateMergeModalOpen;
+    if (modalOpen) return;
+    const items = tab === "cases" ? filteredCases : candidates;
+    if (!items.length) return;
+    const selectedId = tab === "cases" ? selectedCaseId : selectedCandidateId;
+    const onKeyDown = (e) => {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      const t = e.target;
+      if (t && (t.closest("input") || t.closest("textarea") || t.closest("select") || t.isContentEditable)) return;
+      const curIdx = selectedId ? items.findIndex((x) => x.id === selectedId) : -1;
+      if (curIdx < 0) return;
+      const next = items[e.key === "ArrowDown" ? curIdx + 1 : curIdx - 1];
+      if (!next) return;
+      e.preventDefault();
+      if (tab === "cases") {
+        setSelectedCaseId(next.id);
+        const np = Math.floor(items.indexOf(next) / PAGE_SIZE);
+        if (np !== pageIndex) setPageIndex(np);
+      } else {
+        setSelectedCandidateId(next.id);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    tab,
+    createModalOpen,
+    editModalOpen,
+    exampleModalOpen,
+    exampleEdit,
+    candidateRejectModalOpen,
+    candidateMergeModalOpen,
+    filteredCases,
+    candidates,
+    selectedCaseId,
+    selectedCandidateId,
+    pageIndex,
+  ]);
+
+  // Выбранная строка всегда видна в списке (как в Логах/Аудите).
+  useEffect(() => {
+    const attr = tab === "cases" ? "data-case-id" : "data-candidate-id";
+    const selectedId = tab === "cases" ? selectedCaseId : selectedCandidateId;
+    if (!selectedId) return;
+    const row = document.querySelector(`[${attr}="${String(selectedId).replace(/"/g, '\\"')}"]`);
+    if (row) row.scrollIntoView({ block: "nearest" });
+  }, [tab, selectedCaseId, selectedCandidateId, pageIndex, candidates]);
+
   const selectedListItem = useMemo(
     () => cases.find((c) => c.id === selectedCaseId) ?? null,
     [cases, selectedCaseId]
@@ -540,7 +599,6 @@ export default function ResponseCasesAdminWorkspace() {
 
   return (
     <OpPage wide className="op-page--operator-full op-page--response-cases-full">
-      <AdminConsoleHeader />
       <ResponseCaseWorkspaceHeader />
 
       <ResponseCaseFormModal

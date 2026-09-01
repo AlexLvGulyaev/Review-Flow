@@ -10,6 +10,8 @@ class ChRuntimeSettingsOut(BaseModel):
     default_confidence_threshold: float = Field(ge=0, le=1)
     draft_on_medium: bool
     auto_decision_on_high: bool
+    confidence_score_floor: float = Field(ge=0, le=1)
+    confidence_gap_high: float = Field(ge=0, le=1)
     retrieval_algorithm_label: str = "Сопоставление с примерами типовых ситуаций"
     updated_at: datetime | None = None
 
@@ -21,3 +23,5 @@ class ChRuntimeSettingsPatch(BaseModel):
     default_confidence_threshold: float | None = Field(None, ge=0, le=1)
     draft_on_medium: bool | None = None
     auto_decision_on_high: bool | None = None
+    confidence_score_floor: float | None = Field(None, ge=0, le=1)
+    confidence_gap_high: float | None = Field(None, ge=0, le=1)

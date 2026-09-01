@@ -1,17 +1,5 @@
-/** Sprint 020G — sticky global operator console header. */
-export function OperatorConsoleHeader() {
-  return (
-    <header className="rf-oc-global-header">
-      <div className="rf-oc-global-header__main">
-        <h1 className="rf-oc-global-header__title">Операторская консоль</h1>
-        <p className="rf-oc-global-header__subtitle">Рабочее пространство обработки клиентских обращений</p>
-      </div>
-      <div className="rf-oc-global-header__brand">Zerocoder</div>
-      <div className="rf-oc-global-header__divider" aria-hidden="true" />
-    </header>
-  );
-}
-
+/** Workspace-level headers (the global console header now lives in
+ *  `CompanyLayout` — `op-header`, AIC parity). */
 export function OperatorWorkspaceHeader() {
   return (
     <div className="rf-oc-workspace-header">

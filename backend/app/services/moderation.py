@@ -86,17 +86,7 @@ def load_review_detail(db: Session, review_id: uuid.UUID) -> Review:
     return review
 
 
-def build_operator_detail(db: Session, review: Review, *, log_opened: bool = False) -> OperatorReviewDetail:
-    if log_opened:
-        log_event(
-            db,
-            event_type="operator_review_opened",
-            entity_type="review",
-            entity_id=review.id,
-            status="ok",
-        )
-        db.flush()
-
+def build_operator_detail(db: Session, review: Review) -> OperatorReviewDetail:
     cls = latest_classification(review)
     resp = latest_response(review)
     matched_phrase_text = None

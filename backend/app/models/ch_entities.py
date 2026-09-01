@@ -245,4 +245,10 @@ class ChRuntimeSettings(Base):
     )
     draft_on_medium: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     auto_decision_on_high: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    confidence_score_floor: Mapped[float] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0.45
+    )
+    confidence_gap_high: Mapped[float] = mapped_column(
+        Numeric(5, 4), nullable=False, default=0.10
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
