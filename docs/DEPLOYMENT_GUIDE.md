@@ -360,7 +360,10 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:8700/api/revie
 | `013_ch_runtime_settings.sql` | Параметры CH в БД |
 | `014_candidate_type_and_example_learning.sql` | Candidate learning |
 | `015_processing_policies_reference.sql` | Политики обработки |
+| `016_demo_sessions.sql` | Демо-сессии (`demo_mode` в обращениях) |
+| `017_ch_confidence_gap_banding.sql` | CH confidence: gap-based banding, перекалибровка порогов |
 | `018_audit_logs.sql` | Журнал аудита (`audit_logs`) + индексы |
+| `019_audit_seq_number.sql` | Аудит: монотонный seq number |
 
 **Проверка после первого старта** (опционально):
 

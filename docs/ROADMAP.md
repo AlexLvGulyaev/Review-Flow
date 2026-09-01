@@ -157,10 +157,10 @@ MVP **пригоден для демо и обучения**; переход к 
 | Этап | Приоритет | Статус |
 |------|-----------|--------|
 | Controlled Hybrid MVP (pipeline, operator, admin, candidates, reports, settings, docs) | — | **MVP завершён** (2026-06-01) |
-| Повышение качества retrieval (нормализация, ложные совпадения, калибровка confidence, telemetry, покрытие KB) | 1 | **Следующий этап** |
+| Повышение качества retrieval (нормализация, ложные совпадения, калибровка confidence, telemetry, покрытие KB) | 1 | **В работе**: калибровка confidence v2 — gap-based banding с перекалибровкой порогов (2026-08-31); нормализация и покрытие KB — далее |
 | Управление KB (аудит ТС/примеров, дедупликация, QC, массовые операции) | 2 | **Следующий этап** (частично параллельно с п.1) |
 | Расширенная аналитика (confidence, кандидаты, эффективность ТС, метрики retrieval) | 3 | **Среднесрочная перспектива** |
-| Production readiness (auth, RBAC, audit, backup, deploy hardening) | 4 | **Среднесрочная перспектива** |
+| Production readiness (auth, RBAC, audit, backup, deploy hardening) | 4 | **Частично закрыто** (2026-08-31): токен-RBAC, tokenized demo sessions, журнал аудита, CSV-экспорт; backup/deploy hardening — далее |
 | AI evolution (rerank, hybrid retrieval, eval, automated quality) | 5 | **Долгосрочная перспектива** |
 | Формализованная регрессия клиентского UX | — | **Среднесрочная перспектива** |
 | Визуальное разделение client / company UI | — | **Долгосрочная перспектива** |
