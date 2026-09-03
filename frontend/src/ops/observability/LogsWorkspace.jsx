@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { labelOperationalEventType } from "../../lib/displayLabels.js";
 import { adminApiDownload, adminApiFetch, readApiError } from "../../lib/api.js";
-import { LOG_STATUS } from "../../lib/chipContract.js";
+import { LOG_STATUS, TRACE_STATUS_VARIANT } from "../../lib/chipContract.js";
 import { OpPage } from "../components/OpPage.jsx";
 import { OpChipFor } from "../components/OpChip.jsx";
 import { formatTs, isoDateFrom, PAGE_SIZE, paginate, shortId, WINDOW_OPTIONS } from "./observabilityShared.js";
@@ -17,10 +17,11 @@ import "./observability.css";
  * «Технический снимок (JSON)».
  */
 
+// Канон чип-контракта (LOG_STATUS): ✔︎ успешно / ❌ ошибка / 🔄 ожидание.
 const STATUS_OPTIONS = [
-  { value: "ok", label: "🟢 обработано" },
+  { value: "ok", label: "✔︎ успешно" },
   { value: "error", label: "❌ ошибка" },
-  { value: "pending", label: "⏳ в обработке" },
+  { value: "pending", label: "🔄 ожидание" },
 ];
 
 const STATUS_CHIP = { ok: "done", error: "failed", pending: "current" };
@@ -69,6 +70,7 @@ function LogItem({ trace, active, onSelect }) {
         <span className="rf-oc-item__ts">{formatTs(trace.created_at)}</span>
         <OpChipFor
           map={LOG_STATUS}
+          variantMap={TRACE_STATUS_VARIANT}
           code={STATUS_CHIP[trace.status] || "current"}
           emojiOnly
         />
@@ -270,6 +272,7 @@ export default function LogsWorkspace() {
         <div className="rf-obs-detail-chips">
           <OpChipFor
             map={LOG_STATUS}
+            variantMap={TRACE_STATUS_VARIANT}
             code={STATUS_CHIP[detail.status] || "current"}
             emojiOnly
           />
@@ -333,6 +336,7 @@ export default function LogsWorkspace() {
                       <span className="rf-obs-stage__ts">{formatTs(s.created_at)}</span>
                       <OpChipFor
                         map={LOG_STATUS}
+                        variantMap={TRACE_STATUS_VARIANT}
                         code={s.status === "error" ? "failed" : "done"}
                         emojiOnly
                       />

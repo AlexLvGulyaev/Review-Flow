@@ -29,10 +29,14 @@ export function OperatorLifecycleTimeline({ events }) {
                 <OpPipelineStageDot variant={variant} />
                 {e.title}
               </span>
+              {/* Эмодзи-контракт (владелец): у статуса этапа — только значок;
+                  пояснение «Этап пайплайна: …» живёт во всплывающем
+                  комментарии. Название этапа в строке сохранено. */}
               <OpChipFor
                 map={TRACE_STATUS}
                 variantMap={TRACE_STATUS_VARIANT}
                 code={e.status}
+                emojiOnly
               />
             </div>
             {e.details || e.subtitle ? (

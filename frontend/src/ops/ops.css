@@ -1756,6 +1756,13 @@
   background: var(--ai-surface-hover);
 }
 
+.rf-login-btn--home {
+  font-size: 0.8125rem;
+  color: var(--ai-text-muted);
+  text-decoration: none;
+  text-align: center;
+}
+
 .op-sidebar--company {
   gap: 0;
   padding-bottom: 0.5rem;

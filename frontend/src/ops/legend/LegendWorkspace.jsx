@@ -10,6 +10,7 @@ import {
   CONFIDENCE_BAND_VARIANT,
   ENTITY_ACTIVE,
   ENTITY_ACTIVE_VARIANT,
+  LOG_STATUS,
   MODERATION,
   MODERATION_VARIANT,
   PRIORITY,
@@ -18,6 +19,7 @@ import {
   SCENARIO_VARIANT,
   SENTIMENT,
   SENTIMENT_VARIANT,
+  TRACE_STATUS_VARIANT,
   VARIANT,
   chipEntry,
 } from "../../lib/chipContract.js";
@@ -70,8 +72,8 @@ function chipKey(map, note) {
 /* where — проверено поиском по экранам: где реально рендерится семейство
    чипов. Порядок секций задан владельцем: ряд 1 — Модерация, Сценарий,
    Тональность, Приоритет; ряд 2 — Уверенность, Статус сущности (3-колоночная
-   сетка). Семейство трейса убрано: статусы пайплайна видны только в
-   развёрнутом таймлайне карточки. */
+   сетка). Статус обработки (Логи) возвращён в легенду: «Логи» — отдельный
+   экран, статус обращения виден в списке/фильтре/детализации (владелец). */
 const SECTIONS = [
   {
     title: "Модерация ответа",
@@ -133,6 +135,15 @@ const SECTIONS = [
     rows: [
       { map: ENTITY_ACTIVE, variantMap: ENTITY_ACTIVE_VARIANT, code: "active", note: "запись активна и участвует в работе" },
       { map: ENTITY_ACTIVE, variantMap: ENTITY_ACTIVE_VARIANT, code: "inactive", note: "запись в архиве (деактивирована)" },
+    ],
+  },
+  {
+    title: "Статус обработки (Логи)",
+    where: "Логи: значок статуса обращения в строке списка, в детализации и в фильтре «Статус»; на этапах таймлайна — тот же значок у шага.",
+    rows: [
+      { map: LOG_STATUS, variantMap: TRACE_STATUS_VARIANT, code: "done", note: "обращение прошло pipeline до конца — ответ получен и сохранён" },
+      { map: LOG_STATUS, variantMap: TRACE_STATUS_VARIANT, code: "current", note: "обращение ещё обрабатывается пайплайном; итог сменится на «успешно» или «ошибку»" },
+      { map: LOG_STATUS, variantMap: TRACE_STATUS_VARIANT, code: "failed", note: "pipeline прервался, ответа нет — причина в блоке «Ошибка» детализации" },
     ],
   },
 ];

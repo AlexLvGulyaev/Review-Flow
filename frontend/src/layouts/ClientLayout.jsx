@@ -3,6 +3,7 @@ import { Link, Outlet } from "react-router-dom";
 import { ClientModalProvider, useClientModals } from "../context/ClientModalContext.jsx";
 import { DemoProvider } from "../context/DemoContext.jsx";
 import DemoBadge from "../components/client/DemoBadge.jsx";
+import { goProject } from "../lib/projectReturn.js";
 
 function ClientHeader() {
   const { openReviewModal, openStatusModal } = useClientModals();
@@ -10,6 +11,18 @@ function ClientHeader() {
   return (
     <header className="client-header client-header-light">
       <div className="client-header-inner client-header-wide">
+        {/* Возврат к проекту (канон RAR/AIC/ADA/MAB): кнопка, не ссылка.
+            Ставим первым элементом шапки, слева от логотипа — фиксированный
+            ↩ поверх страницы сюда не помещается (76px-хедер, логотип от 40px). */}
+        <button
+          type="button"
+          className="client-return-btn"
+          onClick={goProject}
+          title="Вернуться на страницу проекта в витрине AIP."
+          aria-label="Вернуться на страницу проекта в витрине AIP"
+        >
+          ↩
+        </button>
         <Link className="client-logo" to="/">
           <span className="client-logo-mark">N</span>
           <span className="client-logo-text">

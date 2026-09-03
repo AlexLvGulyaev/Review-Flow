@@ -622,6 +622,37 @@ body {
   flex-wrap: nowrap;
 }
 
+/* Возврат к проекту (канон RAR/AIC/ADA/MAB): ghost-кнопка ↩ слева в
+   шапке, перед логотипом. Кнопка, а не <a href> — без URL в статус-бабле
+   Chrome. */
+.client-return-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #dbe3ee;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.client-return-btn:hover {
+  border-color: var(--client-navy);
+  color: var(--client-navy);
+  background: #f1f5f9;
+}
+
+.client-return-btn:focus-visible {
+  outline: 2px solid var(--client-green);
+  outline-offset: 2px;
+}
+
 .client-logo {
   display: flex;
   align-items: center;
@@ -1839,6 +1870,7 @@ body {
 
   .client-header-actions {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .client-btn-header {

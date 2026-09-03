@@ -122,8 +122,10 @@ export const VARIANT = {
 
 /** Log entry status (Обработка: 🟢 готово / ⏳ в обработке / ❌ ошибка). */
 export const LOG_STATUS = {
-  done: { emoji: "🟢", label: "готово" },
-  current: { emoji: "⏳", label: "в обработке" },
+  // Канон AIC (LIFECYCLE_STATUS): исход события — ✔︎/🔄/❌. 🟢 остаётся за
+  // HEALTH («Норма», состояние компонента), ⏳ — за DOC_STATUS.pending.
+  done: { emoji: "✔︎", label: "успешно" },
+  current: { emoji: "🔄", label: "ожидание" },
   failed: { emoji: "❌", label: "ошибка" },
 };
 

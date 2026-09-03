@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useCompanyAuth } from "../../context/CompanyAuthContext.jsx";
 import { getStaffHomePath } from "../../lib/companyAuth.js";
+import { goProject } from "../../lib/projectReturn.js";
 
 const DEMO_TOKEN = import.meta.env.VITE_OPS_DEMO_TOKEN || "";
 
@@ -70,7 +71,11 @@ export default function CompanyHomePage() {
 
         <form className="rf-login-form" onSubmit={onTokenSubmit}>
           <div>
-            <label className="rf-login-label" htmlFor="rf-login-token">
+            <label
+              className="rf-login-label"
+              htmlFor="rf-login-token"
+              title="Полный доступ к панели управления — по токену оператора."
+            >
               Bearer token
             </label>
             <input
@@ -102,10 +107,20 @@ export default function CompanyHomePage() {
               className="rf-login-btn rf-login-btn--outline"
               onClick={onDemoLogin}
               disabled={demoSubmitting}
+              title="Демо-режим: посмотрите консоль без прав изменения (read-only)."
             >
               {demoSubmitting ? "Вход…" : "Войти в демо-режим (только просмотр)"}
             </button>
           ) : null}
+
+          <button
+            type="button"
+            className="rf-login-btn rf-login-btn--outline rf-login-btn--home"
+            onClick={goProject}
+            title="Вернуться на страницу проекта в витрине AIP."
+          >
+            К проекту
+          </button>
         </form>
       </div>
     </div>

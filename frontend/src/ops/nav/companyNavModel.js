@@ -24,6 +24,9 @@ export function getCompanyNavGroups(role) {
   // so it gets the same sidebar as the administrator — every section is
   // reachable and rendered read-only (mutations disabled in the workspaces).
   if (role === ROLES.ADMINISTRATOR || role === ROLES.DEMO) {
+    // Меню-канон APL (shared/patterns/admin-menu-canon.md):
+    // Система → Ядро (проектное имя) → Операции → Аналитика →
+    // Наблюдаемость → Справка.
     return [
       {
         title: "Система",
@@ -38,9 +41,12 @@ export function getCompanyNavGroups(role) {
         links: [{ to: "/operator/reviews", label: "Очередь обращений", icon: "📥" }],
       },
       {
+        title: "Аналитика",
+        links: [{ to: "/reports", label: "Отчёты", icon: "📈" }],
+      },
+      {
         title: "Наблюдаемость",
         links: [
-          { to: "/reports", label: "Отчёты", icon: "📈" },
           { to: "/logs", label: "Логи", icon: "📜" },
           { to: "/audit", label: "Журнал аудита", icon: "📋" },
         ],
