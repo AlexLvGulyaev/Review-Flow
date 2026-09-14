@@ -200,7 +200,7 @@ flowchart TB
 ## 🛠️ Технологии
 
 - **Backend** — FastAPI, Python 3.12, SQLAlchemy.
-- **Frontend** — React, Vite, React Router, Tailwind CSS.
+- **Frontend** — React, Vite, React Router.
 - **Database** — PostgreSQL 16.
 - **AI** — OpenAI-compatible API (OpenAI / GigaChat / ProxyAPI / mock).
 - **Deploy** — Docker Compose, nginx, Traefik.
@@ -278,7 +278,7 @@ review-flow/
 │   ├── OPERATIONS.md              # Эксплуатация
 │   ├── SCREENSHOTS.md             # Галерея экранов
 │   ├── screenshots/               # Скриншоты интерфейса
-│   ├── MEDIA_INDEX.md             # Каталог медиаматериалов
+│   ├── screenshots/MEDIA_INDEX.md # Каталог медиаматериалов
 │   ├── TZ_COMPLIANCE_REPORT.md    # Соответствие ТЗ
 │   ├── ROADMAP.md                 # Дорожная карта
 │   ├── PROJECT_HISTORY.md         # История проекта
@@ -286,7 +286,8 @@ review-flow/
 ├── backend/                       # FastAPI backend
 ├── frontend/                      # React frontend
 ├── docker-compose.yml             # Docker Compose
-├── Dockerfile                     # Backend-сервис
+├── backend/Dockerfile             # Backend-сервис
+├── frontend/Dockerfile            # Frontend-сервис
 └── .env.example                   # Пример переменных окружения
 ```
 
