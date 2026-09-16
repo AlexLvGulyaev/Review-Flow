@@ -1,6 +1,6 @@
-# Архитектура Review Flow
+# 🏗️ ARCHITECTURE.md — Review Flow
 
-![Review Flow: интерфейс системы (тёмная тема)](screenshots/RF_portfolio_dark.png)
+<img src="screenshots/RF_portfolio_dark.png" alt="Review Flow — витрина кейса: интерфейс системы (DARK)">
 
 Документ описывает **реализованную архитектуру** Review Flow как демонстрационного MVP, а также отделяет:
 
@@ -12,7 +12,7 @@
 
 ---
 
-## 1. Общая схема системы (as‑is)
+## 🗺️ 1. Общая схема системы (as‑is)
 
 ```mermaid
 flowchart TB
@@ -54,12 +54,12 @@ flowchart TB
 
 ---
 
-## 2. Контуры и роли
+## 👥 2. Контуры и роли
 
 ### 2.1 Клиентский контур
 
 **Назначение:** анонимный доступ клиента к созданию обращения и просмотру статуса.  
-**Ключевой инвариант (Controlled Hybrid):** клиент **не видит** внутренних сущностей `Response Case`, confidence и результаты retrieval (см. [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md)).
+**Главный инвариант (Controlled Hybrid):** клиент **не видит** внутренних сущностей `Response Case`, confidence и результаты retrieval (см. [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md)).
 
 Реализованные маршруты (frontend):
 
@@ -95,7 +95,7 @@ flowchart TB
 
 ### 2.4 Аутентификация и RBAC
 
-Защита контуров реализована на двух независимых слоях (эталоны — APL-паттерны `web-ui-tokenized-demo-limiter` и `admin-console-read-only-demo-rbac`).
+Защита контуров реализована на двух независимых слоях (следуют эталонным инженерным паттернам витрины: токенизированный демо-лимитер и read-only демо-RBAC админ-консоли).
 
 **Ops/admin консоль — read-only demo RBAC (`app/core/roles.py`, `app/api/auth.py`).**
 
@@ -114,7 +114,7 @@ flowchart TB
 
 ---
 
-## 3. Backend API (as‑is)
+## 🌐 3. Backend API (as‑is)
 
 Backend — FastAPI приложение (`backend/app/main.py`), использует PostgreSQL и хранит доменные сущности в БД.
 
@@ -135,7 +135,7 @@ Backend — FastAPI приложение (`backend/app/main.py`), использ
 
 ---
 
-## 4. PostgreSQL и миграции (as‑is)
+## 🗄️ 4. PostgreSQL и миграции (as‑is)
 
 ### 4.1 Инициализация БД в Docker Compose
 
@@ -154,7 +154,7 @@ Backend при старте выполняет `run_pending_migrations()` и п�
 
 ---
 
-## 5. Controlled Hybrid pipeline (as‑is + норматив)
+## 🧠 5. Controlled Hybrid pipeline (as‑is + норматив)
 
 Семантика Controlled Hybrid (важно):
 
@@ -177,7 +177,7 @@ Backend при старте выполняет `run_pending_migrations()` и п�
 
 ---
 
-## 6. Lifecycle обращения (as‑is)
+## 🔄 6. Lifecycle обращения (as‑is)
 
 Упрощённый цикл жизни обращения:
 
@@ -192,7 +192,7 @@ flowchart LR
 
 ---
 
-## 7. Lifecycle новой типовой ситуации (learning loop)
+## 🌱 7. Lifecycle новой типовой ситуации (learning loop)
 
 Реализованный демонстрационный цикл (в терминах UI):
 
@@ -209,7 +209,7 @@ flowchart TD
 
 ---
 
-## 8. Роли retrieval / LLM / оператора / администратора
+## 🎭 8. Роли retrieval / LLM / оператора / администратора
 
 - **Retrieval**: поиск похожих примеров и ранжирование типовых ситуаций.
 - **LLM**: адаптация текста ответа (bounded generation) в рамках утверждённой политики; в демо может работать `mock`‑провайдер.
@@ -218,7 +218,7 @@ flowchart TD
 
 ---
 
-## 9. Наблюдаемость (as‑is)
+## 📜 9. Наблюдаемость (as‑is)
 
 Группа «Наблюдаемость» консоли компании — два раздельных журнала (канон референса AIC: список слева ↔ детализация справа, фильтры, пагинация, CSV-экспорт):
 
@@ -231,7 +231,7 @@ flowchart TD
 
 ---
 
-## 10. Ограничения MVP (as‑is)
+## ⚠️ 10. Ограничения MVP (as‑is)
 
 - UI контуры реализованы как одно приложение с role‑переключением.
 - Возможен `mock`‑провайдер AI, который **не является LLM** и возвращает шаблонный текст (см. [🔌 `docs/API_CONTRACT.md`](API_CONTRACT.md) раздел AI Provider Settings).
@@ -239,10 +239,25 @@ flowchart TD
 
 ---
 
-## 11. Roadmap / future work (строго как планы)
+## 🛣️ 11. Roadmap / future work (строго как планы)
 
 Ниже — направления, которые в документах помечены как целевые, но не обязательно реализованы целиком в текущем MVP:
 
 - визуальное разделение client site и company workspace;
 - усиление контракта “operational console” (AF‑alignment) для рабочих мест (семантическое выравнивание);
 - развитие аналитики качества Controlled Hybrid (ошибки retrieval, частые override, coverage KB).
+
+---
+
+## 📚 12. Связанные документы
+
+- [🏠 `README.md`](../README.md) — главная страница проекта.
+- [🧠 `CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md) — архитектура Controlled Hybrid.
+- [🔌 `API_CONTRACT.md`](API_CONTRACT.md) — контракты API.
+- [📊 `PROJECT_STATE.md`](PROJECT_STATE.md) — паспорт состояния проекта.
+
+---
+
+**Статус:** Актуален — реализованная архитектура (as-is)
+**Последнее обновление:** 2026-09-16
+**История изменений:** [📝 CHANGE_LOG.md](CHANGE_LOG.md#-1-история-изменений-документации)

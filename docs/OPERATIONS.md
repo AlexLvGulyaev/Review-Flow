@@ -1,11 +1,5 @@
 # ⚙️ Review Flow — руководство по эксплуатации
 
-**Проект:** review-flow  
-**Дата:** 2026-08-09  
-**Статус:** Актуален: логи, мониторинг, резервное копирование, AI-провайдеры, обновление системы.
-
----
-
 ## 🎯 1. Назначение
 
 Это руководство по **эксплуатации** Review Flow. Оно описывает:
@@ -309,7 +303,7 @@ curl "http://localhost:8700/api/audit?limit=100" \
 
 Фильтры: `action`, `resource_type`, `user_role`, `date_from` / `date_to`.
 Детализация — `GET /api/audit/{entry_id}`. Полное описание —
-[`API_CONTRACT.md`](API_CONTRACT.md), раздел 14a.
+[`API_CONTRACT.md`](API_CONTRACT.md), раздел 17.
 
 ### 8.1b. Выгрузка CSV
 
@@ -354,7 +348,7 @@ curl "http://localhost:8700/api/admin/reports/customer-reviews/export?format=csv
 
 ---
 
-## 📚 Связанные документы
+## 📚 10. Связанные документы
 
 - [🏠 `README.md`](../README.md) — главная страница проекта.
 - [🚀 `docs/DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) — развёртывание.
@@ -362,3 +356,9 @@ curl "http://localhost:8700/api/admin/reports/customer-reviews/export?format=csv
 - [🎛️ `docs/ADMIN_GUIDE.md`](ADMIN_GUIDE.md) — управление типовыми ситуациями, кандидатами, настройками.
 - [🔧 `docs/OPERATOR_GUIDE.md`](OPERATOR_GUIDE.md) — операторская работа.
 - [🧠 `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md) — архитектурная модель.
+
+---
+
+**Статус:** Актуален — логи, мониторинг, резервное копирование, AI-провайдеры, обновление системы
+**Последнее обновление:** 2026-09-16
+**История изменений:** [📝 CHANGE_LOG.md](CHANGE_LOG.md#-1-история-изменений-документации)

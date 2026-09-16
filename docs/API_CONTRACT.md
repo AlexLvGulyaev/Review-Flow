@@ -1,12 +1,5 @@
 # 🔌 API_CONTRACT.md — Review Flow Backend
 
-**Проект:** review-flow  
-**Версия API:** `0.7.1`  
-**Дата актуализации:** 2026-08-09  
-**Статус:** Актуален. Покрывает создание обращений, классификацию, операторскую модерацию, администрирование базы знаний, аналитику, отчёты и настройки AI-провайдеров.
-
----
-
 ## 📌 1. Общие соглашения
 
 ### 1.1 Базовые URL
@@ -136,7 +129,7 @@ Review Flow использует два независимых механизм�
 
 ---
 
-## 🔑 4a. Auth — валидация ops-токена
+## 🔑 5. Auth — валидация ops-токена
 
 Базовый префикс: `/api/auth`.
 
@@ -160,7 +153,7 @@ Review Flow использует два независимых механизм�
 
 ---
 
-## 🔒 4b. Demo — публичные демо-сессии (tokenized demo limiter)
+## 🔒 6. Demo — публичные демо-сессии (tokenized demo limiter)
 
 Базовый префикс: `/api/demo`. Доступны только при `DEMO_LIMITER_ENABLED=true` (иначе `POST /api/demo/start` возвращает `403`).
 
@@ -214,7 +207,7 @@ Review Flow использует два независимых механизм�
 
 ---
 
-## 📝 5. Reviews — публичный клиентский API
+## 📝 7. Reviews — публичный клиентский API
 
 Базовый префикс: `/api/reviews`.  
 Роль: `client` (заголовок `X-Role` не обязателен).
@@ -387,7 +380,7 @@ curl "http://localhost:8700/api/reviews/requests/NL-00999999-REQ-42/status?email
 
 ---
 
-## 👷 6. Operator
+## 👷 8. Operator
 
 Базовый префикс: `/api/operator/reviews`.  
 Роль: `operator` или `administrator`.
@@ -428,7 +421,7 @@ curl "http://localhost:8700/api/reviews/requests/NL-00999999-REQ-42/status?email
 
 - **Ответ:** `200 OK`, `OperatorReviewDetail`.
 
-Ключевые поля ответа:
+Основные поля ответа:
 
 | Поле | Тип | Описание |
 |---|---|---|
@@ -584,7 +577,7 @@ curl -X POST http://localhost:8700/api/operator/reviews/a1b2c3d4-e5f6-7890-abcd-
 
 ---
 
-## 🛠️ 7. Admin — сценарии, шаблоны, фразы, тональности
+## 🛠️ 9. Admin — сценарии, шаблоны, фразы, тональности
 
 Базовый префикс: `/api/admin`.  
 Роль: `administrator`.
@@ -726,7 +719,7 @@ curl -X POST http://localhost:8700/api/admin/templates \
 
 ---
 
-## 🧩 8. Response Cases Admin — управление базой знаний CH
+## 🧩 10. Response Cases Admin — управление базой знаний CH
 
 Базовый префикс: `/api/admin`.  
 Роль: `administrator`.
@@ -763,7 +756,7 @@ curl -X POST http://localhost:8700/api/admin/templates \
 
 - **Ответ:** `200 OK`, список `ResponseCaseListItemAdmin`.
 
-Ключевые поля: `id`, `case_code`, `title`, `description`, `scenario`, `sentiment`, `priority`, `product_area`, `topic`, `confidence_threshold`, `processing_policy_id`, `processing_policy`, `review_policy`, `is_active`, `updated_at`, `examples_count`.
+Основные поля: `id`, `case_code`, `title`, `description`, `scenario`, `sentiment`, `priority`, `product_area`, `topic`, `confidence_threshold`, `processing_policy_id`, `processing_policy`, `review_policy`, `is_active`, `updated_at`, `examples_count`.
 
 ### `POST /api/admin/response-cases`
 
@@ -888,7 +881,7 @@ curl -X POST http://localhost:8700/api/admin/response-cases \
 
 - **Ответ:** `200 OK`, список `ResponseCaseCandidateOut`.
 
-Ключевые поля: `id`, `review_id`, `status`, `candidate_type`, `proposed_title`, `proposed_description`, `proposed_response_policy`, `proposed_approved_response_text`, `match_score`, `retrieval_threshold`, `gap`, `created_at`, `updated_at`.
+Основные поля: `id`, `review_id`, `status`, `candidate_type`, `proposed_title`, `proposed_description`, `proposed_response_policy`, `proposed_approved_response_text`, `match_score`, `retrieval_threshold`, `gap`, `created_at`, `updated_at`.
 
 ### `GET /api/admin/response-case-candidates/{candidate_id}`
 
@@ -934,7 +927,7 @@ curl -X POST http://localhost:8700/api/admin/response-cases \
 
 ---
 
-## 🧠 9. Prompts
+## 🧠 11. Prompts
 
 Базовый префикс: `/api/prompts`.  
 Роль: `administrator`.
@@ -1006,7 +999,7 @@ curl -X POST http://localhost:8700/api/prompts \
 
 ---
 
-## ✅ 10. Evaluation
+## ✅ 12. Evaluation
 
 Базовый префикс: `/api/evaluation`.  
 Роль: `administrator`.
@@ -1030,7 +1023,7 @@ curl -X POST http://localhost:8700/api/prompts \
 
 - **Ответ:** `200 OK`, список `EvaluationCaseOut`.
 
-Ключевые поля: `id`, `review_id`, `review_text`, `draft_response`, `final_response`, `prompt_key`, `prompt_version`, `prompt_version_id`, `expected_quality_notes`, `operator_score`, `operator_comment`, `created_at`, `updated_at`.
+Основные поля: `id`, `review_id`, `review_text`, `draft_response`, `final_response`, `prompt_key`, `prompt_version`, `prompt_version_id`, `expected_quality_notes`, `operator_score`, `operator_comment`, `created_at`, `updated_at`.
 
 ### `PATCH /api/evaluation/cases/{case_id}`
 
@@ -1059,7 +1052,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## 📈 11. Analytics
+## 📈 13. Analytics
 
 Базовый префикс: `/api/analytics`.  
 Роль: `administrator`.
@@ -1137,7 +1130,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## 🔎 12. CH Analytics
+## 🔎 14. CH Analytics
 
 Базовый префикс: `/api/admin/ch-analytics`.  
 Роль: `administrator`.
@@ -1158,7 +1151,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 - **Ответ:** `200 OK`, `ChAnalyticsDashboard`.
 
-Ключевые секции:
+Основные секции:
 
 | Секция | Тип | Содержание |
 |---|---|---|
@@ -1192,7 +1185,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## 📑 13. Reports
+## 📑 15. Reports
 
 Базовый префикс: `/api/admin/reports`.  
 Роль: `administrator`.
@@ -1209,19 +1202,19 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 - **Ответ:** `200 OK`, `CustomerReviewsReport`.
 
-Ключевые поля: `period`, `total_reviews`, `processed_reviews`, `in_progress_reviews`, `average_rating`, `average_processing_hours`, `reviews_by_day`, `by_product_area`, `by_scenario`, `by_sentiment`, `by_priority`, `top_topics`, `export_bundle`, `summary`.
+Основные поля: `period`, `total_reviews`, `processed_reviews`, `in_progress_reviews`, `average_rating`, `average_processing_hours`, `reviews_by_day`, `by_product_area`, `by_scenario`, `by_sentiment`, `by_priority`, `top_topics`, `export_bundle`, `summary`.
 
 ### `GET /api/admin/reports/business-problems`
 
 - **Ответ:** `200 OK`, `BusinessProblemsReport`.
 
-Ключевые поля: `period`, `top_complaints`, `top_suggestions`, `top_gratitude`, `new_topics`, `summary`.
+Основные поля: `period`, `top_complaints`, `top_suggestions`, `top_gratitude`, `new_topics`, `summary`.
 
 ### `GET /api/admin/reports/ch-quality`
 
 - **Ответ:** `200 OK`, `ChQualityReport`.
 
-Ключевые поля: `period`, `coverage_pct`, `override_rate_pct`, `low_confidence_rate_pct`, `new_cases`, `new_examples`, `candidates_created`, `coverage_by_day`, `override_by_day`, `low_confidence_by_day`, `problematic_cases`, `summary`.
+Основные поля: `period`, `coverage_pct`, `override_rate_pct`, `low_confidence_rate_pct`, `new_cases`, `new_examples`, `candidates_created`, `coverage_by_day`, `override_by_day`, `low_confidence_by_day`, `problematic_cases`, `summary`.
 
 ### `GET /api/admin/reports/{report_key}/export`
 
@@ -1248,7 +1241,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## 📋 14. Logs — трейсы обработки обращений
+## 📋 16. Logs — трейсы обработки обращений
 
 Базовый префикс: `/api/logs`.  
 Роль: `administrator` или `demo`.
@@ -1257,7 +1250,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 одна строка списка = одно обращение пользователя — на входе текст обращения,
 на выходе — итоговый статус и ответ. Логирует сам пайплайн обработки
 (`operational_logs`, `entity_type = "review"`); действия персонала в консоли —
-раздел 14a «Audit».
+раздел 17 «Audit».
 
 **Чтения журнала не логируются.** Открытия экранов и запросы списков/отчётов
 не создают записей (принцип AIC: read-only views are intentionally not logged,
@@ -1333,7 +1326,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## 🛡️ 14a. Audit — журнал пользовательской активности
+## 🛡️ 17. Audit — журнал пользовательской активности
 
 Базовый префикс: `/api/audit`.  
 Роль: `administrator` или `demo`.
@@ -1388,7 +1381,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## 🗂️ 15. Reference data
+## 🗂️ 18. Reference data
 
 Базовый префикс: `/api/reference`.  
 Роль: `operator` или `administrator`.
@@ -1428,7 +1421,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## 🤖 16. AI Provider Settings
+## 🤖 19. AI Provider Settings
 
 Базовый префикс: `/api/settings/ai-providers`.  
 Роль: `administrator`.
@@ -1439,7 +1432,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 - **Ответ:** `200 OK`, список `AIProviderSettingOut`.
 
-Ключевые поля:
+Основные поля:
 
 | Поле | Тип | Описание |
 |---|---|---|
@@ -1525,7 +1518,7 @@ curl -X PATCH http://localhost:8700/api/evaluation/cases/a1b2c3d4-e5f6-7890-abcd
 
 ---
 
-## ⚙️ 17. CH Runtime Settings
+## ⚙️ 20. CH Runtime Settings
 
 Базовый префикс: `/api/settings/ch-runtime`.  
 Роль: `administrator`.
@@ -1585,7 +1578,7 @@ curl -X PATCH http://localhost:8700/api/settings/ch-runtime \
 
 ---
 
-## 🔗 18. Интеграционные примечания
+## 🔗 21. Интеграционные примечания
 
 ### 18.1 Идемпотентность
 
@@ -1633,7 +1626,7 @@ allow_headers=["*"]
 
 ---
 
-## 📚 19. Связанные документы
+## 📚 22. Связанные документы
 
 - [🏠 `README.md`](../README.md) — главная страница проекта.
 - [🚀 `docs/DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) — развёртывание.
@@ -1651,10 +1644,16 @@ allow_headers=["*"]
 
 ---
 
-## 📝 20. Резюме ролевого доступа
+## 📝 23. Резюме ролевого доступа
 
 | Роль | Разрешённые префиксы |
 |---|---|
 | `client` / без заголовка | `/health`, `/api/reviews` |
 | `operator` | `/health`, `/api/reviews`, `/api/operator/reviews`, `/api/reference` |
 | `administrator` | все перечисленные выше префиксы |
+
+---
+
+**Статус:** Актуален. Покрывает создание обращений, классификацию, операторскую модерацию, администрирование базы знаний, аналитику, отчёты и настройки AI-провайдеров
+**Последнее обновление:** 2026-09-16
+**История изменений:** [📝 CHANGE_LOG.md](CHANGE_LOG.md#-1-история-изменений-документации)

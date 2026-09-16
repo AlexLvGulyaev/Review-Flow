@@ -1,8 +1,5 @@
 # 🎛️ Review Flow — руководство администратора
 
-**Проект:** review-flow  
-**Дата:** 2026-09-01
-
 🌐 **Консоль администратора:** [▶️ Открыть админ-панель](https://review-flow-admin.alex-n8n.site/company)
 
 ---
@@ -287,7 +284,7 @@ URL: `/settings/system` (локально http://localhost:5180/settings/system)
 
 ---
 
-## 📚 Связанные документы
+## 📚 9. Связанные документы
 
 - [🏠 `README.md`](../README.md) — главная страница проекта и live demo.
 - [🏗️ `docs/CONTROLLED_HYBRID.md`](CONTROLLED_HYBRID.md) — архитектурная модель.
@@ -299,3 +296,9 @@ URL: `/settings/system` (локально http://localhost:5180/settings/system)
 - [🎬 `docs/E2E_SCENARIOS.md`](E2E_SCENARIOS.md) — сквозные бизнес-сценарии.
 - [⚙️ `docs/OPERATIONS.md`](OPERATIONS.md) — эксплуатация, логи, backup, AI-провайдеры.
 - [🚀 `docs/DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) — развёртывание и env vars.
+
+---
+
+**Статус:** Актуален
+**Последнее обновление:** 2026-09-16
+**История изменений:** [📝 CHANGE_LOG.md](CHANGE_LOG.md#-1-история-изменений-документации)
